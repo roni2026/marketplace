@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -15,9 +16,11 @@ import {
   FileText,
   FolderTree,
   Flag,
-  LogOut
+  LogOut,
+  Menu,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 interface Stats {
   totalUsers: number;
@@ -92,48 +95,76 @@ export default function AdminDashboard() {
     { title: 'Reports', href: '/admin/reports', icon: Flag },
   ];
 
+  const chartData = stats
+    ? [
+        { name: 'Pending', count: stats.pendingAds, fill: 'hsl(45 93% 47%)' },
+        { name: 'Approved', count: stats.approvedAds, fill: 'hsl(142 71% 45%)' },
+        { name: 'Rejected', count: stats.rejectedAds, fill: 'hsl(0 72% 50%)' },
+      ]
+    : [];
+
+  const SidebarNav = () => (
+    <>
+      <div className="mb-8">
+        <Link to="/" className="text-2xl font-bold text-primary">
+          BazarBD
+        </Link>
+        <p className="text-sm text-muted-foreground">Admin Panel</p>
+      </div>
+
+      <nav className="space-y-2">
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            to={item.href}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
+          >
+            <item.icon className="h-5 w-5" />
+            {item.title}
+          </Link>
+        ))}
+      </nav>
+
+      <div className="mt-8">
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-3"
+          onClick={signOut}
+        >
+          <LogOut className="h-5 w-5" />
+          Sign Out
+        </Button>
+      </div>
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 min-h-screen bg-card border-r p-4">
-          <div className="mb-8">
-            <Link to="/" className="text-2xl font-bold text-primary">
-              BazarBD
-            </Link>
-            <p className="text-sm text-muted-foreground">Admin Panel</p>
-          </div>
-          
-          <nav className="space-y-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
-              >
-                <item.icon className="h-5 w-5" />
-                {item.title}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="mt-auto pt-8">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3"
-              onClick={signOut}
-            >
-              <LogOut className="h-5 w-5" />
-              Sign Out
-            </Button>
-          </div>
+        {/* Desktop Sidebar */}
+        <aside className="hidden lg:flex lg:flex-col w-64 min-h-screen bg-card border-r p-4">
+          <SidebarNav />
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">Overview of your marketplace</p>
+        <main className="flex-1 p-4 sm:p-8">
+          <div className="mb-8 flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold">Dashboard</h1>
+              <p className="text-muted-foreground">Overview of your marketplace</p>
+            </div>
+
+            {/* Mobile Sidebar */}
+            <Sheet>
+              <SheetTrigger asChild className="lg:hidden">
+                <Button variant="outline" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-4 flex flex-col">
+                <SidebarNav />
+              </SheetContent>
+            </Sheet>
           </div>
 
           {/* Stats Grid */}
@@ -156,6 +187,36 @@ export default function AdminDashboard() {
               </Card>
             ))}
           </div>
+
+          {/* Ads by Status Chart */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="text-base">Ads by Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : (
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+                      <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} />
+                      <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} width={30} />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: 8,
+                        }}
+                      />
+                      <Bar dataKey="count" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

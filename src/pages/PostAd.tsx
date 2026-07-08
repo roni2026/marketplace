@@ -12,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Upload, X, ImageIcon } from 'lucide-react';
+import { Loader2, X, ImageIcon, ArrowLeft, ArrowRight, GripVertical } from 'lucide-react';
 import { DIVISIONS, DISTRICTS, generateSlug } from '@/lib/constants';
 
 interface Category {
@@ -37,6 +37,7 @@ export default function PostAd() {
   const [filteredSubcategories, setFilteredSubcategories] = useState<Subcategory[]>([]);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -76,23 +77,47 @@ export default function PostAd() {
     if (subRes.data) setSubcategories(subRes.data);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (images.length + files.length > 5) {
+  const addFiles = (files: File[]) => {
+    const imageFiles = files.filter((f) => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) return;
+    if (images.length + imageFiles.length > 5) {
       toast.error('Maximum 5 images allowed');
       return;
     }
-    
-    const newImages = [...images, ...files].slice(0, 5);
+
+    const newImages = [...images, ...imageFiles].slice(0, 5);
     setImages(newImages);
-    
+
     const newPreviews = newImages.map(file => URL.createObjectURL(file));
     setImagePreviews(newPreviews);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    addFiles(Array.from(e.target.files || []));
+    e.target.value = '';
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    addFiles(Array.from(e.dataTransfer.files || []));
   };
 
   const removeImage = (index: number) => {
     const newImages = images.filter((_, i) => i !== index);
     const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setImages(newImages);
+    setImagePreviews(newPreviews);
+  };
+
+  const moveImage = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= images.length) return;
+
+    const newImages = [...images];
+    const newPreviews = [...imagePreviews];
+    [newImages[index], newImages[target]] = [newImages[target], newImages[index]];
+    [newPreviews[index], newPreviews[target]] = [newPreviews[target], newPreviews[index]];
     setImages(newImages);
     setImagePreviews(newPreviews);
   };
@@ -204,23 +229,58 @@ export default function PostAd() {
               {/* Images */}
               <div className="space-y-2">
                 <Label>Images (max 5) *</Label>
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {imagePreviews.map((preview, index) => (
-                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border group">
                       <img src={preview} alt="" className="w-full h-full object-cover" />
+                      {index === 0 && (
+                        <span className="absolute bottom-1 left-1 text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
+                          Cover
+                        </span>
+                      )}
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
                         className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1"
+                        aria-label="Remove image"
                       >
                         <X className="h-3 w-3" />
                       </button>
+                      <div className="absolute inset-x-0 bottom-1 flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={() => moveImage(index, -1)}
+                          className="bg-card/90 rounded p-1 disabled:opacity-30"
+                          aria-label="Move image earlier"
+                        >
+                          <ArrowLeft className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={index === imagePreviews.length - 1}
+                          onClick={() => moveImage(index, 1)}
+                          className="bg-card/90 rounded p-1 disabled:opacity-30"
+                          aria-label="Move image later"
+                        >
+                          <ArrowRight className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                   {images.length < 5 && (
-                    <label className="aspect-square rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
+                    <label
+                      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                      onDragLeave={() => setIsDragging(false)}
+                      onDrop={handleDrop}
+                      className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                        isDragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary'
+                      }`}
+                    >
                       <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground mt-1">Add</span>
+                      <span className="text-xs text-muted-foreground mt-1 text-center px-1">
+                        {isDragging ? 'Drop here' : 'Add or drag'}
+                      </span>
                       <input
                         type="file"
                         accept="image/*"
@@ -231,6 +291,9 @@ export default function PostAd() {
                     </label>
                   )}
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  The first photo is used as the cover image. Use the arrows to reorder.
+                </p>
               </div>
 
               {/* Title */}
@@ -241,8 +304,15 @@ export default function PostAd() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="What are you selling?"
+                  maxLength={100}
                   required
                 />
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  {title.trim() ? (
+                    <span className="truncate">URL preview: /ad/{generateSlug(title)}-…</span>
+                  ) : <span />}
+                  <span>{title.length}/100</span>
+                </div>
               </div>
 
               {/* Category */}
@@ -343,7 +413,9 @@ export default function PostAd() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe your item in detail..."
                   rows={5}
+                  maxLength={2000}
                 />
+                <p className="text-xs text-muted-foreground text-right">{description.length}/2000</p>
               </div>
 
               {/* Location */}

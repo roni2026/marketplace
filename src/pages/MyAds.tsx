@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -234,7 +235,7 @@ export default function MyAds() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">My Ads</h1>
           <Link to="/post-ad">
@@ -271,6 +272,7 @@ export default function MyAds() {
           </TabsContent>
         </Tabs>
       </main>
+      <MobileNav />
       <Footer />
     </div>
   );

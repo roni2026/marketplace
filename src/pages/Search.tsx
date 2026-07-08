@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { AdCard } from '@/components/ads/AdCard';
+import { SortSelect, SortOption } from '@/components/ads/SortSelect';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,11 +36,12 @@ export default function Search() {
   const [isLoading, setIsLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortOption>('newest');
   const perPage = 12;
 
   useEffect(() => {
     fetchAds();
-  }, [query, page]);
+  }, [query, page, sort]);
 
   useEffect(() => {
     if (user) {
@@ -57,10 +61,15 @@ export default function Search() {
       dbQuery = dbQuery.ilike('title', `%${query}%`);
     }
 
-    dbQuery = dbQuery
-      .order('is_featured', { ascending: false })
-      .order('created_at', { ascending: false })
-      .range((page - 1) * perPage, page * perPage - 1);
+    dbQuery = dbQuery.order('is_featured', { ascending: false });
+    if (sort === 'price_asc') {
+      dbQuery = dbQuery.order('price', { ascending: true, nullsFirst: false });
+    } else if (sort === 'price_desc') {
+      dbQuery = dbQuery.order('price', { ascending: false, nullsFirst: false });
+    } else {
+      dbQuery = dbQuery.order('created_at', { ascending: false });
+    }
+    dbQuery = dbQuery.range((page - 1) * perPage, page * perPage - 1);
 
     const { data, count } = await dbQuery;
     
@@ -84,13 +93,19 @@ export default function Search() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <title>{query ? `Search results for "${query}"` : 'All Ads'} — BazarBD</title>
+      </Helmet>
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">
-            {query ? `Search results for "${query}"` : 'All Ads'}
-          </h1>
-          <p className="text-muted-foreground">{totalCount} ads found</p>
+      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">
+              {query ? `Search results for "${query}"` : 'All Ads'}
+            </h1>
+            <p className="text-muted-foreground">{totalCount} ads found</p>
+          </div>
+          <SortSelect value={sort} onChange={(v) => { setSort(v); setPage(1); }} />
         </div>
 
         {isLoading ? (
@@ -139,6 +154,7 @@ export default function Search() {
           </>
         )}
       </main>
+      <MobileNav />
       <Footer />
     </div>
   );

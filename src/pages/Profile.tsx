@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -134,7 +135,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <Card className="max-w-xl mx-auto">
           <CardHeader>
             <CardTitle>My Profile</CardTitle>
@@ -244,6 +245,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </main>
+      <MobileNav />
       <Footer />
     </div>
   );
