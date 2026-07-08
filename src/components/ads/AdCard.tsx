@@ -33,8 +33,10 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle }: AdCardProps
   const { user } = useAuth();
   const [isFav, setIsFav] = useState(isFavorite);
   const [isLoading, setIsLoading] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
-  const imageUrl = ad.ad_images?.[0]?.image_url || '/placeholder.svg';
+  const imageUrl = !imgError && ad.ad_images?.[0]?.image_url ? ad.ad_images[0].image_url : '/placeholder.svg';
+  const isNew = Date.now() - new Date(ad.created_at).getTime() < 48 * 60 * 60 * 1000;
 
   const handleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -71,14 +73,21 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle }: AdCardProps
           <img
             src={imageUrl}
             alt={ad.title}
+            loading="lazy"
+            onError={() => setImgError(true)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          {ad.is_featured && (
-            <Badge className="absolute top-2 left-2 bg-primary gap-1">
-              <Star className="h-3 w-3" />
-              Featured
-            </Badge>
-          )}
+          <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
+            {ad.is_featured && (
+              <Badge className="bg-primary gap-1">
+                <Star className="h-3 w-3" />
+                Featured
+              </Badge>
+            )}
+            {isNew && !ad.is_featured && (
+              <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white">New</Badge>
+            )}
+          </div>
           <Badge 
             variant="secondary" 
             className="absolute top-2 right-2 capitalize"

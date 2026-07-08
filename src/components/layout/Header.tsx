@@ -5,6 +5,7 @@ import { Search, Plus, User, Heart, Menu, X, LogOut, Settings } from 'lucide-rea
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,7 +73,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
             <div className="bg-primary text-primary-foreground font-bold text-xl px-3 py-1 rounded-lg">
               BazarBD
             </div>
@@ -106,6 +107,9 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            <div className="hidden sm:block">
+              <ThemeToggle />
+            </div>
             {user ? (
               <>
                 <Link to="/post-ad">
@@ -178,6 +182,10 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                   <nav className="flex flex-col gap-4">
                     <NavLinks mobile />
                   </nav>
+                  <div className="flex items-center justify-between border-t border-border pt-4">
+                    <span className="text-sm text-foreground/80">Theme</span>
+                    <ThemeToggle />
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>

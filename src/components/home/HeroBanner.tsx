@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, ShieldCheck, Users, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -53,6 +53,21 @@ export function HeroBanner() {
               {term}
             </button>
           ))}
+        </div>
+
+        <div className="mt-10 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
+          <span className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            Free & secure listings
+          </span>
+          <span className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            Trusted by local buyers & sellers
+          </span>
+          <span className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            New ads added daily
+          </span>
         </div>
       </div>
     </section>

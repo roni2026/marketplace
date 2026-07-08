@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
+import { Smartphone } from 'lucide-react';
 
 export function Footer() {
+  const year = new Date().getFullYear();
+
   return (
-    <footer className="bg-secondary text-secondary-foreground mt-auto">
+    <footer className="bg-secondary text-secondary-foreground mt-auto pb-16 lg:pb-0">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
@@ -44,8 +47,12 @@ export function Footer() {
           </div>
         </div>
         
-        <div className="border-t border-secondary-foreground/20 mt-8 pt-8 text-center text-sm opacity-60">
-          <p>© 2024 BazarBD. All rights reserved. Made with ❤️ in Bangladesh</p>
+        <div className="border-t border-secondary-foreground/20 mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm opacity-80">
+          <p>© {year} BazarBD. All rights reserved. Made with ❤️ in Bangladesh</p>
+          <div className="flex items-center gap-2 rounded-full border border-secondary-foreground/20 px-3 py-1.5 text-xs">
+            <Smartphone className="h-3.5 w-3.5" />
+            Also available as an Android app
+          </div>
         </div>
       </div>
     </footer>
