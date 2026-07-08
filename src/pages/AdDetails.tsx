@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { formatPrice } from '@/lib/constants';
-import { formatDistanceToNow } from 'date-fns';
-import { MapPin, Clock, User, Phone, Heart, Flag, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { formatDistanceToNow, format } from 'date-fns';
+import { MapPin, Clock, User, Phone, Heart, Flag, MessageCircle, Eye, BadgeCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -21,6 +24,9 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { AdGallery } from '@/components/ads/AdGallery';
+import { ShareButton } from '@/components/ads/ShareButton';
+import { SimilarAds } from '@/components/ads/SimilarAds';
 
 interface Ad {
   id: string;
@@ -36,6 +42,8 @@ interface Ad {
   is_featured: boolean;
   created_at: string;
   user_id: string;
+  category_id: string;
+  views_count: number | null;
   ad_images: { id: string; image_url: string; sort_order: number }[];
   categories: { name: string; slug: string } | null;
   subcategories: { name: string; slug: string } | null;
@@ -45,33 +53,40 @@ interface Profile {
   full_name: string | null;
   phone_number: string | null;
   avatar_url: string | null;
+  created_at: string | null;
 }
 
 export default function AdDetails() {
   const { slug } = useParams();
   const { user } = useAuth();
+  const { recordView } = useRecentlyViewed();
   const [ad, setAd] = useState<Ad | null>(null);
   const [seller, setSeller] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [reportReason, setReportReason] = useState('');
   const [isReporting, setIsReporting] = useState(false);
+  const [showPhone, setShowPhone] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
 
   // Extract ID from slug (format: title-slug-uuid)
   const adId = slug?.split('-').pop() || '';
 
   useEffect(() => {
     fetchAd();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adId]);
 
   useEffect(() => {
     if (user && ad) {
       checkFavorite();
+      fetchFavorites();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, ad]);
 
   const fetchAd = async () => {
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('ads')
@@ -82,11 +97,12 @@ export default function AdDetails() {
       if (error) throw error;
       
       setAd(data as Ad);
+      recordView(data.id);
       
       // Fetch seller profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, phone_number, avatar_url')
+        .select('full_name, phone_number, avatar_url, created_at')
         .eq('user_id', data.user_id)
         .single();
       
@@ -113,6 +129,12 @@ export default function AdDetails() {
       .eq('ad_id', ad.id)
       .maybeSingle();
     setIsFavorite(!!data);
+  };
+
+  const fetchFavorites = async () => {
+    if (!user) return;
+    const { data } = await supabase.from('favorites').select('ad_id').eq('user_id', user.id);
+    if (data) setFavorites(data.map((f) => f.ad_id));
   };
 
   const toggleFavorite = async () => {
@@ -160,15 +182,8 @@ export default function AdDetails() {
     }
   };
 
-  const images = ad?.ad_images?.sort((a, b) => a.sort_order - b.sort_order) || [];
-
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
+  const images = ad?.ad_images?.slice().sort((a, b) => a.sort_order - b.sort_order) || [];
+  const whatsappNumber = seller?.phone_number?.replace(/[^0-9]/g, '');
 
   if (isLoading) {
     return (
@@ -207,10 +222,16 @@ export default function AdDetails() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <title>{ad.title} — BazarBD</title>
+        <meta name="description" content={ad.description?.slice(0, 155) || ad.title} />
+        <meta property="og:title" content={ad.title} />
+        {images[0] && <meta property="og:image" content={images[0].image_url} />}
+      </Helmet>
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         {/* Breadcrumb */}
-        <nav className="text-sm text-muted-foreground mb-4 flex gap-2">
+        <nav className="text-sm text-muted-foreground mb-4 flex gap-2 overflow-x-auto whitespace-nowrap">
           <Link to="/" className="hover:text-primary">Home</Link>
           <span>/</span>
           {ad.categories && (
@@ -227,64 +248,7 @@ export default function AdDetails() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Images */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="relative aspect-[4/3] bg-muted rounded-lg overflow-hidden">
-              {images.length > 0 ? (
-                <>
-                  <img
-                    src={images[currentImageIndex].image_url}
-                    alt={ad.title}
-                    className="w-full h-full object-contain"
-                  />
-                  {images.length > 1 && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-card/80"
-                        onClick={prevImage}
-                      >
-                        <ChevronLeft className="h-6 w-6" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-card/80"
-                        onClick={nextImage}
-                      >
-                        <ChevronRight className="h-6 w-6" />
-                      </Button>
-                    </>
-                  )}
-                  {ad.is_featured && (
-                    <Badge className="absolute top-4 left-4 bg-primary gap-1">
-                      <Star className="h-3 w-3" />
-                      Featured
-                    </Badge>
-                  )}
-                </>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-muted-foreground">No images</span>
-                </div>
-              )}
-            </div>
-
-            {/* Thumbnails */}
-            {images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {images.map((img, idx) => (
-                  <button
-                    key={img.id}
-                    onClick={() => setCurrentImageIndex(idx)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
-                      idx === currentImageIndex ? 'border-primary' : 'border-transparent'
-                    }`}
-                  >
-                    <img src={img.image_url} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
+            <AdGallery images={images} title={ad.title} isFeatured={ad.is_featured} />
 
             {/* Description */}
             <Card>
@@ -317,9 +281,15 @@ export default function AdDetails() {
                   <span>{ad.area ? `${ad.area}, ` : ''}{ad.district}, {ad.division}</span>
                 </div>
 
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>Posted {formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}</span>
+                <div className="flex items-center gap-4 text-muted-foreground text-sm">
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Posted {formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Eye className="h-4 w-4" />
+                    {(ad.views_count || 0) + 1} views
+                  </span>
                 </div>
 
                 <div className="flex gap-2">
@@ -331,9 +301,10 @@ export default function AdDetails() {
                     <Heart className={`h-4 w-4 ${isFavorite ? 'fill-destructive text-destructive' : ''}`} />
                     {isFavorite ? 'Saved' : 'Save'}
                   </Button>
+                  <ShareButton title={ad.title} text={`Check out this ad on BazarBD: ${ad.title}`} />
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button variant="outline" size="icon">
+                      <Button variant="outline" size="icon" aria-label="Report this ad">
                         <Flag className="h-4 w-4" />
                       </Button>
                     </DialogTrigger>
@@ -364,27 +335,58 @@ export default function AdDetails() {
               <CardContent className="p-6 space-y-4">
                 <h3 className="font-semibold">Seller Information</h3>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
                     {seller?.avatar_url ? (
                       <img src={seller.avatar_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <User className="h-6 w-6 text-muted-foreground" />
                     )}
                   </div>
-                  <div>
-                    <p className="font-medium">{seller?.full_name || 'Anonymous'}</p>
-                    {seller?.phone_number && (
-                      <p className="text-sm text-muted-foreground">{seller.phone_number}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium flex items-center gap-1 truncate">
+                      {seller?.full_name || 'Anonymous'}
+                      {seller?.phone_number && (
+                        <BadgeCheck className="h-4 w-4 text-primary shrink-0" aria-label="Verified contact" />
+                      )}
+                    </p>
+                    {seller?.created_at && (
+                      <p className="text-xs text-muted-foreground">
+                        Member since {format(new Date(seller.created_at), 'MMM yyyy')}
+                      </p>
                     )}
                   </div>
                 </div>
+
                 {seller?.phone_number && (
-                  <Button className="w-full gap-2" asChild>
-                    <a href={`tel:${seller.phone_number}`}>
-                      <Phone className="h-4 w-4" />
-                      Call Seller
-                    </a>
-                  </Button>
+                  <div className="space-y-2">
+                    {showPhone ? (
+                      <Button className="w-full gap-2" asChild>
+                        <a href={`tel:${seller.phone_number}`}>
+                          <Phone className="h-4 w-4" />
+                          {seller.phone_number}
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button className="w-full gap-2" onClick={() => setShowPhone(true)}>
+                        <Phone className="h-4 w-4" />
+                        Reveal Phone Number
+                      </Button>
+                    )}
+                    {whatsappNumber && (
+                      <Button variant="outline" className="w-full gap-2" asChild>
+                        <a
+                          href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+                            `Hi, I'm interested in your ad "${ad.title}" on BazarBD.`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          Message on WhatsApp
+                        </a>
+                      </Button>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -403,7 +405,12 @@ export default function AdDetails() {
             </Card>
           </div>
         </div>
+
+        {ad.categories && (
+          <SimilarAds categoryId={ad.category_id} excludeAdId={ad.id} favorites={favorites} />
+        )}
       </main>
+      <MobileNav />
       <Footer />
     </div>
   );

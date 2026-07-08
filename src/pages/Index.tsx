@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { HeroBanner } from '@/components/home/HeroBanner';
 import { CategoryGrid } from '@/components/home/CategoryGrid';
 import { AdSection } from '@/components/home/AdSection';
+import { RecentlyViewed } from '@/components/home/RecentlyViewed';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -90,8 +93,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <title>BazarBD — Buy & Sell Anything in Bangladesh</title>
+        <meta
+          name="description"
+          content="Browse thousands of free classified ads for electronics, vehicles, property and more across Bangladesh, or post your own in minutes."
+        />
+      </Helmet>
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 pb-16 lg:pb-0">
         <HeroBanner />
         
         <div className="container mx-auto px-4">
@@ -130,10 +140,12 @@ const Index = () => {
                 viewAllLink="/search"
                 favorites={favorites}
               />
+              <RecentlyViewed favorites={favorites} />
             </>
           )}
         </div>
       </main>
+      <MobileNav />
       <Footer />
     </div>
   );

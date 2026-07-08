@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { AdCard } from '@/components/ads/AdCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -70,7 +71,7 @@ export default function Favorites() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <h1 className="text-2xl font-bold mb-6">My Favorites</h1>
 
         {isLoading ? (
@@ -103,6 +104,7 @@ export default function Favorites() {
           </div>
         )}
       </main>
+      <MobileNav />
       <Footer />
     </div>
   );

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,7 +63,7 @@ export default function CategoriesPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <h1 className="text-2xl font-bold mb-6">All Categories</h1>
 
         {isLoading ? (
@@ -118,6 +119,7 @@ export default function CategoriesPage() {
           </div>
         )}
       </main>
+      <MobileNav />
       <Footer />
     </div>
   );

@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { AdCard } from '@/components/ads/AdCard';
+import { SortSelect, SortOption } from '@/components/ads/SortSelect';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -54,6 +57,7 @@ export default function CategoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortOption>('newest');
   const perPage = 12;
 
   // Filters
@@ -72,7 +76,7 @@ export default function CategoryPage() {
     if (category) {
       fetchAds();
     }
-  }, [category, page, minPrice, maxPrice, condition, division, district, subcategoryId]);
+  }, [category, page, minPrice, maxPrice, condition, division, district, subcategoryId, sort]);
 
   useEffect(() => {
     if (user) {
@@ -117,10 +121,15 @@ export default function CategoryPage() {
     if (minPrice) query = query.gte('price', parseFloat(minPrice));
     if (maxPrice) query = query.lte('price', parseFloat(maxPrice));
 
-    query = query
-      .order('is_featured', { ascending: false })
-      .order('created_at', { ascending: false })
-      .range((page - 1) * perPage, page * perPage - 1);
+    query = query.order('is_featured', { ascending: false });
+    if (sort === 'price_asc') {
+      query = query.order('price', { ascending: true, nullsFirst: false });
+    } else if (sort === 'price_desc') {
+      query = query.order('price', { ascending: false, nullsFirst: false });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
+    query = query.range((page - 1) * perPage, page * perPage - 1);
 
     const { data, count } = await query;
     
@@ -259,14 +268,20 @@ export default function CategoryPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <title>{category?.name || 'Category'} — BazarBD</title>
+      </Helmet>
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
+      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold">{category?.name || 'Category'}</h1>
             <p className="text-muted-foreground">{totalCount} ads found</p>
           </div>
-          
+
+          <div className="flex items-center gap-2">
+            <SortSelect value={sort} onChange={(v) => { setSort(v); setPage(1); }} />
+
           {/* Mobile Filter Button */}
           <Sheet>
             <SheetTrigger asChild>
@@ -284,6 +299,7 @@ export default function CategoryPage() {
               </div>
             </SheetContent>
           </Sheet>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-4 gap-8">
@@ -349,6 +365,7 @@ export default function CategoryPage() {
           </div>
         </div>
       </main>
+      <MobileNav />
       <Footer />
     </div>
   );
