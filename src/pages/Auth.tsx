@@ -105,10 +105,9 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mb-4">
-            <span className="bg-primary text-primary-foreground font-bold text-2xl px-4 py-2 rounded-lg">
-              BazarBD
-            </span>
+          <div className="mb-4 flex justify-center">
+            <img src="/brand/logo-light.png" alt="BazarBD" className="h-9 w-auto dark:hidden" />
+            <img src="/brand/logo-dark.png" alt="BazarBD" className="h-9 w-auto hidden dark:block" />
           </div>
           <CardTitle className="text-2xl">Welcome</CardTitle>
           <CardDescription>

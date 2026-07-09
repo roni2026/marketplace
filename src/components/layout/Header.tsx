@@ -74,9 +74,16 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
-            <div className="bg-primary text-primary-foreground font-bold text-xl px-3 py-1 rounded-lg">
-              BazarBD
-            </div>
+            <img
+              src="/brand/logo-light.png"
+              alt="BazarBD"
+              className="h-8 w-auto dark:hidden"
+            />
+            <img
+              src="/brand/logo-dark.png"
+              alt="BazarBD"
+              className="h-8 w-auto hidden dark:block"
+            />
           </Link>
 
           {/* Search Bar - Desktop */}

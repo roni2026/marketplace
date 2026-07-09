@@ -106,10 +106,11 @@ export default function AdminDashboard() {
   const SidebarNav = () => (
     <>
       <div className="mb-8">
-        <Link to="/" className="text-2xl font-bold text-primary">
-          BazarBD
+        <Link to="/" className="block">
+          <img src="/brand/logo-light.png" alt="BazarBD" className="h-7 w-auto dark:hidden" />
+          <img src="/brand/logo-dark.png" alt="BazarBD" className="h-7 w-auto hidden dark:block" />
         </Link>
-        <p className="text-sm text-muted-foreground">Admin Panel</p>
+        <p className="text-sm text-muted-foreground mt-2">Admin Panel</p>
       </div>
 
       <nav className="space-y-2">
