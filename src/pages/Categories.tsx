@@ -6,7 +6,7 @@ import { MobileNav } from '@/components/layout/MobileNav';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { 
+import {
   Smartphone, Car, Home, Briefcase, Shirt, Wrench, Sofa, GraduationCap,
   LucideIcon, ChevronRight
 } from 'lucide-react';
@@ -27,6 +27,30 @@ interface Category {
   name: string;
   slug: string;
   icon: string | null;
+}
+
+/** Custom illustrated badge for a category, falling back to a plain Lucide icon in a
+ * circle if no artwork exists yet for that slug (e.g. a category an admin just added). */
+function CategoryIcon({ category }: { category: Category }) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  if (!imageFailed) {
+    return (
+      <img
+        src={`/category-icons/${category.slug}.png`}
+        alt={category.name}
+        className="h-12 w-12 object-contain"
+        onError={() => setImageFailed(true)}
+      />
+    );
+  }
+
+  const IconComponent = iconMap[category.icon || 'Smartphone'] || Smartphone;
+  return (
+    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+      <IconComponent className="h-6 w-6 text-primary" />
+    </div>
+  );
 }
 
 interface Subcategory {
@@ -75,16 +99,13 @@ export default function CategoriesPage() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {categories.map((category) => {
-              const IconComponent = iconMap[category.icon || 'Smartphone'] || Smartphone;
               const subs = getSubcategories(category.id);
               
               return (
                 <Card key={category.id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <Link to={`/category/${category.slug}`} className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <IconComponent className="h-6 w-6 text-primary" />
-                      </div>
+                      <CategoryIcon category={category} />
                       <h2 className="text-xl font-semibold hover:text-primary transition-colors">
                         {category.name}
                       </h2>
