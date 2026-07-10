@@ -6,7 +6,15 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  isAdmin: boolean;
+  /**
+   * Admin flag with three states:
+   *  - null  => the admin role check has not resolved yet (still loading)
+   *  - false => confirmed NOT an admin
+   *  - true  => confirmed admin
+   * Guards must treat `null` as "still checking" and never redirect on it,
+   * otherwise real admins get bounced out before the async check completes.
+   */
+  isAdmin: boolean | null;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -18,14 +26,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
+        // Reset to "checking" state, then verify the role.
+        setIsAdmin(null);
         setTimeout(() => {
           checkAdminRole(session.user.id);
         }, 0);
@@ -39,6 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       if (session?.user) {
         checkAdminRole(session.user.id);
+      } else {
+        setIsAdmin(false);
       }
       setIsLoading(false);
     });
@@ -53,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq('user_id', userId)
       .eq('role', 'admin')
       .maybeSingle();
-    
+
     setIsAdmin(!!data);
   };
 

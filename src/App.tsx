@@ -7,6 +7,8 @@ import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AdminRoute } from "@/components/auth/AdminRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import PostAd from "./pages/PostAd";
@@ -36,22 +38,27 @@ const App = () => (
             <Sonner richColors closeButton position="top-center" />
             <BrowserRouter>
               <Routes>
+                {/* Public Routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/post-ad" element={<PostAd />} />
                 <Route path="/ad/:slug" element={<AdDetails />} />
                 <Route path="/category/:slug" element={<Category />} />
                 <Route path="/categories" element={<Categories />} />
                 <Route path="/search" element={<Search />} />
-                <Route path="/my-ads" element={<MyAds />} />
-                <Route path="/favorites" element={<Favorites />} />
-                <Route path="/profile" element={<Profile />} />
-                {/* Admin Routes */}
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/ads" element={<AdModeration />} />
-                <Route path="/admin/categories" element={<CategoryManagement />} />
-                <Route path="/admin/users" element={<UserManagement />} />
-                <Route path="/admin/reports" element={<ReportManagement />} />
+
+                {/* Authenticated Routes */}
+                <Route path="/post-ad" element={<ProtectedRoute><PostAd /></ProtectedRoute>} />
+                <Route path="/my-ads" element={<ProtectedRoute><MyAds /></ProtectedRoute>} />
+                <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+                {/* Admin Routes (require admin role) */}
+                <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                <Route path="/admin/ads" element={<AdminRoute><AdModeration /></AdminRoute>} />
+                <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
+                <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
+                <Route path="/admin/reports" element={<AdminRoute><ReportManagement /></AdminRoute>} />
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <InstallPrompt />
