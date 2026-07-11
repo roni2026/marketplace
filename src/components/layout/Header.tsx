@@ -177,6 +177,14 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                         {t('nav.profile')}
                       </Link>
                     </DropdownMenuItem>
+                    {user && (
+                      <DropdownMenuItem asChild>
+                        <Link to={`/user/${user.id}`} className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          {t('profile.publicProfile')}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
                       <Link to="/my-ads" className="flex items-center gap-2">
                         {t('nav.myAds')}

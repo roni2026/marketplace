@@ -11,8 +11,25 @@ interface ProfileData {
   district: string | null;
   area: string | null;
   avatar_url: string | null;
+  banner_url: string | null;
+  bio: string | null;
+  website: string | null;
+  social_links: Record<string, string> | null;
+  preferred_language: string | null;
+  preferred_currency: string | null;
   is_verified: boolean | null;
   is_suspended: boolean | null;
+  is_public: boolean | null;
+  last_active_at: string | null;
+  seller_rating: number | null;
+  buyer_rating: number | null;
+  total_sales: number | null;
+  total_purchases: number | null;
+  total_followers: number | null;
+  total_following: number | null;
+  total_reviews: number | null;
+  response_rate: number | null;
+  avg_response_time_hours: number | null;
 }
 
 interface AuthContextType {
@@ -51,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('full_name, phone_number, division, district, area, avatar_url, is_verified, is_suspended')
+      .select('full_name, phone_number, division, district, area, avatar_url, banner_url, bio, website, social_links, preferred_language, preferred_currency, is_verified, is_suspended, is_public, last_active_at, seller_rating, buyer_rating, total_sales, total_purchases, total_followers, total_following, total_reviews, response_rate, avg_response_time_hours')
       .eq('user_id', userId)
       .maybeSingle();
 
@@ -69,17 +86,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const calculateProfileCompletion = (p: ProfileData | null): number => {
     if (!p) return 0;
     const fields = [
-      { key: 'full_name', weight: 20 },
-      { key: 'phone_number', weight: 20 },
-      { key: 'division', weight: 15 },
-      { key: 'district', weight: 15 },
-      { key: 'area', weight: 10 },
-      { key: 'avatar_url', weight: 20 },
+      { key: 'full_name', weight: 15 },
+      { key: 'phone_number', weight: 15 },
+      { key: 'division', weight: 10 },
+      { key: 'district', weight: 10 },
+      { key: 'area', weight: 5 },
+      { key: 'avatar_url', weight: 15 },
+      { key: 'banner_url', weight: 5 },
+      { key: 'bio', weight: 10 },
+      { key: 'website', weight: 5 },
+      { key: 'social_links', weight: 5 },
+      { key: 'preferred_language', weight: 3 },
+      { key: 'preferred_currency', weight: 2 },
     ];
     let score = 0;
     for (const field of fields) {
       const value = p[field.key as keyof ProfileData];
-      if (value && String(value).trim()) {
+      if (value && String(value).trim() && value !== '{}') {
         score += field.weight;
       }
     }

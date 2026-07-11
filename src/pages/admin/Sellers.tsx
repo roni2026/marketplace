@@ -32,6 +32,12 @@ interface Seller {
   is_suspended: boolean | null;
   created_at: string;
   ad_count?: number;
+  seller_rating?: number;
+  total_sales?: number;
+  total_followers?: number;
+  trust_score?: number;
+  response_rate?: number;
+  bio?: string | null;
 }
 
 export default function Sellers() {
@@ -65,9 +71,34 @@ export default function Sellers() {
       countMap.set(a.user_id, (countMap.get(a.user_id) || 0) + 1);
     });
 
+    // Get profile stats for reputation data
+    const sellerUserIds = ((profiles as any[]) || [])
+      .filter(p => p.user_roles?.some((r: any) => ['seller', 'admin', 'super_admin'].includes(r.role)) || (countMap.get(p.user_id) || 0) > 0)
+      .map(p => p.user_id);
+
+    const { data: statsData } = await supabase
+      .from('profile_stats')
+      .select('*')
+      .in('user_id', sellerUserIds);
+
+    const statsMap = new Map<string, any>();
+    (statsData || []).forEach((s: any) => statsMap.set(s.user_id, s));
+
     const sellersWithCounts = ((profiles as any[]) || [])
       .filter(p => p.user_roles?.some((r: any) => ['seller', 'admin', 'super_admin'].includes(r.role)) || (countMap.get(p.user_id) || 0) > 0)
-      .map(p => ({ ...p, ad_count: countMap.get(p.user_id) || 0 }));
+      .map(p => {
+        const stats = statsMap.get(p.user_id);
+        return {
+          ...p,
+          ad_count: countMap.get(p.user_id) || 0,
+          seller_rating: p.seller_rating || stats?.seller_rating || 0,
+          total_sales: p.total_sales || stats?.total_sales || 0,
+          total_followers: p.total_followers || stats?.total_followers || 0,
+          trust_score: stats?.trust_score || 50,
+          response_rate: p.response_rate || stats?.response_rate || 0,
+          bio: p.bio || null,
+        };
+      });
 
     setSellers(sellersWithCounts);
     setIsLoading(false);
@@ -149,22 +180,22 @@ export default function Sellers() {
                     <p className="text-[10px] text-muted-foreground">Listings</p>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-accent/50">
-                    <p className="text-lg font-bold">{seller.is_verified ? '✓' : '—'}</p>
-                    <p className="text-[10px] text-muted-foreground">Verified</p>
+                    <p className="text-lg font-bold">{seller.seller_rating ? seller.seller_rating.toFixed(1) : '—'}</p>
+                    <p className="text-[10px] text-muted-foreground">Rating</p>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-accent/50">
-                    <p className="text-lg font-bold">{formatDistanceToNow(new Date(seller.created_at), { addSuffix: false }).replace(' days', 'd').replace(' months', 'mo').replace(' about ', '')}</p>
-                    <p className="text-[10px] text-muted-foreground">Active</p>
+                    <p className="text-lg font-bold">{seller.total_sales || 0}</p>
+                    <p className="text-[10px] text-muted-foreground">Sales</p>
                   </div>
                 </div>
 
-                {/* Performance Score (mock) */}
+                {/* Trust Score */}
                 <div className="mb-3">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-muted-foreground">Performance Score</span>
-                    <span className="text-xs font-medium">{Math.min(100, (seller.ad_count || 0) * 10 + (seller.is_verified ? 20 : 0))}%</span>
+                    <span className="text-xs text-muted-foreground">Trust Score</span>
+                    <span className="text-xs font-medium">{Math.round(seller.trust_score || 50)}/100</span>
                   </div>
-                  <Progress value={Math.min(100, (seller.ad_count || 0) * 10 + (seller.is_verified ? 20 : 0))} className="h-1.5" />
+                  <Progress value={seller.trust_score || 50} className="h-1.5" />
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -179,7 +210,7 @@ export default function Sellers() {
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleVerify(seller.user_id, seller.is_verified)}>
                       {seller.is_verified ? 'Revoke' : 'Verify'}
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="View Profile">
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="View Profile" onClick={() => navigate(`/user/${seller.user_id}`)}>
                       <Eye className="h-3.5 w-3.5" />
                     </Button>
                   </div>

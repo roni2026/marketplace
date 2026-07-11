@@ -553,26 +553,28 @@ export default function AdDetails() {
               <CardContent className="p-6 space-y-4">
                 <h3 className="font-semibold">{t('ad.sellerInfo')}</h3>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                    {seller?.avatar_url ? (
-                      <img src={seller.avatar_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="h-6 w-6 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium flex items-center gap-1 truncate">
-                      {seller?.full_name || t('ad.anonymous')}
-                      {seller?.is_verified && (
-                        <BadgeCheck className="h-4 w-4 text-primary shrink-0" aria-label="Verified seller" />
+                  <Link to={ad?.user_id ? `/user/${ad.user_id}` : '#'} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                      {seller?.avatar_url ? (
+                        <img src={seller.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="h-6 w-6 text-muted-foreground" />
                       )}
-                    </p>
-                    {seller?.created_at && (
-                      <p className="text-xs text-muted-foreground">
-                        Member since {format(new Date(seller.created_at), 'MMM yyyy')}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium flex items-center gap-1 truncate">
+                        {seller?.full_name || t('ad.anonymous')}
+                        {seller?.is_verified && (
+                          <BadgeCheck className="h-4 w-4 text-primary shrink-0" aria-label="Verified seller" />
+                        )}
                       </p>
-                    )}
-                  </div>
+                      {seller?.created_at && (
+                        <p className="text-xs text-muted-foreground">
+                          Member since {format(new Date(seller.created_at), 'MMM yyyy')}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
                 </div>
 
                 {seller?.phone_number && (

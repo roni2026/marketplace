@@ -25,6 +25,7 @@ import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 import SellerDashboard from "./pages/SellerDashboard";
 import Compare from "./pages/Compare";
+import PublicProfile from "./pages/PublicProfile";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -82,6 +83,7 @@ const App = () => (
                 <Route path="/categories" element={<Categories />} />
                 <Route path="/search" element={<Search />} />
                 <Route path="/compare" element={<Compare />} />
+                <Route path="/user/:userId" element={<PublicProfile />} />
 
                 {/* Authenticated Routes */}
                 <Route path="/post-ad" element={<ProtectedRoute><PostAd /></ProtectedRoute>} />
