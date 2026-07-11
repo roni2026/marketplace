@@ -286,7 +286,7 @@ export async function followShop(shopId: string, followerId: string): Promise<bo
       column_name: 'total_followers',
       row_id: shopId,
       increment_by: 1,
-    }).catch(() => {
+    }).catch(async () => {
       // Fallback: manual update
       const { data: shop } = await supabase.from('shops').select('total_followers').eq('id', shopId).single();
       if (shop) {
