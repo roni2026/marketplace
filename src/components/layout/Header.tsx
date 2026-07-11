@@ -191,6 +191,11 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
+                      <Link to="/seller-portal" className="flex items-center gap-2">
+                        Seller Portal
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link to="/saved-searches" className="flex items-center gap-2">
                         {t('nav.savedSearches')}
                       </Link>

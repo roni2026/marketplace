@@ -24,6 +24,11 @@ import SavedSearches from "./pages/SavedSearches";
 import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 import SellerDashboard from "./pages/SellerDashboard";
+import SellerPortal from "./pages/SellerPortal";
+import ShopDashboard from "./pages/ShopDashboard";
+import ShopSetup from "./pages/ShopSetup";
+import ShopSettings from "./pages/ShopSettings";
+import PublicShopPage from "./pages/PublicShopPage";
 import Compare from "./pages/Compare";
 import PublicProfile from "./pages/PublicProfile";
 
@@ -62,6 +67,8 @@ import Payouts from "./pages/admin/Payouts";
 import Coupons from "./pages/admin/Coupons";
 import Inventory from "./pages/admin/Inventory";
 import Campaigns from "./pages/admin/Campaigns";
+import ShopManagement from "./pages/admin/ShopManagement";
+import ShopVerificationReview from "./pages/admin/ShopVerificationReview";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +101,11 @@ const App = () => (
                 <Route path="/saved-searches" element={<ProtectedRoute><SavedSearches /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
                 <Route path="/seller-dashboard" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
+                <Route path="/seller-portal" element={<ProtectedRoute><SellerPortal /></ProtectedRoute>} />
+                <Route path="/shop-setup" element={<ProtectedRoute><ShopSetup /></ProtectedRoute>} />
+                <Route path="/shop-dashboard" element={<ProtectedRoute><ShopDashboard /></ProtectedRoute>} />
+                <Route path="/shop-settings" element={<ProtectedRoute><ShopSettings /></ProtectedRoute>} />
+                <Route path="/shop/:slug" element={<PublicShopPage />} />
 
                 {/* Admin Routes - /admin shows the admin portal with its own login */}
                 <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -130,6 +142,8 @@ const App = () => (
                 <Route path="/admin/coupons" element={<AdminRoute><Coupons /></AdminRoute>} />
                 <Route path="/admin/inventory" element={<AdminRoute><Inventory /></AdminRoute>} />
                 <Route path="/admin/campaigns" element={<AdminRoute><Campaigns /></AdminRoute>} />
+                <Route path="/admin/shops" element={<AdminRoute><ShopManagement /></AdminRoute>} />
+                <Route path="/admin/shop-verifications" element={<AdminRoute><ShopVerificationReview /></AdminRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

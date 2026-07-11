@@ -66,6 +66,8 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Customers', href: '/admin/customers', icon: Users },
       { title: 'Sellers', href: '/admin/sellers', icon: Store },
+      { title: 'Shops', href: '/admin/shops', icon: Store },
+      { title: 'Shop Verifications', href: '/admin/shop-verifications', icon: ShieldCheck },
       { title: 'Vendor Verification', href: '/admin/trust', icon: ShieldCheck },
       { title: 'User Management', href: '/admin/users', icon: UserCheck },
       { title: 'Permissions', href: '/admin/permissions', icon: Key },
