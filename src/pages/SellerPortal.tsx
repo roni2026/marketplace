@@ -26,7 +26,7 @@ import {
   Package, TrendingUp, DollarSign, Eye, Clock, Store,
   Plus, Edit, Trash2, Copy, RefreshCw, Archive, Calendar,
   MessageCircle, Star, BarChart3, Wallet, Settings, AlertCircle,
-  Truck, MapPin, Vacation, FileText, Download, CreditCard,
+  Truck, MapPin, Plane, FileText, Download, CreditCard,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -794,7 +794,7 @@ export default function SellerPortal() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Vacation className="h-4 w-4" /> Vacation Mode
+                  <Plane className="h-4 w-4" /> Vacation Mode
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
