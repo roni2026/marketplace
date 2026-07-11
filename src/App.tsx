@@ -38,6 +38,7 @@ import UserPreferences from "./pages/UserPreferences";
 import BlockedSellers from "./pages/BlockedSellers";
 import HiddenListings from "./pages/HiddenListings";
 import UserActivity from "./pages/UserActivity";
+import MessagesV2 from "./pages/MessagesV2";
 import Compare from "./pages/Compare";
 import PublicProfile from "./pages/PublicProfile";
 
@@ -83,6 +84,7 @@ import ListingAnalytics from "./pages/admin/ListingAnalytics";
 import SearchAnalytics from "./pages/admin/SearchAnalytics";
 import SponsoredListings from "./pages/admin/SponsoredListings";
 import SellerReports from "./pages/admin/SellerReports";
+import MessageModeration from "./pages/admin/MessageModeration";
 
 const queryClient = new QueryClient();
 
@@ -119,7 +121,7 @@ const App = () => (
                 <Route path="/my-ads" element={<ProtectedRoute><MyAds /></ProtectedRoute>} />
                 <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+                <Route path="/messages" element={<ProtectedRoute><MessagesV2 /></ProtectedRoute>} />
                 <Route path="/saved-searches" element={<ProtectedRoute><SavedSearches /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
                 <Route path="/seller-dashboard" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
@@ -144,7 +146,7 @@ const App = () => (
                 <Route path="/admin/permissions" element={<AdminRoute><PermissionsPage /></AdminRoute>} />
                 <Route path="/admin/media" element={<AdminRoute><MediaLibrary /></AdminRoute>} />
                 <Route path="/admin/reviews" element={<AdminRoute><ReviewModeration /></AdminRoute>} />
-                <Route path="/admin/messages" element={<AdminRoute><MessageMonitoring /></AdminRoute>} />
+                <Route path="/admin/messages" element={<AdminRoute><MessageModeration /></AdminRoute>} />
                 <Route path="/admin/cms" element={<AdminRoute><CMSPage /></AdminRoute>} />
                 <Route path="/admin/seo" element={<AdminRoute><SEOPage /></AdminRoute>} />
                 <Route path="/admin/workflow" element={<AdminRoute><WorkflowAutomation /></AdminRoute>} />
