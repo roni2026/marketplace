@@ -1,6 +1,19 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { AppRole, fetchUserRoles, hasPermission as checkPermission, isAdminRole, isStaffRole, Permission } from '@/lib/permissions';
+import { logLogin, logLogout, logLoginAttempt } from '@/lib/audit';
+
+interface ProfileData {
+  full_name: string | null;
+  phone_number: string | null;
+  division: string | null;
+  district: string | null;
+  area: string | null;
+  avatar_url: string | null;
+  is_verified: boolean | null;
+  is_suspended: boolean | null;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -11,13 +24,17 @@ interface AuthContextType {
    *  - null  => the admin role check has not resolved yet (still loading)
    *  - false => confirmed NOT an admin
    *  - true  => confirmed admin
-   * Guards must treat `null` as "still checking" and never redirect on it,
-   * otherwise real admins get bounced out before the async check completes.
    */
   isAdmin: boolean | null;
+  roles: AppRole[];
+  profile: ProfileData | null;
+  profileCompletion: number;
+  hasPermission: (permission: Permission) => boolean;
+  isStaff: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +44,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [roles, setRoles] = useState<AppRole[]>([]);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+
+  const fetchProfile = useCallback(async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('full_name, phone_number, division, district, area, avatar_url, is_verified, is_suspended')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (data) {
+      setProfile(data as ProfileData);
+    }
+  }, []);
+
+  const checkRoles = useCallback(async (userId: string) => {
+    const userRoles = await fetchUserRoles(userId);
+    setRoles(userRoles);
+    setIsAdmin(isAdminRole(userRoles) ? true : false);
+  }, []);
+
+  const calculateProfileCompletion = (p: ProfileData | null): number => {
+    if (!p) return 0;
+    const fields = [
+      { key: 'full_name', weight: 20 },
+      { key: 'phone_number', weight: 20 },
+      { key: 'division', weight: 15 },
+      { key: 'district', weight: 15 },
+      { key: 'area', weight: 10 },
+      { key: 'avatar_url', weight: 20 },
+    ];
+    let score = 0;
+    for (const field of fields) {
+      const value = p[field.key as keyof ProfileData];
+      if (value && String(value).trim()) {
+        score += field.weight;
+      }
+    }
+    return score;
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -34,13 +91,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        // Reset to "checking" state, then verify the role.
         setIsAdmin(null);
         setTimeout(() => {
-          checkAdminRole(session.user.id);
+          checkRoles(session.user.id);
+          fetchProfile(session.user.id);
         }, 0);
       } else {
         setIsAdmin(false);
+        setRoles([]);
+        setProfile(null);
       }
     });
 
@@ -48,7 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        checkAdminRole(session.user.id);
+        checkRoles(session.user.id);
+        fetchProfile(session.user.id);
       } else {
         setIsAdmin(false);
       }
@@ -56,18 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  const checkAdminRole = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .eq('role', 'admin')
-      .maybeSingle();
-
-    setIsAdmin(!!data);
-  };
+  }, [checkRoles, fetchProfile]);
 
   const signUp = async (email: string, password: string, fullName: string) => {
     const { error } = await supabase.auth.signUp({
@@ -82,17 +131,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      await logLoginAttempt(email, false, error.message);
+    } else if (data.user) {
+      await logLoginAttempt(email, true);
+      await logLogin(data.user.id);
+
+      // Record session
+      try {
+        await supabase.from('user_sessions').insert({
+          user_id: data.user.id,
+          is_active: true,
+        });
+      } catch {
+        // Non-critical
+      }
+    }
+
     return { error };
   };
 
   const signOut = async () => {
+    if (user) {
+      await logLogout(user.id);
+      try {
+        await supabase
+          .from('user_sessions')
+          .update({ is_active: false })
+          .eq('user_id', user.id)
+          .eq('is_active', true);
+      } catch {
+        // Non-critical
+      }
+    }
     await supabase.auth.signOut();
     setIsAdmin(false);
+    setRoles([]);
+    setProfile(null);
   };
 
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchProfile(user.id);
+    }
+  };
+
+  const hasPermission = useCallback(
+    (permission: Permission) => checkPermission(roles, permission),
+    [roles]
+  );
+
+  const profileCompletion = calculateProfileCompletion(profile);
+  const isStaff = isStaffRole(roles);
+
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, isAdmin, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{
+      user, session, isLoading, isAdmin, roles, profile, profileCompletion,
+      hasPermission, isStaff,
+      signUp, signIn, signOut, refreshProfile,
+    }}>
       {children}
     </AuthContext.Provider>
   );
