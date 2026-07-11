@@ -31,6 +31,7 @@ import { Textarea as UITextarea } from '@/components/ui/textarea';
 import { AdGallery } from '@/components/ads/AdGallery';
 import { ShareButton } from '@/components/ads/ShareButton';
 import { SimilarAds } from '@/components/ads/SimilarAds';
+import { ListingDetail } from '@/components/listings/ListingDetail';
 import { logAudit } from '@/lib/audit';
 import { useTranslation } from 'react-i18next';
 
@@ -374,6 +375,9 @@ export default function AdDetails() {
                 </p>
               </CardContent>
             </Card>
+
+            {/* Phase 4 Extended Details */}
+            <ListingDetail ad={ad as any} />
           </div>
 
           {/* Sidebar */}

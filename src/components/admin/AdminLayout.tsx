@@ -43,6 +43,8 @@ const navSections: NavSection[] = [
     label: 'Marketplace',
     items: [
       { title: 'Products', href: '/admin/products', icon: Package },
+      { title: 'Listing Management', href: '/admin/listing-management', icon: FolderTree },
+      { title: 'Listing Analytics', href: '/admin/listing-analytics', icon: BarChart3 },
       { title: 'Ad Moderation', href: '/admin/ads', icon: FileText },
       { title: 'Categories', href: '/admin/categories', icon: FolderTree },
       { title: 'Reviews', href: '/admin/reviews', icon: Star },

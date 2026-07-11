@@ -29,6 +29,8 @@ import ShopDashboard from "./pages/ShopDashboard";
 import ShopSetup from "./pages/ShopSetup";
 import ShopSettings from "./pages/ShopSettings";
 import PublicShopPage from "./pages/PublicShopPage";
+import SellerListings from "./pages/SellerListings";
+import PostAdV4 from "./pages/PostAdV4";
 import Compare from "./pages/Compare";
 import PublicProfile from "./pages/PublicProfile";
 
@@ -69,6 +71,8 @@ import Inventory from "./pages/admin/Inventory";
 import Campaigns from "./pages/admin/Campaigns";
 import ShopManagement from "./pages/admin/ShopManagement";
 import ShopVerificationReview from "./pages/admin/ShopVerificationReview";
+import ListingManagement from "./pages/admin/ListingManagement";
+import ListingAnalytics from "./pages/admin/ListingAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +98,8 @@ const App = () => (
 
                 {/* Authenticated Routes */}
                 <Route path="/post-ad" element={<ProtectedRoute><PostAd /></ProtectedRoute>} />
+                <Route path="/post-ad-v4" element={<ProtectedRoute><PostAdV4 /></ProtectedRoute>} />
+                <Route path="/seller-listings" element={<ProtectedRoute><SellerListings /></ProtectedRoute>} />
                 <Route path="/my-ads" element={<ProtectedRoute><MyAds /></ProtectedRoute>} />
                 <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
@@ -144,6 +150,8 @@ const App = () => (
                 <Route path="/admin/campaigns" element={<AdminRoute><Campaigns /></AdminRoute>} />
                 <Route path="/admin/shops" element={<AdminRoute><ShopManagement /></AdminRoute>} />
                 <Route path="/admin/shop-verifications" element={<AdminRoute><ShopVerificationReview /></AdminRoute>} />
+                <Route path="/admin/listing-management" element={<AdminRoute><ListingManagement /></AdminRoute>} />
+                <Route path="/admin/listing-analytics" element={<AdminRoute><ListingAnalytics /></AdminRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
