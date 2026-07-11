@@ -86,8 +86,8 @@ create policy "Admins can manage workflow rules"
   on public.workflow_rules for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -109,8 +109,8 @@ create policy "Admins can view workflow logs"
   on public.workflow_logs for select
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -132,8 +132,8 @@ create policy "Admins can manage cron jobs"
   on public.cron_jobs for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -164,8 +164,8 @@ create policy "Admins can manage banners"
   on public.banners for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -193,8 +193,8 @@ create policy "Admins can manage homepage sections"
   on public.homepage_sections for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -224,8 +224,8 @@ create policy "Admins can manage landing pages"
   on public.landing_pages for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -253,8 +253,8 @@ create policy "Admins can manage FAQ entries"
   on public.faq_entries for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -286,8 +286,8 @@ create policy "Admins can manage blog posts"
   on public.blog_posts for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -315,8 +315,8 @@ create policy "Admins can manage static pages"
   on public.static_pages for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -343,8 +343,8 @@ create policy "Admins can manage terms versions"
   on public.terms_versions for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -367,8 +367,8 @@ create policy "Admins can manage privacy versions"
   on public.privacy_versions for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -400,8 +400,8 @@ create policy "Admins can manage SEO settings"
   on public.seo_settings for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -423,8 +423,8 @@ create policy "Admins can manage redirects"
   on public.redirects for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
 
@@ -447,7 +447,7 @@ create policy "Admins can manage sitemap entries"
   on public.sitemap_entries for all
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('super_admin', 'admin')
+      select 1 from public.user_roles ur
+      where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
