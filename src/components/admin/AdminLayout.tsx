@@ -46,6 +46,8 @@ const navSections: NavSection[] = [
       { title: 'Listing Management', href: '/admin/listing-management', icon: FolderTree },
       { title: 'Listing Analytics', href: '/admin/listing-analytics', icon: BarChart3 },
       { title: 'Search & Discovery', href: '/admin/search-analytics', icon: Search },
+      { title: 'Sponsored Listings', href: '/admin/sponsored-listings', icon: TrendingUp },
+      { title: 'Seller Reports', href: '/admin/seller-reports', icon: Flag },
       { title: 'Ad Moderation', href: '/admin/ads', icon: FileText },
       { title: 'Categories', href: '/admin/categories', icon: FolderTree },
       { title: 'Reviews', href: '/admin/reviews', icon: Star },

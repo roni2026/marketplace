@@ -34,6 +34,10 @@ import PostAdV4 from "./pages/PostAdV4";
 import AdvancedSearch from "./pages/AdvancedSearch";
 import Discovery from "./pages/Discovery";
 import Collections from "./pages/Collections";
+import UserPreferences from "./pages/UserPreferences";
+import BlockedSellers from "./pages/BlockedSellers";
+import HiddenListings from "./pages/HiddenListings";
+import UserActivity from "./pages/UserActivity";
 import Compare from "./pages/Compare";
 import PublicProfile from "./pages/PublicProfile";
 
@@ -77,6 +81,8 @@ import ShopVerificationReview from "./pages/admin/ShopVerificationReview";
 import ListingManagement from "./pages/admin/ListingManagement";
 import ListingAnalytics from "./pages/admin/ListingAnalytics";
 import SearchAnalytics from "./pages/admin/SearchAnalytics";
+import SponsoredListings from "./pages/admin/SponsoredListings";
+import SellerReports from "./pages/admin/SellerReports";
 
 const queryClient = new QueryClient();
 
@@ -99,6 +105,10 @@ const App = () => (
                 <Route path="/search" element={<AdvancedSearch />} />
                 <Route path="/discover" element={<Discovery />} />
                 <Route path="/collections" element={<ProtectedRoute><Collections /></ProtectedRoute>} />
+                <Route path="/preferences" element={<ProtectedRoute><UserPreferences /></ProtectedRoute>} />
+                <Route path="/blocked-sellers" element={<ProtectedRoute><BlockedSellers /></ProtectedRoute>} />
+                <Route path="/hidden-listings" element={<ProtectedRoute><HiddenListings /></ProtectedRoute>} />
+                <Route path="/activity" element={<ProtectedRoute><UserActivity /></ProtectedRoute>} />
                 <Route path="/compare" element={<Compare />} />
                 <Route path="/user/:userId" element={<PublicProfile />} />
 
@@ -159,6 +169,8 @@ const App = () => (
                 <Route path="/admin/listing-management" element={<AdminRoute><ListingManagement /></AdminRoute>} />
                 <Route path="/admin/listing-analytics" element={<AdminRoute><ListingAnalytics /></AdminRoute>} />
                 <Route path="/admin/search-analytics" element={<AdminRoute><SearchAnalytics /></AdminRoute>} />
+                <Route path="/admin/sponsored-listings" element={<AdminRoute><SponsoredListings /></AdminRoute>} />
+                <Route path="/admin/seller-reports" element={<AdminRoute><SellerReports /></AdminRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
