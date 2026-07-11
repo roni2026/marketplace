@@ -35,6 +35,9 @@ const navSections: NavSection[] = [
     label: 'Overview',
     items: [
       { title: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+      { title: 'Global Search', href: '/admin/search', icon: Search },
+      { title: 'Bulk Operations', href: '/admin/bulk-operations', icon: Zap },
+      { title: 'Activity Log', href: '/admin/activity-log', icon: Activity },
       { title: 'Analytics', href: '/admin/analytics', icon: TrendingUp },
       { title: 'Reports', href: '/admin/reporting', icon: BarChart3 },
     ],
@@ -106,7 +109,7 @@ const navSections: NavSection[] = [
   {
     label: 'System',
     items: [
-      { title: 'Settings', href: '/admin/settings', icon: Settings },
+      { title: 'Settings', href: '/admin/settings-v2', icon: Settings },
       { title: 'Audit Logs', href: '/admin/audit', icon: Shield },
       { title: 'Workflow Automation', href: '/admin/workflow', icon: Zap },
       { title: 'Admin Tools', href: '/admin/tools', icon: Wrench },

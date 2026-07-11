@@ -85,6 +85,11 @@ import SearchAnalytics from "./pages/admin/SearchAnalytics";
 import SponsoredListings from "./pages/admin/SponsoredListings";
 import SellerReports from "./pages/admin/SellerReports";
 import MessageModeration from "./pages/admin/MessageModeration";
+import AdminDashboardV2 from "./pages/admin/AdminDashboardV2";
+import AdminActivityLog from "./pages/admin/AdminActivityLog";
+import AdminSettingsV2 from "./pages/admin/AdminSettings";
+import BulkOperations from "./pages/admin/BulkOperations";
+import AdminSearch from "./pages/admin/AdminSearch";
 
 const queryClient = new QueryClient();
 
@@ -132,7 +137,12 @@ const App = () => (
                 <Route path="/shop/:slug" element={<PublicShopPage />} />
 
                 {/* Admin Routes - /admin shows the admin portal with its own login */}
-                <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                <Route path="/admin" element={<AdminRoute><AdminDashboardV2 /></AdminRoute>} />
+                <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardV2 /></AdminRoute>} />
+                <Route path="/admin/activity-log" element={<AdminRoute><AdminActivityLog /></AdminRoute>} />
+                <Route path="/admin/settings-v2" element={<AdminRoute><AdminSettingsV2 /></AdminRoute>} />
+                <Route path="/admin/bulk-operations" element={<AdminRoute><BulkOperations /></AdminRoute>} />
+                <Route path="/admin/search" element={<AdminRoute><AdminSearch /></AdminRoute>} />
                 <Route path="/admin/ads" element={<AdminRoute><AdModeration /></AdminRoute>} />
                 <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
                 <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
