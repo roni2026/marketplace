@@ -52,6 +52,15 @@ import SystemMonitoring from "./pages/admin/SystemMonitoring";
 import Compliance from "./pages/admin/Compliance";
 import Developer from "./pages/admin/Developer";
 import BackupRecovery from "./pages/admin/BackupRecovery";
+import Products from "./pages/admin/Products";
+import Orders from "./pages/admin/Orders";
+import Customers from "./pages/admin/Customers";
+import Sellers from "./pages/admin/Sellers";
+import Transactions from "./pages/admin/Transactions";
+import Payouts from "./pages/admin/Payouts";
+import Coupons from "./pages/admin/Coupons";
+import Inventory from "./pages/admin/Inventory";
+import Campaigns from "./pages/admin/Campaigns";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +119,15 @@ const App = () => (
                 <Route path="/admin/compliance" element={<AdminRoute><Compliance /></AdminRoute>} />
                 <Route path="/admin/developer" element={<AdminRoute><Developer /></AdminRoute>} />
                 <Route path="/admin/backup" element={<AdminRoute><BackupRecovery /></AdminRoute>} />
+                <Route path="/admin/products" element={<AdminRoute><Products /></AdminRoute>} />
+                <Route path="/admin/orders" element={<AdminRoute><Orders /></AdminRoute>} />
+                <Route path="/admin/customers" element={<AdminRoute><Customers /></AdminRoute>} />
+                <Route path="/admin/sellers" element={<AdminRoute><Sellers /></AdminRoute>} />
+                <Route path="/admin/transactions" element={<AdminRoute><Transactions /></AdminRoute>} />
+                <Route path="/admin/payouts" element={<AdminRoute><Payouts /></AdminRoute>} />
+                <Route path="/admin/coupons" element={<AdminRoute><Coupons /></AdminRoute>} />
+                <Route path="/admin/inventory" element={<AdminRoute><Inventory /></AdminRoute>} />
+                <Route path="/admin/campaigns" element={<AdminRoute><Campaigns /></AdminRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
