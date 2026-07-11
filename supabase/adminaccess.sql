@@ -1,11 +1,24 @@
--- Grant permissions on user_roles
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_roles TO authenticated;
-GRANT SELECT ON public.user_roles TO anon;
+-- BazarBD — Grant admin access to a user
+-- -------------------------------------------------------------------------
+-- Step 1: Find your User UID in Supabase Dashboard → Authentication → Users
+-- Step 2: Replace YOUR-USER-UID-HERE below with your actual UID
+-- Step 3: Run this in Supabase Dashboard → SQL Editor
+-- -------------------------------------------------------------------------
 
--- Grant permissions on profiles (also showing 403)
-GRANT SELECT, INSERT, UPDATE ON public.profiles TO authenticated;
-GRANT SELECT ON public.profiles TO anon;
+-- Grant super_admin role (highest access — everything including managing other admins)
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('YOUR-USER-UID-HERE', 'super_admin')
+ON CONFLICT (user_id, role) DO NOTHING;
 
--- Also grant on sequences (needed for INSERT)
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon;
+-- Or grant admin role (full access except managing other admins)
+-- INSERT INTO public.user_roles (user_id, role)
+-- VALUES ('YOUR-USER-UID-HERE', 'admin')
+-- ON CONFLICT (user_id, role) DO NOTHING;
+
+-- Verify the role was inserted
+SELECT * FROM public.user_roles WHERE user_id = 'YOUR-USER-UID-HERE';
+
+-- -------------------------------------------------------------------------
+-- ALSO run fix_permissions.sql to grant table access to anon/authenticated
+-- roles. Without those GRANTs, the client gets 403 "permission denied".
+-- -------------------------------------------------------------------------

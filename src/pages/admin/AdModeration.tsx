@@ -15,13 +15,54 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/constants';
 import { toast } from 'sonner';
-import { Check, X, Eye, Star, MapPin, Calendar, Zap, AlertTriangle, Trash2, CheckSquare } from 'lucide-react';
+import { Check, X, Eye, Star, MapPin, Calendar, Zap, AlertTriangle, Trash2, CheckSquare, History, User as UserIcon } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { logAdAction } from '@/lib/audit';
 import { getSpamScore, moderateContent } from '@/lib/moderation';
+import { format } from 'date-fns';
+
+interface AuditLogEntry {
+  id: string;
+  user_id: string | null;
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  details: Record<string, unknown> | null;
+  created_at: string;
+  profiles?: { full_name: string | null } | null;
+}
+
+const ACTION_LABELS: Record<string, string> = {
+  create: 'Created',
+  update: 'Updated',
+  delete: 'Deleted',
+  approve: 'Approved',
+  reject: 'Rejected',
+  login: 'Login',
+  logout: 'Logout',
+  login_failed: 'Login Failed',
+  suspend: 'Suspended',
+  unsuspend: 'Unsuspended',
+  verify: 'Verified',
+  export: 'Exported',
+  bulk_action: 'Bulk Action',
+  settings_change: 'Settings Changed',
+};
+
+const ACTION_COLORS: Record<string, string> = {
+  approve: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  reject: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  create: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  update: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+  delete: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  suspend: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  unsuspend: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  verify: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+};
 
 interface Ad {
   id: string;
+  user_id: string;
   title: string;
   slug: string;
   price: number | null;
@@ -64,6 +105,9 @@ export default function AdModeration() {
   const [activeTab, setActiveTab] = useState('pending');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [spamScores, setSpamScores] = useState<Record<string, number>>({});
+  const [adAuditLogs, setAdAuditLogs] = useState<Record<string, AuditLogEntry[]>>({});
+  const [expandedAuditAd, setExpandedAuditAd] = useState<string | null>(null);
+  const [auditLoading, setAuditLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -103,6 +147,47 @@ export default function AdModeration() {
     }
     setSpamScores(scores);
     setIsLoading(false);
+  };
+
+  const fetchAdAuditLogs = async (adId: string) => {
+    setAuditLoading(adId);
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*, profiles!audit_logs_user_id_fkey(full_name)')
+        .eq('resource_type', 'ad')
+        .eq('resource_id', adId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        // Try without the foreign key relation name
+        const { data: fallbackData } = await supabase
+          .from('audit_logs')
+          .select('*')
+          .eq('resource_type', 'ad')
+          .eq('resource_id', adId)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        setAdAuditLogs((prev) => ({ ...prev, [adId]: (fallbackData as AuditLogEntry[]) || [] }));
+      } else {
+        setAdAuditLogs((prev) => ({ ...prev, [adId]: (data as AuditLogEntry[]) || [] }));
+      }
+    } catch {
+      setAdAuditLogs((prev) => ({ ...prev, [adId]: [] }));
+    }
+    setAuditLoading(null);
+  };
+
+  const toggleAuditLog = (adId: string) => {
+    if (expandedAuditAd === adId) {
+      setExpandedAuditAd(null);
+    } else {
+      setExpandedAuditAd(adId);
+      if (!adAuditLogs[adId]) {
+        fetchAdAuditLogs(adId);
+      }
+    }
   };
 
   const handleApprove = async (adId: string) => {
@@ -179,6 +264,9 @@ export default function AdModeration() {
     if (error) {
       toast.error('Failed to approve ads');
     } else {
+      for (const adId of selectedIds) {
+        await logAdAction('approve', adId, { bulk: true });
+      }
       toast.success(`${selectedIds.length} ads approved`);
       setSelectedIds([]);
       fetchAds();
@@ -200,6 +288,9 @@ export default function AdModeration() {
     if (error) {
       toast.error('Failed to reject ads');
     } else {
+      for (const adId of selectedIds) {
+        await logAdAction('reject', adId, { bulk: true, reason: 'spam' });
+      }
       toast.success(`${selectedIds.length} ads rejected`);
       setSelectedIds([]);
       fetchAds();
@@ -211,6 +302,7 @@ export default function AdModeration() {
     if (error) {
       toast.error('Failed to delete ad');
     } else {
+      await logAdAction('delete', adId);
       toast.success('Ad deleted');
       fetchAds();
     }
@@ -225,6 +317,7 @@ export default function AdModeration() {
     if (error) {
       toast.error('Failed to update ad');
     } else {
+      await logAdAction('update', adId, { featured: !featured });
       toast.success(!featured ? 'Ad featured' : 'Ad unfeatured');
       fetchAds();
     }
@@ -397,6 +490,63 @@ export default function AdModeration() {
                         </div>
                       </div>
                     </div>
+                  </div>
+                  {/* Audit Log History for this ad */}
+                  <div className="mt-3 pt-3 border-t">
+                    <button
+                      onClick={() => toggleAuditLog(ad.id)}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <History className="h-4 w-4" />
+                      {expandedAuditAd === ad.id ? 'Hide' : 'Show'} Audit History
+                      {adAuditLogs[ad.id] && adAuditLogs[ad.id].length > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                          {adAuditLogs[ad.id].length} actions
+                        </Badge>
+                      )}
+                    </button>
+                    {expandedAuditAd === ad.id && (
+                      <div className="mt-3 space-y-2">
+                        {auditLoading === ad.id ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            Loading audit history...
+                          </div>
+                        ) : adAuditLogs[ad.id] && adAuditLogs[ad.id].length > 0 ? (
+                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                            {adAuditLogs[ad.id].map((log) => (
+                              <div
+                                key={log.id}
+                                className="flex items-start gap-3 text-sm py-1.5 px-2 rounded-md hover:bg-accent/50"
+                              >
+                                <div className="shrink-0 mt-0.5">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${ACTION_COLORS[log.action] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
+                                    {ACTION_LABELS[log.action] || log.action}
+                                  </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                                    <UserIcon className="h-3 w-3" />
+                                    <span className="font-medium text-foreground">
+                                      {log.profiles?.full_name || 'System'}
+                                    </span>
+                                    <span>·</span>
+                                    <span>{format(new Date(log.created_at), 'MMM d, yyyy HH:mm:ss')}</span>
+                                  </div>
+                                  {log.details && Object.keys(log.details).length > 0 && (
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      {JSON.stringify(log.details)}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">No audit history found for this ad.</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -13,14 +13,96 @@ import {
   LogOut,
   Home,
   Menu,
+  TrendingUp,
+  Shield,
+  LifeBuoy,
+  Settings,
+  ShieldCheck,
+  AlertTriangle,
+  Key,
+  Image,
+  Star,
+  MessageSquare,
+  Layout,
+  Search,
+  Zap,
+  Wrench,
+  BarChart3,
+  Terminal,
+  Activity,
+  FileCheck,
+  Database,
+  Code,
+  HardDrive,
 } from 'lucide-react';
 
-const navItems = [
-  { title: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { title: 'Ad Moderation', href: '/admin/ads', icon: FileText },
-  { title: 'Categories', href: '/admin/categories', icon: FolderTree },
-  { title: 'Users', href: '/admin/users', icon: Users },
-  { title: 'Reports', href: '/admin/reports', icon: Flag },
+interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface NavSection {
+  label: string;
+  items: NavItem[];
+}
+
+const navSections: NavSection[] = [
+  {
+    label: 'Overview',
+    items: [
+      { title: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+      { title: 'Analytics', href: '/admin/analytics', icon: TrendingUp },
+      { title: 'Reporting', href: '/admin/reporting', icon: BarChart3 },
+    ],
+  },
+  {
+    label: 'Moderation',
+    items: [
+      { title: 'Ad Moderation', href: '/admin/ads', icon: FileText },
+      { title: 'Review Moderation', href: '/admin/reviews', icon: Star },
+      { title: 'Message Monitoring', href: '/admin/messages', icon: MessageSquare },
+      { title: 'Reports', href: '/admin/reports', icon: Flag },
+    ],
+  },
+  {
+    label: 'User Management',
+    items: [
+      { title: 'Users', href: '/admin/users', icon: Users },
+      { title: 'Permissions', href: '/admin/permissions', icon: Key },
+      { title: 'Trust Verification', href: '/admin/trust', icon: ShieldCheck },
+      { title: 'Fraud Detection', href: '/admin/fraud', icon: AlertTriangle },
+    ],
+  },
+  {
+    label: 'Content',
+    items: [
+      { title: 'Categories', href: '/admin/categories', icon: FolderTree },
+      { title: 'CMS', href: '/admin/cms', icon: Layout },
+      { title: 'SEO', href: '/admin/seo', icon: Search },
+      { title: 'Media Library', href: '/admin/media', icon: Image },
+    ],
+  },
+  {
+    label: 'Support',
+    items: [
+      { title: 'Support Tickets', href: '/admin/support', icon: LifeBuoy },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { title: 'Audit Logs', href: '/admin/audit', icon: Shield },
+      { title: 'Workflow Automation', href: '/admin/workflow', icon: Zap },
+      { title: 'Admin Tools', href: '/admin/tools', icon: Wrench },
+      { title: 'System Monitoring', href: '/admin/monitoring', icon: Activity },
+      { title: 'API Logs', href: '/admin/api-logs', icon: Terminal },
+      { title: 'Compliance', href: '/admin/compliance', icon: FileCheck },
+      { title: 'Backup & Recovery', href: '/admin/backup', icon: HardDrive },
+      { title: 'Developer', href: '/admin/developer', icon: Code },
+      { title: 'Settings', href: '/admin/settings', icon: Settings },
+    ],
+  },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
@@ -28,37 +110,48 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
 
   return (
-    <div className="flex h-full flex-col p-4">
-      <div className="mb-8">
+    <div className="flex h-full flex-col p-4 overflow-y-auto">
+      <div className="mb-6 shrink-0">
         <Link to="/" className="text-2xl font-bold text-primary" onClick={onNavigate}>
           BazarBD
         </Link>
         <p className="text-sm text-muted-foreground">Admin Panel</p>
       </div>
 
-      <nav className="space-y-1 flex-1">
-        {navItems.map((item) => {
-          const isActive =
-            item.href === '/admin'
-              ? location.pathname === '/admin'
-              : location.pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              onClick={onNavigate}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.title}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 space-y-4">
+        {navSections.map((section) => (
+          <div key={section.label}>
+            <p className="px-3 mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+              {section.label}
+            </p>
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const isActive =
+                  item.href === '/admin'
+                    ? location.pathname === '/admin'
+                    : location.pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    onClick={onNavigate}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground font-medium'
+                        : 'hover:bg-accent text-foreground/80'
+                    }`}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {item.title}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
-      <div className="pt-4 border-t space-y-2">
+      <div className="pt-4 border-t space-y-2 shrink-0">
         {user?.email && (
           <div className="px-3 pb-1">
             <p className="text-xs text-muted-foreground">Signed in as</p>
@@ -96,7 +189,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background">
       <div className="flex">
         {/* Desktop sidebar */}
-        <aside className="hidden md:flex w-64 min-h-screen bg-card border-r sticky top-0 h-screen">
+        <aside className="hidden md:flex w-64 min-h-screen bg-card border-r sticky top-0 h-screen overflow-y-auto">
           <SidebarContent />
         </aside>
 
@@ -111,7 +204,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-72 p-0">
+                <SheetContent side="left" className="w-72 p-0 overflow-y-auto">
                   <SidebarContent onNavigate={() => setMobileOpen(false)} />
                 </SheetContent>
               </Sheet>

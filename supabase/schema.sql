@@ -541,3 +541,59 @@ insert into public.categories (name, slug, icon, sort_order) values
   ('Furniture', 'furniture', 'Sofa', 7),
   ('Education', 'education', 'GraduationCap', 8)
 on conflict (slug) do nothing;
+
+-- -------------------------------------------------------------------------
+-- GRANT permissions for anon and authenticated roles
+-- These are REQUIRED for the Supabase REST API (PostgREST) to work.
+-- Without these, the client gets 403 "permission denied for table X".
+-- -------------------------------------------------------------------------
+
+-- Core tables: anon can read public data, authenticated can read + write own
+GRANT SELECT ON public.categories TO anon, authenticated;
+GRANT SELECT ON public.subcategories TO anon, authenticated;
+
+GRANT SELECT, INSERT, UPDATE ON public.profiles TO authenticated;
+GRANT SELECT ON public.profiles TO anon;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_roles TO authenticated;
+GRANT SELECT ON public.user_roles TO anon;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.ads TO authenticated;
+GRANT SELECT ON public.ads TO anon;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.ad_images TO authenticated;
+GRANT SELECT ON public.ad_images TO anon;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.favorites TO authenticated;
+
+GRANT SELECT, INSERT ON public.reports TO authenticated;
+GRANT SELECT, UPDATE ON public.reports TO authenticated;
+
+GRANT INSERT ON public.audit_logs TO authenticated;
+GRANT SELECT ON public.audit_logs TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.notifications TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE ON public.messages TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.saved_searches TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE ON public.offers TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE ON public.support_tickets TO authenticated;
+GRANT SELECT, INSERT ON public.support_ticket_messages TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_sessions TO authenticated;
+
+GRANT INSERT ON public.login_attempts TO authenticated;
+GRANT SELECT ON public.login_attempts TO authenticated;
+
+GRANT SELECT, INSERT ON public.ad_stats TO authenticated;
+
+-- Grant sequence usage (needed for INSERT into tables with serial/identity columns)
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+
+-- Also grant on any future tables created in the public schema
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO anon, authenticated;

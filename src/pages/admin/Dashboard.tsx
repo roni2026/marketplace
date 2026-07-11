@@ -1,33 +1,27 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  Users, 
-  FileCheck, 
-  FileClock, 
-  FileX, 
+import {
+  Users,
+  FileCheck,
+  FileClock,
+  FileX,
   AlertTriangle,
-  LayoutDashboard,
-  FileText,
-  FolderTree,
-  Flag,
-  LogOut,
-  Menu,
   TrendingUp,
   Shield,
   LifeBuoy,
-  DollarSign,
   Eye,
   Heart,
+  Flag,
+  FolderTree,
 } from 'lucide-react';
-import { Link as RouterLink } from 'react-router-dom';
-import { Bar, BarChart, LineChart, Line, Area, AreaChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { Bar, BarChart, Area, AreaChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { format, subDays } from 'date-fns';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface Stats {
   totalUsers: number;
@@ -43,7 +37,7 @@ interface Stats {
 }
 
 export default function AdminDashboard() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +59,7 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     setIsLoading(true);
-    
+
     const weekAgo = subDays(new Date(), 7).toISOString();
 
     const [usersRes, newUsersRes, pendingRes, approvedRes, rejectedRes, reportsRes, viewsRes, favRes, msgRes, ticketsRes] = await Promise.all([
@@ -137,18 +131,6 @@ export default function AdminDashboard() {
     { title: 'Favorites', value: stats?.totalFavorites, icon: Heart, color: 'text-pink-500' },
   ];
 
-  const navItems = [
-    { title: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { title: 'Ad Moderation', href: '/admin/ads', icon: FileText },
-    { title: 'Categories', href: '/admin/categories', icon: FolderTree },
-    { title: 'Users', href: '/admin/users', icon: Users },
-    { title: 'Reports', href: '/admin/reports', icon: Flag },
-    { title: 'Analytics', href: '/admin/analytics', icon: TrendingUp },
-    { title: 'Audit Logs', href: '/admin/audit', icon: Shield },
-    { title: 'Support', href: '/admin/support', icon: LifeBuoy },
-    { title: 'Settings', href: '/admin/settings', icon: LayoutDashboard },
-  ];
-
   const chartData = stats
     ? [
         { name: 'Pending', count: stats.pendingAds, fill: 'hsl(45 93% 47%)' },
@@ -157,257 +139,197 @@ export default function AdminDashboard() {
       ]
     : [];
 
-  const SidebarNav = () => (
-    <>
-      <div className="mb-8">
-        <Link to="/" className="block">
-          <img src="/brand/logo-light.png" alt="BazarBD" className="h-7 w-auto dark:hidden" />
-          <img src="/brand/logo-dark.png" alt="BazarBD" className="h-7 w-auto hidden dark:block" />
-        </Link>
-        <p className="text-sm text-muted-foreground mt-2">Admin Panel</p>
-      </div>
-
-      <nav className="space-y-2">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            to={item.href}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
-          >
-            <item.icon className="h-5 w-5" />
-            {item.title}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="mt-8">
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-3"
-          onClick={signOut}
-        >
-          <LogOut className="h-5 w-5" />
-          Sign Out
-        </Button>
-      </div>
-    </>
-  );
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex">
-        {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex lg:flex-col w-64 min-h-screen bg-card border-r p-4">
-          <SidebarNav />
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-8">
-          <div className="mb-8 flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold">Dashboard</h1>
-              <p className="text-muted-foreground">Overview of your marketplace</p>
-            </div>
-
-            {/* Mobile Sidebar */}
-            <Sheet>
-              <SheetTrigger asChild className="lg:hidden">
-                <Button variant="outline" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-4 flex flex-col">
-                <SidebarNav />
-              </SheetContent>
-            </Sheet>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {statCards.map((stat) => (
-              <Card key={stat.title}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {stat.title}
-                  </CardTitle>
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-16" />
-                  ) : (
-                    <>
-                      <p className="text-2xl font-bold">{stat.value?.toLocaleString()}</p>
-                      {stat.sub && <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Growth Chart */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Growth Metrics (14 days)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-64 w-full" />
-              ) : (
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={dailyData}>
-                      <defs>
-                        <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(220 70% 56%)" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="hsl(220 70% 56%)" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="colorAds" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(142 71% 45%)" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="hsl(142 71% 45%)" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
-                      <XAxis dataKey="date" tickLine={false} axisLine={false} fontSize={12} />
-                      <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} width={30} />
-                      <Tooltip
-                        contentStyle={{
-                          background: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: 8,
-                        }}
-                      />
-                      <Area type="monotone" dataKey="users" stroke="hsl(220 70% 56%)" fill="url(#colorUsers)" strokeWidth={2} />
-                      <Area type="monotone" dataKey="ads" stroke="hsl(142 71% 45%)" fill="url(#colorAds)" strokeWidth={2} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Ads by Status Chart */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-base">Ads by Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-64 w-full" />
-              ) : (
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
-                      <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} />
-                      <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} width={30} />
-                      <Tooltip
-                        contentStyle={{
-                          background: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: 8,
-                        }}
-                      />
-                      <Bar dataKey="count" radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/ads')}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileClock className="h-5 w-5 text-yellow-500" />
-                  Review Pending Ads
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  {stats?.pendingAds || 0} ads waiting for review
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/reports')}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Flag className="h-5 w-5 text-orange-500" />
-                  Handle Reports
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  {stats?.pendingReports || 0} reports to review
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/support')}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <LifeBuoy className="h-5 w-5 text-purple-500" />
-                  Support Tickets
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  {stats?.openTickets || 0} open tickets
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/analytics')}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-blue-500" />
-                  View Analytics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Growth metrics and revenue charts
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/audit')}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-green-500" />
-                  Audit Logs
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Track all administrative actions
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/categories')}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FolderTree className="h-5 w-5 text-blue-500" />
-                  Manage Categories
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Add or edit categories and subcategories
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
+    <AdminLayout>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">Overview of your marketplace</p>
       </div>
-    </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {statCards.map((stat) => (
+          <Card key={stat.title}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {stat.title}
+              </CardTitle>
+              <stat.icon className={`h-5 w-5 ${stat.color}`} />
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <>
+                  <p className="text-2xl font-bold">{stat.value?.toLocaleString()}</p>
+                  {stat.sub && <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Growth Chart */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Growth Metrics (14 days)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-64 w-full" />
+          ) : (
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={dailyData}>
+                  <defs>
+                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(220 70% 56%)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(220 70% 56%)" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorAds" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(142 71% 45%)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(142 71% 45%)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+                  <XAxis dataKey="date" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} width={30} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: 8,
+                    }}
+                  />
+                  <Area type="monotone" dataKey="users" stroke="hsl(220 70% 56%)" fill="url(#colorUsers)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="ads" stroke="hsl(142 71% 45%)" fill="url(#colorAds)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Ads by Status Chart */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-base">Ads by Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-64 w-full" />
+          ) : (
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+                  <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} width={30} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: 8,
+                    }}
+                  />
+                  <Bar dataKey="count" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/ads')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileClock className="h-5 w-5 text-yellow-500" />
+              Review Pending Ads
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              {stats?.pendingAds || 0} ads waiting for review
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/reports')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Flag className="h-5 w-5 text-orange-500" />
+              Handle Reports
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              {stats?.pendingReports || 0} reports to review
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/support')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LifeBuoy className="h-5 w-5 text-purple-500" />
+              Support Tickets
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              {stats?.openTickets || 0} open tickets
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/analytics')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-500" />
+              View Analytics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Growth metrics and revenue charts
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/audit')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-green-500" />
+              Audit Logs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Track all administrative actions
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/categories')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FolderTree className="h-5 w-5 text-blue-500" />
+              Manage Categories
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Add or edit categories and subcategories
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
   );
 }
