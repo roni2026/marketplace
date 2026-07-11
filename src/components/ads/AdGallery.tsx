@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -18,9 +18,32 @@ interface AdGalleryProps {
 export function AdGallery({ images, title, isFeatured }: AdGalleryProps) {
   const [index, setIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
   const next = () => setIndex((prev) => (prev + 1) % images.length);
   const prev = () => setIndex((prev) => (prev - 1 + images.length) % images.length);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        next();
+      } else {
+        prev();
+      }
+    }
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -44,7 +67,7 @@ export function AdGallery({ images, title, isFeatured }: AdGalleryProps) {
 
   return (
     <div className="space-y-3">
-      <div className="relative aspect-[4/3] bg-muted rounded-lg overflow-hidden group">
+      <div className="relative aspect-[4/3] bg-muted rounded-lg overflow-hidden group" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         <button
           type="button"
           className="w-full h-full cursor-zoom-in"
@@ -55,6 +78,8 @@ export function AdGallery({ images, title, isFeatured }: AdGalleryProps) {
             src={images[index].image_url}
             alt={`${title} — photo ${index + 1} of ${images.length}`}
             className="w-full h-full object-contain"
+            loading="lazy"
+            decoding="async"
           />
         </button>
 
@@ -105,7 +130,7 @@ export function AdGallery({ images, title, isFeatured }: AdGalleryProps) {
       </div>
 
       {images.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
           {images.map((img, idx) => (
             <button
               key={img.id}
@@ -113,8 +138,9 @@ export function AdGallery({ images, title, isFeatured }: AdGalleryProps) {
               className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
                 idx === index ? "border-primary" : "border-transparent"
               }`}
+              aria-label={`View photo ${idx + 1}`}
             >
-              <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+              <img src={img.image_url} alt="" loading="lazy" className="w-full h-full object-cover" />
             </button>
           ))}
         </div>

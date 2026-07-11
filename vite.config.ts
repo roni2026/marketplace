@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => ({
         theme_color: "#0284c7",
         background_color: "#ffffff",
         display: "standalone",
+        orientation: "portrait",
         start_url: "/",
         icons: [
           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -35,6 +36,8 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    target: "es2015",
+    cssCodeSplit: true,
     chunkSizeWarningLimit: 700,
     rollupOptions: {
       output: {
@@ -42,6 +45,7 @@ export default defineConfig(({ mode }) => ({
           "react-vendor": ["react", "react-dom", "react-router-dom"],
           "supabase-vendor": ["@supabase/supabase-js", "@tanstack/react-query"],
           "charts-vendor": ["recharts"],
+          "ui-vendor": ["lucide-react", "date-fns", "react-helmet-async", "sonner"],
         },
       },
     },

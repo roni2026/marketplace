@@ -79,6 +79,7 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle }: AdCardProps
             src={imageUrl}
             alt={ad.title}
             loading="lazy"
+            decoding="async"
             onError={() => setImgError(true)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -124,19 +125,21 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle }: AdCardProps
             }`}
             onClick={handleFavorite}
             disabled={isLoading}
+            aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+            style={{ touchAction: 'manipulation', minHeight: '44px', minWidth: '44px' }}
           >
             <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
           </Button>
         </div>
         <CardContent className="p-4">
           <div className="space-y-2">
-            <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+            <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors text-sm sm:text-base">
               {ad.title}
             </h3>
-            <p className="text-lg font-bold text-primary">
+            <p className="text-base sm:text-lg font-bold text-primary">
               {formatPrice(ad.price, ad.price_type)}
             </p>
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
               <MapPin className="h-3 w-3" />
               <span className="truncate">{ad.district}, {ad.division}</span>
             </div>

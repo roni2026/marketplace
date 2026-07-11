@@ -152,9 +152,152 @@ All colors MUST be HSL.
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
   }
 
   body {
     @apply bg-background text-foreground;
+    overscroll-behavior-y: none;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
+
+  /* Prevent iOS auto-zoom on input focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  /* Custom styled form elements on iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  textarea,
+  select {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Touch optimizations for interactive elements */
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  /* Prevent image drag on mobile */
+  img {
+    -webkit-user-drag: none;
+    user-drag: none;
+  }
+
+  /* Non-text UI elements: disable text selection */
+  button,
+  nav,
+  [role="navigation"],
+  [role="tablist"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Content areas: ensure text selection works */
+  p,
+  h1, h2, h3, h4, h5, h6,
+  [role="contentinfo"],
+  .select-text {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Hide scrollbars on mobile for cleaner UI */
+  @media (max-width: 640px) {
+    ::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+  }
+}
+
+/* Utility: hide scrollbar for horizontal scroll areas */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area insets for iPhone notch / home indicator */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-area-pt {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Sticky header optimization */
+header.sticky,
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  will-change: transform;
+}
+
+/* Animated elements performance hint */
+.will-change-transform {
+  will-change: transform;
+}
+
+/* Hover effects only on devices that support hover (prevents sticky hover on touch) */
+@media (hover: hover) {
+  .hover\:shadow-lg:hover,
+  .hover\:shadow-md:hover,
+  .hover\:border-primary\/50:hover {
+    will-change: transform;
+  }
+}
+
+/* Mobile grid optimizations */
+@media (max-width: 640px) {
+  .mobile-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mobile-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Body scroll lock when modals/drawers are open */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  left: 0;
+}
+
+/* Scroll padding for sticky header offset */
+html {
+  scroll-padding-top: 4rem;
 }

@@ -92,7 +92,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ scrollPaddingTop: '5rem' }}>
       <Helmet>
         <title>BazarBD — Buy & Sell Anything in Bangladesh</title>
         <meta
@@ -104,11 +104,11 @@ const Index = () => {
       <main className="flex-1 pb-16 lg:pb-0">
         <HeroBanner />
         
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 sm:px-6">
           {isLoading ? (
             <div className="py-8">
               <Skeleton className="h-8 w-48 mb-6" />
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <Skeleton key={i} className="h-24 rounded-lg" />
                 ))}
@@ -121,7 +121,7 @@ const Index = () => {
           {isLoading ? (
             <div className="py-8">
               <Skeleton className="h-8 w-48 mb-6" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="h-64 rounded-lg" />
                 ))}

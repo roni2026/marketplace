@@ -75,7 +75,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
   );
 
   return (
-    <header className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
+    <header className="sticky top-0 z-50 bg-card border-b border-border shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
@@ -107,6 +107,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                 size="icon" 
                 variant="ghost" 
                 className="absolute right-0 top-0 h-full"
+                aria-label="Search"
               >
                 <Search className="h-4 w-4" />
               </Button>
@@ -127,7 +128,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
             {/* Notification Bell */}
             {user && (
               <Link to="/notifications" className="relative">
-                <Button variant="ghost" size="icon" className="relative">
+                <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
                   <Bell className="h-5 w-5" />
                   {unreadNotifications > 0 && (
                     <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full px-1">
@@ -141,7 +142,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
             {/* Messages Icon */}
             {user && (
               <Link to="/messages" className="relative">
-                <Button variant="ghost" size="icon" className="relative">
+                <Button variant="ghost" size="icon" className="relative" aria-label="Messages">
                   <MessageCircle className="h-5 w-5" />
                   {unreadMessages > 0 && (
                     <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full px-1">
@@ -162,7 +163,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                 </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" aria-label="User menu">
                       <User className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -214,11 +215,11 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
             {/* Mobile Menu */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild className="lg:hidden">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label="Open menu">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72">
+              <SheetContent side="right" className="w-72 sm:w-80" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
                 <div className="flex flex-col gap-6 mt-8">
                   <form onSubmit={handleSearch} className="relative">
                     <Input
@@ -233,6 +234,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                       size="icon" 
                       variant="ghost" 
                       className="absolute right-0 top-0 h-full"
+                      aria-label="Search"
                     >
                       <Search className="h-4 w-4" />
                     </Button>

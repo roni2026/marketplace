@@ -192,12 +192,12 @@ export default function Search() {
   const activeFilterCount = [minPrice, maxPrice, condition !== 'all' ? condition : '', division !== 'all' ? division : '', district !== 'all' ? district : '', categoryId !== 'all' ? categoryId : ''].filter(Boolean).length;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ scrollPaddingTop: '5rem' }}>
       <Helmet>
         <title>{query ? `Search results for "${query}"` : 'All Ads'} — BazarBD</title>
       </Helmet>
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
+      <main className="flex-1 container mx-auto px-4 sm:px-6 py-8 pb-20 lg:pb-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">
@@ -235,10 +235,10 @@ export default function Search() {
           </div>
         </div>
 
-        {/* Advanced Filters */}
+        {/* Advanced Filters - bottom sheet on mobile, inline panel on desktop */}
         {showFilters && (
-          <div className="mb-6 p-4 bg-card border border-border rounded-lg space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="mb-6 p-4 bg-card border border-border rounded-lg space-y-4 fixed inset-x-0 bottom-0 z-50 rounded-t-xl shadow-2xl sm:static sm:rounded-lg sm:shadow-none max-h-[85vh] overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="space-y-2">
                 <Label className="text-xs">Min Price</Label>
                 <Input
@@ -322,7 +322,7 @@ export default function Search() {
         )}
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} className="h-64 rounded-lg" />
             ))}
@@ -333,7 +333,7 @@ export default function Search() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {ads.map((ad) => (
                 <AdCard
                   key={ad.id}

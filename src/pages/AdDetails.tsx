@@ -334,7 +334,7 @@ export default function AdDetails() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ scrollPaddingTop: '5rem' }}>
       <Helmet>
         <title>{ad.title} — BazarBD</title>
         <meta name="description" content={ad.description?.slice(0, 155) || ad.title} />
@@ -342,7 +342,7 @@ export default function AdDetails() {
         {images[0] && <meta property="og:image" content={images[0].image_url} />}
       </Helmet>
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
+      <main className="flex-1 container mx-auto px-4 sm:px-6 py-8 pb-20 lg:pb-8">
         {/* Breadcrumb */}
         <nav className="text-sm text-muted-foreground mb-4 flex gap-2 overflow-x-auto whitespace-nowrap">
           <Link to="/" className="hover:text-primary">Home</Link>
@@ -358,16 +358,16 @@ export default function AdDetails() {
           <span className="truncate">{ad.title}</span>
         </nav>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Images */}
           <div className="lg:col-span-2 space-y-4">
             <AdGallery images={images} title={ad.title} isFeatured={ad.is_featured} />
 
             {/* Description */}
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <h2 className="font-semibold text-lg mb-4">Description</h2>
-                <p className="text-muted-foreground whitespace-pre-wrap">
+                <p className="text-muted-foreground whitespace-pre-wrap text-sm sm:text-base" style={{ minHeight: '14px' }}>
                   {ad.description || 'No description provided.'}
                 </p>
               </CardContent>
@@ -377,9 +377,9 @@ export default function AdDetails() {
           {/* Sidebar */}
           <div className="space-y-4">
             <Card>
-              <CardContent className="p-6 space-y-4">
+              <CardContent className="p-4 sm:p-6 space-y-4">
                 <div className="flex items-start justify-between gap-4">
-                  <h1 className="text-2xl font-bold">{ad.title}</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold">{ad.title}</h1>
                   <div className="flex flex-col gap-1 items-end shrink-0">
                     <Badge variant="secondary" className="capitalize">
                       {ad.condition}
@@ -393,7 +393,7 @@ export default function AdDetails() {
                   </div>
                 </div>
 
-                <p className="text-3xl font-bold text-primary">
+                <p className="text-2xl sm:text-3xl font-bold text-primary">
                   {formatPrice(ad.price, ad.price_type)}
                 </p>
 
@@ -430,6 +430,7 @@ export default function AdDetails() {
                     variant="outline"
                     className="flex-1 gap-2"
                     onClick={toggleFavorite}
+                    style={{ minHeight: '48px' }}
                   >
                     <Heart className={`h-4 w-4 ${isFavorite ? 'fill-destructive text-destructive' : ''}`} />
                     {isFavorite ? 'Saved' : 'Save'}
@@ -439,7 +440,7 @@ export default function AdDetails() {
                   </div>
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button variant="outline" size="icon" aria-label="Report this ad">
+                      <Button variant="outline" size="icon" aria-label="Report this ad" style={{ minHeight: '48px', minWidth: '48px' }}>
                         <Flag className="h-4 w-4" />
                       </Button>
                     </DialogTrigger>
@@ -468,9 +469,9 @@ export default function AdDetails() {
                   <div className="flex gap-2">
                     <Dialog open={showOfferDialog} onOpenChange={setShowOfferDialog}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" className="flex-1 gap-2">
-                          <Tag className="h-4 w-4" />
-                          Make Offer
+                      <Button variant="outline" className="flex-1 gap-2" style={{ minHeight: '48px' }}>
+                        <Tag className="h-4 w-4" />
+                        Make Offer
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
@@ -511,7 +512,7 @@ export default function AdDetails() {
 
                     <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" className="flex-1 gap-2">
+                        <Button variant="outline" className="flex-1 gap-2" style={{ minHeight: '48px' }}>
                           <MessageCircle className="h-4 w-4" />
                           Message
                         </Button>
@@ -548,7 +549,7 @@ export default function AdDetails() {
 
             {/* Seller Info */}
             <Card>
-              <CardContent className="p-6 space-y-4">
+              <CardContent className="p-4 sm:p-6 space-y-4">
                 <h3 className="font-semibold">Seller Information</h3>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
@@ -576,20 +577,20 @@ export default function AdDetails() {
                 {seller?.phone_number && (
                   <div className="space-y-2">
                     {showPhone ? (
-                      <Button className="w-full gap-2" asChild>
+                      <Button className="w-full gap-2" asChild style={{ minHeight: '48px' }}>
                         <a href={`tel:${seller.phone_number}`}>
                           <Phone className="h-4 w-4" />
                           {seller.phone_number}
                         </a>
                       </Button>
                     ) : (
-                      <Button className="w-full gap-2" onClick={() => setShowPhone(true)}>
+                      <Button className="w-full gap-2" onClick={() => setShowPhone(true)} style={{ minHeight: '48px' }}>
                         <Phone className="h-4 w-4" />
                         Reveal Phone Number
                       </Button>
                     )}
                     {whatsappNumber && (
-                      <Button variant="outline" className="w-full gap-2" asChild>
+                      <Button variant="outline" className="w-full gap-2" asChild style={{ minHeight: '48px' }}>
                         <a
                           href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
                             `Hi, I'm interested in your ad "${ad.title}" on BazarBD.`

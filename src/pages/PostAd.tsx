@@ -315,10 +315,10 @@ export default function PostAd() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 sm:px-6 py-8 pb-20 lg:pb-8">
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle className="text-2xl">Post an Ad</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl">Post an Ad</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -328,7 +328,7 @@ export default function PostAd() {
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {imagePreviews.map((preview, index) => (
                     <div key={index} className="relative aspect-square rounded-lg overflow-hidden border group">
-                      <img src={preview} alt="" className="w-full h-full object-cover" />
+                      <img src={preview} alt="" loading="lazy" className="w-full h-full object-cover" />
                       {index === 0 && (
                         <span className="absolute bottom-1 left-1 text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
                           Cover
@@ -369,7 +369,7 @@ export default function PostAd() {
                       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                       onDragLeave={() => setIsDragging(false)}
                       onDrop={handleDrop}
-                      className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                      className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors min-h-[100px] ${
                         isDragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary'
                       }`}
                     >
@@ -412,7 +412,7 @@ export default function PostAd() {
               </div>
 
               {/* Category */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Category *</Label>
                   <Select value={categoryId} onValueChange={setCategoryId}>
@@ -516,7 +516,7 @@ export default function PostAd() {
               </div>
 
               {/* Location */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Division *</Label>
                   <Select value={division} onValueChange={(v) => { setDivision(v); setDistrict(''); }}>
@@ -560,7 +560,7 @@ export default function PostAd() {
               </div>
 
               {/* Scheduling & Urgent */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="schedule" className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
@@ -592,7 +592,7 @@ export default function PostAd() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading} style={{ minHeight: '48px' }}>
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 {scheduleDate ? 'Schedule Ad' : 'Post Ad'}
               </Button>

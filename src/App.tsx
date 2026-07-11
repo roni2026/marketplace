@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
+import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import PostAd from "./pages/PostAd";
@@ -26,32 +27,32 @@ import NotFound from "./pages/NotFound";
 import SellerDashboard from "./pages/SellerDashboard";
 import Compare from "./pages/Compare";
 
-// Admin pages
-import AdminDashboard from "./pages/admin/Dashboard";
-import AdModeration from "./pages/admin/AdModeration";
-import CategoryManagement from "./pages/admin/CategoryManagement";
-import UserManagement from "./pages/admin/UserManagement";
-import ReportManagement from "./pages/admin/ReportManagement";
-import AuditLogPage from "./pages/admin/AuditLog";
-import AnalyticsPage from "./pages/admin/Analytics";
-import SettingsPage from "./pages/admin/Settings";
-import SupportPage from "./pages/admin/Support";
-import TrustVerification from "./pages/admin/TrustVerification";
-import FraudDetection from "./pages/admin/FraudDetection";
-import PermissionsPage from "./pages/admin/Permissions";
-import MediaLibrary from "./pages/admin/MediaLibrary";
-import ReviewModeration from "./pages/admin/ReviewModeration";
-import MessageMonitoring from "./pages/admin/MessageMonitoring";
-import CMSPage from "./pages/admin/CMS";
-import SEOPage from "./pages/admin/SEO";
-import WorkflowAutomation from "./pages/admin/WorkflowAutomation";
-import AdminTools from "./pages/admin/AdminTools";
-import Reporting from "./pages/admin/Reporting";
-import APILogs from "./pages/admin/APILogs";
-import SystemMonitoring from "./pages/admin/SystemMonitoring";
-import Compliance from "./pages/admin/Compliance";
-import Developer from "./pages/admin/Developer";
-import BackupRecovery from "./pages/admin/BackupRecovery";
+// Admin pages - lazy loaded for better performance
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const AdModeration = lazy(() => import("./pages/admin/AdModeration"));
+const CategoryManagement = lazy(() => import("./pages/admin/CategoryManagement"));
+const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
+const ReportManagement = lazy(() => import("./pages/admin/ReportManagement"));
+const AuditLogPage = lazy(() => import("./pages/admin/AuditLog"));
+const AnalyticsPage = lazy(() => import("./pages/admin/Analytics"));
+const SettingsPage = lazy(() => import("./pages/admin/Settings"));
+const SupportPage = lazy(() => import("./pages/admin/Support"));
+const TrustVerification = lazy(() => import("./pages/admin/TrustVerification"));
+const FraudDetection = lazy(() => import("./pages/admin/FraudDetection"));
+const PermissionsPage = lazy(() => import("./pages/admin/Permissions"));
+const MediaLibrary = lazy(() => import("./pages/admin/MediaLibrary"));
+const ReviewModeration = lazy(() => import("./pages/admin/ReviewModeration"));
+const MessageMonitoring = lazy(() => import("./pages/admin/MessageMonitoring"));
+const CMSPage = lazy(() => import("./pages/admin/CMS"));
+const SEOPage = lazy(() => import("./pages/admin/SEO"));
+const WorkflowAutomation = lazy(() => import("./pages/admin/WorkflowAutomation"));
+const AdminTools = lazy(() => import("./pages/admin/AdminTools"));
+const Reporting = lazy(() => import("./pages/admin/Reporting"));
+const APILogs = lazy(() => import("./pages/admin/APILogs"));
+const SystemMonitoring = lazy(() => import("./pages/admin/SystemMonitoring"));
+const Compliance = lazy(() => import("./pages/admin/Compliance"));
+const Developer = lazy(() => import("./pages/admin/Developer"));
+const BackupRecovery = lazy(() => import("./pages/admin/BackupRecovery"));
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const App = () => (
             <Toaster />
             <Sonner richColors closeButton position="top-center" />
             <BrowserRouter>
+              <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Index />} />
@@ -113,6 +115,7 @@ const App = () => (
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
               <InstallPrompt />
             </BrowserRouter>
           </TooltipProvider>

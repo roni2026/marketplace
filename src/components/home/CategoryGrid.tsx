@@ -56,7 +56,7 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
   return (
     <section className="py-8">
       <h2 className="text-2xl font-bold mb-6">Browse Categories</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
         {categories.map((category) => (
           <Link key={category.id} to={`/category/${category.slug}`}>
             <Card className="group hover:shadow-md hover:border-primary/50 transition-all cursor-pointer h-full">
