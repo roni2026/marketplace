@@ -8,11 +8,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/constants';
 import { formatDistanceToNow } from 'date-fns';
-import { MapPin, Clock, Plus, Edit, Trash2, Eye, AlertCircle } from 'lucide-react';
+import { MapPin, Clock, Plus, Edit, Trash2, Eye, AlertCircle, RefreshCw, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -25,6 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { logAdAction } from '@/lib/audit';
 
 interface Ad {
   id: string;
@@ -37,6 +40,8 @@ interface Ad {
   division: string;
   district: string;
   created_at: string;
+  expires_at: string | null;
+  views_count: number | null;
   ad_images: { image_url: string }[];
 }
 
@@ -45,6 +50,8 @@ export default function MyAds() {
   const { user, isLoading: authLoading } = useAuth();
   const [ads, setAds] = useState<Ad[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -67,62 +74,99 @@ export default function MyAds() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     
-    setAds(data as Ad[] || []);
+    setAds((data as Ad[]) || []);
     setIsLoading(false);
   };
 
-  const deleteAd = async (adId: string) => {
+  const filterAdsByStatus = (status: string | null) => {
+    let filtered = ads;
+    if (status) {
+      filtered = filtered.filter(ad => ad.status === status);
+    }
+    if (searchTerm) {
+      filtered = filtered.filter(ad => 
+        ad.title.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    return filtered;
+  };
+
+  const handleDelete = async (adId: string) => {
     const { error } = await supabase.from('ads').delete().eq('id', adId);
-    
     if (error) {
       toast.error('Failed to delete ad');
     } else {
+      await logAdAction('delete', adId);
       toast.success('Ad deleted successfully');
       fetchAds();
     }
   };
 
-  const markAsSold = async (adId: string) => {
+  const handleRenew = async (adId: string) => {
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const { error } = await supabase
       .from('ads')
-      .update({ status: 'sold' })
+      .update({ 
+        expires_at: expiresAt,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', adId);
     
     if (error) {
-      toast.error('Failed to update ad');
+      toast.error('Failed to renew ad');
     } else {
-      toast.success('Ad marked as sold');
+      toast.success('Ad renewed for 30 days');
       fetchAds();
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      pending: 'secondary',
-      approved: 'default',
-      rejected: 'destructive',
-      sold: 'outline',
-    };
-    return <Badge variant={variants[status] || 'secondary'} className="capitalize">{status}</Badge>;
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    const { error } = await supabase.from('ads').delete().in('id', selectedIds);
+    if (error) {
+      toast.error('Failed to delete ads');
+    } else {
+      toast.success(`${selectedIds.length} ads deleted`);
+      setSelectedIds([]);
+      fetchAds();
+    }
   };
 
-  const filterAdsByStatus = (status: string | null) => {
-    if (!status) return ads;
-    return ads.filter(ad => ad.status === status);
+  const handleBulkRenew = async () => {
+    if (selectedIds.length === 0) return;
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { error } = await supabase
+      .from('ads')
+      .update({ expires_at: expiresAt, updated_at: new Date().toISOString() })
+      .in('id', selectedIds);
+    
+    if (error) {
+      toast.error('Failed to renew ads');
+    } else {
+      toast.success(`${selectedIds.length} ads renewed`);
+      setSelectedIds([]);
+      fetchAds();
+    }
+  };
+
+  const toggleSelect = (adId: string) => {
+    setSelectedIds(prev => 
+      prev.includes(adId) 
+        ? prev.filter(id => id !== adId)
+        : [...prev, adId]
+    );
+  };
+
+  const toggleSelectAll = (adsList: Ad[]) => {
+    if (adsList.length > 0 && adsList.every(ad => selectedIds.includes(ad.id))) {
+      setSelectedIds(prev => prev.filter(id => !adsList.some(ad => ad.id === id)));
+    } else {
+      setSelectedIds(prev => [...new Set([...prev, ...adsList.map(ad => ad.id)])]);
+    }
   };
 
   const AdList = ({ status }: { status: string | null }) => {
     const filteredAds = filterAdsByStatus(status);
-    
-    if (isLoading) {
-      return (
-        <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-lg" />
-          ))}
-        </div>
-      );
-    }
 
     if (filteredAds.length === 0) {
       return (
@@ -131,7 +175,7 @@ export default function MyAds() {
           <Link to="/post-ad">
             <Button className="mt-4 gap-2">
               <Plus className="h-4 w-4" />
-              Post an Ad
+              Post Your First Ad
             </Button>
           </Link>
         </div>
@@ -140,94 +184,179 @@ export default function MyAds() {
 
     return (
       <div className="space-y-4">
-        {filteredAds.map((ad) => (
-          <Card key={ad.id}>
-            <CardContent className="p-4">
-              <div className="flex gap-4">
-                <div className="w-24 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                  <img
-                    src={ad.ad_images?.[0]?.image_url || '/placeholder.svg'}
-                    alt={ad.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold truncate">{ad.title}</h3>
-                    {getStatusBadge(ad.status)}
-                  </div>
-                  <p className="text-lg font-bold text-primary mt-1">
-                    {formatPrice(ad.price, ad.price_type)}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {ad.district}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}
-                    </span>
-                  </div>
-                  
-                  {ad.status === 'rejected' && ad.rejection_message && (
-                    <div className="mt-2 flex items-start gap-2 text-sm text-destructive bg-destructive/10 p-2 rounded">
-                      <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                      <span>{ad.rejection_message}</span>
+        {/* Bulk Actions */}
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-3 p-3 bg-card border border-border rounded-lg">
+            <span className="text-sm font-medium">{selectedIds.length} selected</span>
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleBulkRenew}>
+              <RefreshCw className="h-4 w-4" />
+              Renew Selected
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  Delete Selected
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete {selectedIds.length} ads?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. These ads will be permanently deleted.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground">
+                    Delete All
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
+              Clear
+            </Button>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {filteredAds.map((ad) => {
+            const imageUrl = ad.ad_images?.[0]?.image_url || '/placeholder.svg';
+            const isExpired = ad.expires_at && new Date(ad.expires_at) < new Date();
+            return (
+              <Card key={ad.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex gap-4">
+                    <Checkbox
+                      checked={selectedIds.includes(ad.id)}
+                      onCheckedChange={() => toggleSelect(ad.id)}
+                      className="mt-1"
+                    />
+                    <Link to={`/ad/${ad.slug}-${ad.id}`} className="shrink-0">
+                      <div className="w-24 h-24 rounded-lg overflow-hidden bg-muted">
+                        <img
+                          src={imageUrl}
+                          alt={ad.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+                        />
+                      </div>
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <Link to={`/ad/${ad.slug}-${ad.id}`}>
+                            <h3 className="font-semibold hover:text-primary transition-colors truncate">
+                              {ad.title}
+                            </h3>
+                          </Link>
+                          <p className="text-lg font-bold text-primary mt-1">
+                            {formatPrice(ad.price, ad.price_type)}
+                          </p>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {ad.district}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}
+                            </span>
+                            {(ad.views_count || 0) > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Eye className="h-3 w-3" />
+                                {ad.views_count} views
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Badge
+                          className={
+                            ad.status === 'approved' ? 'bg-green-600 hover:bg-green-600 text-white' :
+                            ad.status === 'pending' ? 'bg-yellow-500 hover:bg-yellow-500 text-white' :
+                            ad.status === 'rejected' ? 'bg-red-500 hover:bg-red-500 text-white' :
+                            ad.status === 'sold' ? 'bg-blue-500 hover:bg-blue-500 text-white' :
+                            ''
+                          }
+                        >
+                          {ad.status}
+                        </Badge>
+                      </div>
+
+                      {ad.status === 'rejected' && ad.rejection_message && (
+                        <div className="mt-2 flex items-start gap-2 text-sm text-destructive bg-destructive/10 p-2 rounded">
+                          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                          <span>{ad.rejection_message}</span>
+                        </div>
+                      )}
+
+                      {isExpired && ad.status === 'approved' && (
+                        <div className="mt-2 flex items-start gap-2 text-sm text-orange-600 bg-orange-500/10 p-2 rounded">
+                          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                          <span>This ad has expired. Renew to make it visible again.</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 mt-3">
+                        <Button variant="outline" size="sm" className="gap-2" onClick={() => handleRenew(ad.id)}>
+                          <RefreshCw className="h-3 w-3" />
+                          Renew
+                        </Button>
+                        <Link to={`/post-ad?edit=${ad.id}`}>
+                          <Button variant="outline" size="sm" className="gap-2">
+                            <Edit className="h-3 w-3" />
+                            Edit
+                          </Button>
+                        </Link>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="gap-2 text-destructive">
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete this ad?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. "{ad.title}" will be permanently deleted.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(ad.id)} className="bg-destructive text-destructive-foreground">
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Link to={`/ad/${ad.slug}-${ad.id}`}>
-                    <Button variant="outline" size="sm" className="w-full gap-1">
-                      <Eye className="h-3 w-3" />
-                      View
-                    </Button>
-                  </Link>
-                  {ad.status === 'approved' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => markAsSold(ad.id)}
-                    >
-                      Mark Sold
-                    </Button>
-                  )}
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm" className="gap-1">
-                        <Trash2 className="h-3 w-3" />
-                        Delete
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete this ad?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete your ad.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deleteAd(ad.id)}>
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
     );
   };
 
-  if (authLoading) {
+  if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Skeleton className="h-8 w-8 rounded-full" />
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <Skeleton className="h-12 w-48 mb-6" />
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-32" />
+            ))}
+          </div>
+        </main>
+        <MobileNav />
+        <Footer />
       </div>
     );
   }
@@ -236,19 +365,29 @@ export default function MyAds() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold">My Ads</h1>
           <Link to="/post-ad">
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              Post New Ad
+              Post Ad
             </Button>
           </Link>
         </div>
 
+        {/* Search */}
+        <div className="mb-4">
+          <Input
+            placeholder="Search your ads..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+
         <Tabs defaultValue="all">
           <TabsList>
-            <TabsTrigger value="all">All ({ads.length})</TabsTrigger>
+            <TabsTrigger value="all">All ({filterAdsByStatus(null).length})</TabsTrigger>
             <TabsTrigger value="pending">Pending ({filterAdsByStatus('pending').length})</TabsTrigger>
             <TabsTrigger value="approved">Approved ({filterAdsByStatus('approved').length})</TabsTrigger>
             <TabsTrigger value="rejected">Rejected ({filterAdsByStatus('rejected').length})</TabsTrigger>

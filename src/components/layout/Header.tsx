@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, User, Heart, Menu, X, LogOut, Settings } from 'lucide-react';
+import { Search, Plus, User, Heart, Menu, X, LogOut, Settings, Bell, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useState } from 'react';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useMessages } from '@/hooks/useMessages';
+import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import {
@@ -13,6 +15,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 
 interface HeaderProps {
   searchQuery?: string;
@@ -22,6 +26,8 @@ interface HeaderProps {
 
 export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderProps) {
   const { user, isAdmin, signOut } = useAuth();
+  const { unreadCount: unreadNotifications } = useNotifications();
+  const { unreadCount: unreadMessages } = useMessages();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -117,6 +123,35 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
             <div className="hidden sm:block">
               <ThemeToggle />
             </div>
+
+            {/* Notification Bell */}
+            {user && (
+              <Link to="/notifications" className="relative">
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  {unreadNotifications > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full px-1">
+                      {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            )}
+
+            {/* Messages Icon */}
+            {user && (
+              <Link to="/messages" className="relative">
+                <Button variant="ghost" size="icon" className="relative">
+                  <MessageCircle className="h-5 w-5" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full px-1">
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            )}
+
             {user ? (
               <>
                 <Link to="/post-ad">
@@ -141,6 +176,22 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                     <DropdownMenuItem asChild>
                       <Link to="/my-ads" className="flex items-center gap-2">
                         My Ads
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/saved-searches" className="flex items-center gap-2">
+                        Saved Searches
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/messages" className="flex items-center gap-2">
+                        <MessageCircle className="h-4 w-4" />
+                        Messages
+                        {unreadMessages > 0 && (
+                          <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">
+                            {unreadMessages}
+                          </Badge>
+                        )}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -189,6 +240,43 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                   <nav className="flex flex-col gap-4">
                     <NavLinks mobile />
                   </nav>
+                  {user && (
+                    <nav className="flex flex-col gap-4 border-t border-border pt-4">
+                      <Link 
+                        to="/notifications" 
+                        className="text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Bell className="h-4 w-4" />
+                        Notifications
+                        {unreadNotifications > 0 && (
+                          <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5">
+                            {unreadNotifications}
+                          </Badge>
+                        )}
+                      </Link>
+                      <Link 
+                        to="/messages" 
+                        className="text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        Messages
+                        {unreadMessages > 0 && (
+                          <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5">
+                            {unreadMessages}
+                          </Badge>
+                        )}
+                      </Link>
+                      <Link 
+                        to="/saved-searches" 
+                        className="text-foreground/80 hover:text-primary transition-colors"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        Saved Searches
+                      </Link>
+                    </nav>
+                  )}
                   <div className="flex items-center justify-between border-t border-border pt-4">
                     <span className="text-sm text-foreground/80">Theme</span>
                     <ThemeToggle />

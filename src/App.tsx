@@ -19,12 +19,19 @@ import MyAds from "./pages/MyAds";
 import Favorites from "./pages/Favorites";
 import Profile from "./pages/Profile";
 import Categories from "./pages/Categories";
+import Messages from "./pages/Messages";
+import SavedSearches from "./pages/SavedSearches";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdModeration from "./pages/admin/AdModeration";
 import CategoryManagement from "./pages/admin/CategoryManagement";
 import UserManagement from "./pages/admin/UserManagement";
 import ReportManagement from "./pages/admin/ReportManagement";
+import AuditLogPage from "./pages/admin/AuditLog";
+import AnalyticsPage from "./pages/admin/Analytics";
+import SettingsPage from "./pages/admin/Settings";
+import SupportPage from "./pages/admin/Support";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +58,9 @@ const App = () => (
                 <Route path="/my-ads" element={<ProtectedRoute><MyAds /></ProtectedRoute>} />
                 <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+                <Route path="/saved-searches" element={<ProtectedRoute><SavedSearches /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
 
                 {/* Admin Routes (require admin role) */}
                 <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -58,6 +68,10 @@ const App = () => (
                 <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
                 <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
                 <Route path="/admin/reports" element={<AdminRoute><ReportManagement /></AdminRoute>} />
+                <Route path="/admin/audit" element={<AdminRoute><AuditLogPage /></AdminRoute>} />
+                <Route path="/admin/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
+                <Route path="/admin/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
+                <Route path="/admin/support" element={<AdminRoute><SupportPage /></AdminRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

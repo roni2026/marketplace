@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, MapPin, Clock, Star } from 'lucide-react';
+import { Heart, MapPin, Clock, Star, Zap, Eye, TrendingUp } from 'lucide-react';
 import { formatPrice } from '@/lib/constants';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +21,11 @@ interface AdCardProps {
     division: string;
     district: string;
     is_featured: boolean;
+    is_premium?: boolean | null;
+    is_boosted?: boolean | null;
+    is_urgent?: boolean | null;
+    views_count?: number | null;
+    favorites_count?: number | null;
     created_at: string;
     ad_images: { image_url: string }[];
     categories?: { name: string; slug: string } | null;
@@ -78,13 +83,30 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle }: AdCardProps
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
+            {ad.is_premium && (
+              <Badge className="bg-purple-600 hover:bg-purple-600 text-white gap-1">
+                <TrendingUp className="h-3 w-3" />
+                Premium
+              </Badge>
+            )}
+            {ad.is_boosted && (
+              <Badge className="bg-blue-600 hover:bg-blue-600 text-white">
+                Boosted
+              </Badge>
+            )}
             {ad.is_featured && (
               <Badge className="bg-primary gap-1">
                 <Star className="h-3 w-3" />
                 Featured
               </Badge>
             )}
-            {isNew && !ad.is_featured && (
+            {ad.is_urgent && (
+              <Badge className="bg-red-600 hover:bg-red-600 text-white gap-1">
+                <Zap className="h-3 w-3" />
+                Urgent
+              </Badge>
+            )}
+            {isNew && !ad.is_featured && !ad.is_premium && !ad.is_boosted && (
               <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white">New</Badge>
             )}
           </div>
@@ -118,9 +140,17 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle }: AdCardProps
               <MapPin className="h-3 w-3" />
               <span className="truncate">{ad.district}, {ad.division}</span>
             </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              <span>{formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}</span>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>{formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}</span>
+              </span>
+              {(ad.views_count || 0) > 0 && (
+                <span className="flex items-center gap-1">
+                  <Eye className="h-3 w-3" />
+                  {ad.views_count}
+                </span>
+              )}
             </div>
           </div>
         </CardContent>

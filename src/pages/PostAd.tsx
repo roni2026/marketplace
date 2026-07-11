@@ -12,8 +12,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, X, ImageIcon, ArrowLeft, ArrowRight, GripVertical } from 'lucide-react';
+import { Loader2, X, ImageIcon, ArrowLeft, ArrowRight, Calendar } from 'lucide-react';
 import { DIVISIONS, DISTRICTS, generateSlug } from '@/lib/constants';
+import { validateTitle, validateDescription, validatePrice, validateLocation, validateImageFile, sanitizeText, sanitizeRichText } from '@/lib/validation';
+import { moderateContent, getSpamScore } from '@/lib/moderation';
+import { logAdAction } from '@/lib/audit';
 
 interface Category {
   id: string;
@@ -38,6 +41,8 @@ export default function PostAd() {
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [isUrgent, setIsUrgent] = useState(false);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -83,6 +88,15 @@ export default function PostAd() {
     if (images.length + imageFiles.length > 5) {
       toast.error('Maximum 5 images allowed');
       return;
+    }
+
+    // Validate each image file
+    for (const file of imageFiles) {
+      const validation = validateImageFile(file);
+      if (!validation.valid) {
+        toast.error(validation.errors[0]);
+        return;
+      }
     }
 
     const newImages = [...images, ...imageFiles].slice(0, 5);
@@ -143,6 +157,27 @@ export default function PostAd() {
     return uploadedUrls;
   };
 
+  const checkDuplicate = async (titleText: string, descText: string) => {
+    const { data } = await supabase
+      .from('ads')
+      .select('title, description')
+      .eq('user_id', user!.id)
+      .limit(20);
+
+    if (!data || data.length === 0) return false;
+
+    const newWords = new Set((titleText + ' ' + descText).toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter((w: string) => w.length > 2));
+    for (const existing of data) {
+      const existingWords = new Set((existing.title + ' ' + (existing.description || '')).toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter((w: string) => w.length > 2));
+      const intersection = new Set([...newWords].filter((x: string) => existingWords.has(x)));
+      const union = new Set([...newWords, ...existingWords]);
+      if (union.size > 0 && intersection.size / union.size >= 0.7) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -151,8 +186,33 @@ export default function PostAd() {
       return;
     }
 
-    if (!title || !categoryId || !division || !district) {
-      toast.error('Please fill in all required fields');
+    // Validate inputs
+    const titleValidation = validateTitle(title);
+    if (!titleValidation.valid) {
+      toast.error(titleValidation.errors[0]);
+      return;
+    }
+
+    const descValidation = validateDescription(description);
+    if (!descValidation.valid) {
+      toast.error(descValidation.errors[0]);
+      return;
+    }
+
+    const priceValidation = validatePrice(price, priceType);
+    if (!priceValidation.valid) {
+      toast.error(priceValidation.errors[0]);
+      return;
+    }
+
+    const locationValidation = validateLocation(division, district);
+    if (!locationValidation.valid) {
+      toast.error(locationValidation.errors[0]);
+      return;
+    }
+
+    if (!categoryId) {
+      toast.error('Please select a category');
       return;
     }
 
@@ -161,19 +221,46 @@ export default function PostAd() {
       return;
     }
 
+    // Moderate content
+    const moderationResult = moderateContent(title + ' ' + description);
+    if (moderationResult.flags.length > 0) {
+      if (moderationResult.flags.some(f => f.startsWith('profanity:'))) {
+        toast.error('Your ad contains inappropriate language. Please revise.');
+        return;
+      }
+    }
+
+    // Check spam score
+    const spamScore = getSpamScore(title + ' ' + description);
+    if (spamScore >= 60) {
+      toast.error('Your ad content appears to be spam. Please revise.');
+      return;
+    }
+
+    // Check for duplicates
+    const isDuplicate = await checkDuplicate(title, description);
+    if (isDuplicate) {
+      toast.error('You already have a very similar ad. Please modify your listing.');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      const slug = generateSlug(title);
+      const sanitizedTitle = sanitizeText(title);
+      const sanitizedDesc = sanitizeRichText(description);
+      const slug = generateSlug(sanitizedTitle);
       const priceValue = priceType === 'free' ? null : parseFloat(price) || null;
+      const scheduledAt = scheduleDate ? new Date(scheduleDate).toISOString() : null;
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       
       const { data: ad, error: adError } = await supabase
         .from('ads')
         .insert({
           user_id: user.id,
-          title,
+          title: sanitizedTitle,
           slug,
-          description,
+          description: sanitizedDesc,
           category_id: categoryId,
           subcategory_id: subcategoryId || null,
           price: priceValue,
@@ -181,7 +268,11 @@ export default function PostAd() {
           condition,
           division,
           district,
-          area,
+          area: sanitizeText(area),
+          is_urgent: isUrgent,
+          scheduled_at: scheduledAt,
+          expires_at: expiresAt,
+          status: scheduledAt ? 'draft' : 'pending',
         })
         .select()
         .single();
@@ -198,7 +289,12 @@ export default function PostAd() {
       
       await supabase.from('ad_images').insert(imageInserts);
 
-      toast.success('Ad posted successfully! It will be visible after admin approval.');
+      // Log audit
+      await logAdAction('create', ad.id, { title: sanitizedTitle, spam_score: spamScore });
+
+      toast.success(scheduleDate 
+        ? 'Ad scheduled successfully! It will be published on the selected date.'
+        : 'Ad posted successfully! It will be visible after admin approval.');
       navigate('/my-ads');
     } catch (error: any) {
       console.error('Error posting ad:', error);
@@ -292,7 +388,7 @@ export default function PostAd() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  The first photo is used as the cover image. Use the arrows to reorder.
+                  The first photo is used as the cover image. Use the arrows to reorder. Max 5MB per image.
                 </p>
               </div>
 
@@ -380,6 +476,7 @@ export default function PostAd() {
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
                       placeholder="0"
+                      min={0}
                     />
                   </div>
                 )}
@@ -413,9 +510,9 @@ export default function PostAd() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe your item in detail..."
                   rows={5}
-                  maxLength={2000}
+                  maxLength={5000}
                 />
-                <p className="text-xs text-muted-foreground text-right">{description.length}/2000</p>
+                <p className="text-xs text-muted-foreground text-right">{description.length}/5000</p>
               </div>
 
               {/* Location */}
@@ -462,9 +559,42 @@ export default function PostAd() {
                 />
               </div>
 
+              {/* Scheduling & Urgent */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="schedule" className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    Schedule (Optional)
+                  </Label>
+                  <Input
+                    id="schedule"
+                    type="datetime-local"
+                    value={scheduleDate}
+                    onChange={(e) => setScheduleDate(e.target.value)}
+                    min={new Date().toISOString().slice(0, 16)}
+                  />
+                  <p className="text-xs text-muted-foreground">Publish at a later date</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Mark as Urgent</Label>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <input
+                      type="checkbox"
+                      id="urgent"
+                      checked={isUrgent}
+                      onChange={(e) => setIsUrgent(e.target.checked)}
+                      className="rounded border-border"
+                    />
+                    <Label htmlFor="urgent" className="text-sm font-normal cursor-pointer">
+                      Show urgent badge
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Post Ad
+                {scheduleDate ? 'Schedule Ad' : 'Post Ad'}
               </Button>
             </form>
           </CardContent>

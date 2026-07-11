@@ -8,12 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { useOffers } from '@/hooks/useOffers';
 import { formatPrice } from '@/lib/constants';
 import { formatDistanceToNow, format } from 'date-fns';
-import { MapPin, Clock, User, Phone, Heart, Flag, MessageCircle, Eye, BadgeCheck } from 'lucide-react';
+import { MapPin, Clock, User, Phone, Heart, Flag, MessageCircle, Eye, BadgeCheck, Tag, Zap, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -23,10 +27,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea as UITextarea } from '@/components/ui/textarea';
 import { AdGallery } from '@/components/ads/AdGallery';
 import { ShareButton } from '@/components/ads/ShareButton';
 import { SimilarAds } from '@/components/ads/SimilarAds';
+import { logAudit } from '@/lib/audit';
 
 interface Ad {
   id: string;
@@ -40,10 +45,16 @@ interface Ad {
   district: string;
   area: string | null;
   is_featured: boolean;
+  is_premium: boolean | null;
+  is_boosted: boolean | null;
+  is_urgent: boolean | null;
+  views_count: number | null;
+  favorites_count: number | null;
+  shares_count: number | null;
+  offers_count: number | null;
   created_at: string;
   user_id: string;
   category_id: string;
-  views_count: number | null;
   ad_images: { id: string; image_url: string; sort_order: number }[];
   categories: { name: string; slug: string } | null;
   subcategories: { name: string; slug: string } | null;
@@ -54,6 +65,7 @@ interface Profile {
   phone_number: string | null;
   avatar_url: string | null;
   created_at: string | null;
+  is_verified: boolean | null;
 }
 
 export default function AdDetails() {
@@ -68,9 +80,14 @@ export default function AdDetails() {
   const [isReporting, setIsReporting] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [offerAmount, setOfferAmount] = useState('');
+  const [offerMessage, setOfferMessage] = useState('');
+  const [showOfferDialog, setShowOfferDialog] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
 
-  // Extract ID from slug (format: title-slug-uuid)
   const adId = slug?.split('-').pop() || '';
+  const { makeOffer } = useOffers(adId);
 
   useEffect(() => {
     fetchAd();
@@ -102,7 +119,7 @@ export default function AdDetails() {
       // Fetch seller profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, phone_number, avatar_url, created_at')
+        .select('full_name, phone_number, avatar_url, created_at, is_verified')
         .eq('user_id', data.user_id)
         .single();
       
@@ -113,6 +130,20 @@ export default function AdDetails() {
         .from('ads')
         .update({ views_count: (data.views_count || 0) + 1 })
         .eq('id', adId);
+
+      // Track in ad_stats
+      await supabase
+        .from('ad_stats')
+        .upsert({
+          ad_id: adId,
+          stat_date: new Date().toISOString().slice(0, 10),
+          views: 1,
+        }, { onConflict: 'ad_id,stat_date' });
+
+      // Log view in audit
+      if (user) {
+        await logAudit({ action: 'update', resourceType: 'ad_view', resourceId: adId });
+      }
     } catch (error) {
       console.error('Error fetching ad:', error);
     } finally {
@@ -148,11 +179,30 @@ export default function AdDetails() {
       await supabase.from('favorites').delete().eq('ad_id', ad.id).eq('user_id', user.id);
       setIsFavorite(false);
       toast.success('Removed from favorites');
+      // Decrement favorites count
+      await supabase
+        .from('ads')
+        .update({ favorites_count: Math.max((ad.favorites_count || 0) - 1, 0) })
+        .eq('id', ad.id);
     } else {
       await supabase.from('favorites').insert({ ad_id: ad.id, user_id: user.id });
       setIsFavorite(true);
       toast.success('Added to favorites');
+      // Increment favorites count
+      await supabase
+        .from('ads')
+        .update({ favorites_count: (ad.favorites_count || 0) + 1 })
+        .eq('id', ad.id);
     }
+  };
+
+  const handleShare = async () => {
+    if (!ad) return;
+    // Increment share count
+    await supabase
+      .from('ads')
+      .update({ shares_count: (ad.shares_count || 0) + 1 })
+      .eq('id', ad.id);
   };
 
   const handleReport = async () => {
@@ -172,6 +222,7 @@ export default function AdDetails() {
         user_id: user.id,
         ad_id: ad.id,
         reason: reportReason,
+        status: 'pending',
       });
       toast.success('Report submitted. Thank you for helping keep BazarBD safe.');
       setReportReason('');
@@ -182,8 +233,70 @@ export default function AdDetails() {
     }
   };
 
+  const handleOffer = async () => {
+    if (!user) {
+      toast.error('Please login to make an offer');
+      return;
+    }
+    if (!ad || !offerAmount) return;
+
+    const amount = parseFloat(offerAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+
+    const { error } = await makeOffer({
+      adId: ad.id,
+      sellerId: ad.user_id,
+      amount,
+      message: offerMessage,
+    });
+
+    if (error) {
+      toast.error('Failed to submit offer');
+    } else {
+      toast.success('Offer sent to seller!');
+      setShowOfferDialog(false);
+      setOfferAmount('');
+      setOfferMessage('');
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!user) {
+      toast.error('Please login to send a message');
+      return;
+    }
+    if (!ad || !messageText.trim()) return;
+
+    const { error } = await supabase.from('messages').insert({
+      sender_id: user.id,
+      receiver_id: ad.user_id,
+      ad_id: ad.id,
+      body: messageText.trim(),
+    });
+
+    if (error) {
+      toast.error('Failed to send message');
+    } else {
+      // Create notification for seller
+      await supabase.from('notifications').insert({
+        user_id: ad.user_id,
+        type: 'new_message',
+        title: 'New Message',
+        message: `You have a new message about "${ad.title}"`,
+        data: { ad_id: ad.id },
+      }).catch(() => {});
+      toast.success('Message sent!');
+      setShowMessageDialog(false);
+      setMessageText('');
+    }
+  };
+
   const images = ad?.ad_images?.slice().sort((a, b) => a.sort_order - b.sort_order) || [];
   const whatsappNumber = seller?.phone_number?.replace(/[^0-9]/g, '');
+  const isOwnAd = user?.id === ad?.user_id;
 
   if (isLoading) {
     return (
@@ -267,9 +380,17 @@ export default function AdDetails() {
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <h1 className="text-2xl font-bold">{ad.title}</h1>
-                  <Badge variant="secondary" className="capitalize shrink-0">
-                    {ad.condition}
-                  </Badge>
+                  <div className="flex flex-col gap-1 items-end shrink-0">
+                    <Badge variant="secondary" className="capitalize">
+                      {ad.condition}
+                    </Badge>
+                    {ad.is_urgent && (
+                      <Badge className="bg-red-600 hover:bg-red-600 text-white gap-1">
+                        <Zap className="h-3 w-3" />
+                        Urgent
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
                 <p className="text-3xl font-bold text-primary">
@@ -281,7 +402,7 @@ export default function AdDetails() {
                   <span>{ad.area ? `${ad.area}, ` : ''}{ad.district}, {ad.division}</span>
                 </div>
 
-                <div className="flex items-center gap-4 text-muted-foreground text-sm">
+                <div className="flex items-center gap-4 text-muted-foreground text-sm flex-wrap">
                   <span className="flex items-center gap-2">
                     <Clock className="h-4 w-4" />
                     Posted {formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}
@@ -290,6 +411,18 @@ export default function AdDetails() {
                     <Eye className="h-4 w-4" />
                     {(ad.views_count || 0) + 1} views
                   </span>
+                  {(ad.favorites_count || 0) > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Heart className="h-4 w-4" />
+                      {ad.favorites_count}
+                    </span>
+                  )}
+                  {(ad.shares_count || 0) > 0 && (
+                    <span className="flex items-center gap-1">
+                      <MessageCircle className="h-4 w-4" />
+                      {ad.shares_count} shares
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
@@ -301,7 +434,9 @@ export default function AdDetails() {
                     <Heart className={`h-4 w-4 ${isFavorite ? 'fill-destructive text-destructive' : ''}`} />
                     {isFavorite ? 'Saved' : 'Save'}
                   </Button>
-                  <ShareButton title={ad.title} text={`Check out this ad on BazarBD: ${ad.title}`} />
+                  <div onClick={handleShare}>
+                    <ShareButton title={ad.title} text={`Check out this ad on BazarBD: ${ad.title}`} />
+                  </div>
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="icon" aria-label="Report this ad">
@@ -315,7 +450,7 @@ export default function AdDetails() {
                           Please tell us why you're reporting this ad
                         </DialogDescription>
                       </DialogHeader>
-                      <Textarea
+                      <UITextarea
                         value={reportReason}
                         onChange={(e) => setReportReason(e.target.value)}
                         placeholder="Describe the issue..."
@@ -327,6 +462,87 @@ export default function AdDetails() {
                     </DialogContent>
                   </Dialog>
                 </div>
+
+                {/* Offer & Message buttons */}
+                {!isOwnAd && user && (
+                  <div className="flex gap-2">
+                    <Dialog open={showOfferDialog} onOpenChange={setShowOfferDialog}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="flex-1 gap-2">
+                          <Tag className="h-4 w-4" />
+                          Make Offer
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Make an Offer</DialogTitle>
+                          <DialogDescription>
+                            Enter your offer amount and an optional message to the seller.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="offerAmount">Offer Amount (৳)</Label>
+                            <Input
+                              id="offerAmount"
+                              type="number"
+                              value={offerAmount}
+                              onChange={(e) => setOfferAmount(e.target.value)}
+                              placeholder="Enter your offer"
+                              min={0}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="offerMsg">Message (Optional)</Label>
+                            <UITextarea
+                              id="offerMsg"
+                              value={offerMessage}
+                              onChange={(e) => setOfferMessage(e.target.value)}
+                              placeholder="Add a message for the seller..."
+                              rows={3}
+                            />
+                          </div>
+                          <Button onClick={handleOffer} className="w-full">
+                            Submit Offer
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="flex-1 gap-2">
+                          <MessageCircle className="h-4 w-4" />
+                          Message
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Send a Message</DialogTitle>
+                          <DialogDescription>
+                            Send a message to the seller about this ad.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="msgText">Message</Label>
+                            <UITextarea
+                              id="msgText"
+                              value={messageText}
+                              onChange={(e) => setMessageText(e.target.value)}
+                              placeholder="Type your message..."
+                              rows={4}
+                            />
+                          </div>
+                          <Button onClick={handleSendMessage} className="w-full gap-2">
+                            <Send className="h-4 w-4" />
+                            Send Message
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -345,8 +561,8 @@ export default function AdDetails() {
                   <div className="min-w-0">
                     <p className="font-medium flex items-center gap-1 truncate">
                       {seller?.full_name || 'Anonymous'}
-                      {seller?.phone_number && (
-                        <BadgeCheck className="h-4 w-4 text-primary shrink-0" aria-label="Verified contact" />
+                      {seller?.is_verified && (
+                        <BadgeCheck className="h-4 w-4 text-primary shrink-0" aria-label="Verified seller" />
                       )}
                     </p>
                     {seller?.created_at && (
