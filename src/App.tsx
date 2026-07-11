@@ -9,7 +9,6 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
-import { AdminPortal } from "@/components/AdminPortal";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import PostAd from "./pages/PostAd";
@@ -56,104 +55,71 @@ import BackupRecovery from "./pages/admin/BackupRecovery";
 
 const queryClient = new QueryClient();
 
-// Detect if we're on the admin subdomain (admin.bazarbd.onrender.com)
-const isAdminSubdomain =
-  typeof window !== "undefined" &&
-  window.location.hostname.startsWith("admin.");
+const App = () => (
+  <HelmetProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner richColors closeButton position="top-center" />
+            <BrowserRouter>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/ad/:slug" element={<AdDetails />} />
+                <Route path="/category/:slug" element={<Category />} />
+                <Route path="/categories" element={<Categories />} />
+                <Route path="/search" element={<Search />} />
+                <Route path="/compare" element={<Compare />} />
 
-const App = () => {
-  // If on admin subdomain, render the standalone admin portal
-  if (isAdminSubdomain) {
-    return (
-      <HelmetProvider>
-        <ThemeProvider>
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner richColors closeButton position="top-center" />
-                <BrowserRouter>
-                  <Routes>
-                    {/* All admin routes under the admin subdomain */}
-                    <Route path="/*" element={<AdminPortal />} />
-                  </Routes>
-                  <InstallPrompt />
-                </BrowserRouter>
-              </TooltipProvider>
-            </AuthProvider>
-          </QueryClientProvider>
-        </ThemeProvider>
-      </HelmetProvider>
-    );
-  }
+                {/* Authenticated Routes */}
+                <Route path="/post-ad" element={<ProtectedRoute><PostAd /></ProtectedRoute>} />
+                <Route path="/my-ads" element={<ProtectedRoute><MyAds /></ProtectedRoute>} />
+                <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+                <Route path="/saved-searches" element={<ProtectedRoute><SavedSearches /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/seller-dashboard" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
 
-  // Normal customer marketplace app
-  return (
-    <HelmetProvider>
-      <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner richColors closeButton position="top-center" />
-              <BrowserRouter>
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/ad/:slug" element={<AdDetails />} />
-                  <Route path="/category/:slug" element={<Category />} />
-                  <Route path="/categories" element={<Categories />} />
-                  <Route path="/search" element={<Search />} />
-                  <Route path="/compare" element={<Compare />} />
+                {/* Admin Routes - /admin shows the admin portal with its own login */}
+                <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                <Route path="/admin/ads" element={<AdminRoute><AdModeration /></AdminRoute>} />
+                <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
+                <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
+                <Route path="/admin/reports" element={<AdminRoute><ReportManagement /></AdminRoute>} />
+                <Route path="/admin/audit" element={<AdminRoute><AuditLogPage /></AdminRoute>} />
+                <Route path="/admin/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
+                <Route path="/admin/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
+                <Route path="/admin/support" element={<AdminRoute><SupportPage /></AdminRoute>} />
+                <Route path="/admin/trust" element={<AdminRoute><TrustVerification /></AdminRoute>} />
+                <Route path="/admin/fraud" element={<AdminRoute><FraudDetection /></AdminRoute>} />
+                <Route path="/admin/permissions" element={<AdminRoute><PermissionsPage /></AdminRoute>} />
+                <Route path="/admin/media" element={<AdminRoute><MediaLibrary /></AdminRoute>} />
+                <Route path="/admin/reviews" element={<AdminRoute><ReviewModeration /></AdminRoute>} />
+                <Route path="/admin/messages" element={<AdminRoute><MessageMonitoring /></AdminRoute>} />
+                <Route path="/admin/cms" element={<AdminRoute><CMSPage /></AdminRoute>} />
+                <Route path="/admin/seo" element={<AdminRoute><SEOPage /></AdminRoute>} />
+                <Route path="/admin/workflow" element={<AdminRoute><WorkflowAutomation /></AdminRoute>} />
+                <Route path="/admin/tools" element={<AdminRoute><AdminTools /></AdminRoute>} />
+                <Route path="/admin/reporting" element={<AdminRoute><Reporting /></AdminRoute>} />
+                <Route path="/admin/api-logs" element={<AdminRoute><APILogs /></AdminRoute>} />
+                <Route path="/admin/monitoring" element={<AdminRoute><SystemMonitoring /></AdminRoute>} />
+                <Route path="/admin/compliance" element={<AdminRoute><Compliance /></AdminRoute>} />
+                <Route path="/admin/developer" element={<AdminRoute><Developer /></AdminRoute>} />
+                <Route path="/admin/backup" element={<AdminRoute><BackupRecovery /></AdminRoute>} />
 
-                  {/* Authenticated Routes */}
-                  <Route path="/post-ad" element={<ProtectedRoute><PostAd /></ProtectedRoute>} />
-                  <Route path="/my-ads" element={<ProtectedRoute><MyAds /></ProtectedRoute>} />
-                  <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
-                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                  <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-                  <Route path="/saved-searches" element={<ProtectedRoute><SavedSearches /></ProtectedRoute>} />
-                  <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-                  <Route path="/seller-dashboard" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
-
-                  {/* Admin Routes (require admin role) - accessible from main domain too */}
-                  <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-                  <Route path="/admin/ads" element={<AdminRoute><AdModeration /></AdminRoute>} />
-                  <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
-                  <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
-                  <Route path="/admin/reports" element={<AdminRoute><ReportManagement /></AdminRoute>} />
-                  <Route path="/admin/audit" element={<AdminRoute><AuditLogPage /></AdminRoute>} />
-                  <Route path="/admin/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
-                  <Route path="/admin/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
-                  <Route path="/admin/support" element={<AdminRoute><SupportPage /></AdminRoute>} />
-                  <Route path="/admin/trust" element={<AdminRoute><TrustVerification /></AdminRoute>} />
-                  <Route path="/admin/fraud" element={<AdminRoute><FraudDetection /></AdminRoute>} />
-                  <Route path="/admin/permissions" element={<AdminRoute><PermissionsPage /></AdminRoute>} />
-                  <Route path="/admin/media" element={<AdminRoute><MediaLibrary /></AdminRoute>} />
-                  <Route path="/admin/reviews" element={<AdminRoute><ReviewModeration /></AdminRoute>} />
-                  <Route path="/admin/messages" element={<AdminRoute><MessageMonitoring /></AdminRoute>} />
-                  <Route path="/admin/cms" element={<AdminRoute><CMSPage /></AdminRoute>} />
-                  <Route path="/admin/seo" element={<AdminRoute><SEOPage /></AdminRoute>} />
-                  <Route path="/admin/workflow" element={<AdminRoute><WorkflowAutomation /></AdminRoute>} />
-                  <Route path="/admin/tools" element={<AdminRoute><AdminTools /></AdminRoute>} />
-                  <Route path="/admin/reporting" element={<AdminRoute><Reporting /></AdminRoute>} />
-                  <Route path="/admin/api-logs" element={<AdminRoute><APILogs /></AdminRoute>} />
-                  <Route path="/admin/monitoring" element={<AdminRoute><SystemMonitoring /></AdminRoute>} />
-                  <Route path="/admin/compliance" element={<AdminRoute><Compliance /></AdminRoute>} />
-                  <Route path="/admin/developer" element={<AdminRoute><Developer /></AdminRoute>} />
-                  <Route path="/admin/backup" element={<AdminRoute><BackupRecovery /></AdminRoute>} />
-
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <InstallPrompt />
-              </BrowserRouter>
-            </TooltipProvider>
-          </AuthProvider>
-        </QueryClientProvider>
-      </ThemeProvider>
-    </HelmetProvider>
-  );
-};
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <InstallPrompt />
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  </HelmetProvider>
+);
 
 export default App;
