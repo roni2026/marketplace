@@ -31,6 +31,9 @@ import ShopSettings from "./pages/ShopSettings";
 import PublicShopPage from "./pages/PublicShopPage";
 import SellerListings from "./pages/SellerListings";
 import PostAdV4 from "./pages/PostAdV4";
+import AdvancedSearch from "./pages/AdvancedSearch";
+import Discovery from "./pages/Discovery";
+import Collections from "./pages/Collections";
 import Compare from "./pages/Compare";
 import PublicProfile from "./pages/PublicProfile";
 
@@ -73,6 +76,7 @@ import ShopManagement from "./pages/admin/ShopManagement";
 import ShopVerificationReview from "./pages/admin/ShopVerificationReview";
 import ListingManagement from "./pages/admin/ListingManagement";
 import ListingAnalytics from "./pages/admin/ListingAnalytics";
+import SearchAnalytics from "./pages/admin/SearchAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -92,7 +96,9 @@ const App = () => (
                 <Route path="/ad/:slug" element={<AdDetails />} />
                 <Route path="/category/:slug" element={<Category />} />
                 <Route path="/categories" element={<Categories />} />
-                <Route path="/search" element={<Search />} />
+                <Route path="/search" element={<AdvancedSearch />} />
+                <Route path="/discover" element={<Discovery />} />
+                <Route path="/collections" element={<ProtectedRoute><Collections /></ProtectedRoute>} />
                 <Route path="/compare" element={<Compare />} />
                 <Route path="/user/:userId" element={<PublicProfile />} />
 
@@ -152,6 +158,7 @@ const App = () => (
                 <Route path="/admin/shop-verifications" element={<AdminRoute><ShopVerificationReview /></AdminRoute>} />
                 <Route path="/admin/listing-management" element={<AdminRoute><ListingManagement /></AdminRoute>} />
                 <Route path="/admin/listing-analytics" element={<AdminRoute><ListingAnalytics /></AdminRoute>} />
+                <Route path="/admin/search-analytics" element={<AdminRoute><SearchAnalytics /></AdminRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
