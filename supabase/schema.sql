@@ -1,17 +1,21 @@
--- BazarBD — reference Supabase schema
+-- BazarBD — Enterprise Supabase schema
 -- -------------------------------------------------------------------------
--- This file is reverse-engineered from the generated `src/integrations/
--- supabase/types.ts` client types (the original repo shipped only the
--- frontend, with no migrations). Review carefully before running against a
--- production project — in particular the Row Level Security policies below
--- are a reasonable default, not a guarantee, for this app's access patterns.
+-- Upgraded schema with audit logs, notifications, messages, offers,
+-- support tickets, saved searches, session management, and analytics.
+-- Review RLS policies carefully before running against production.
 -- -------------------------------------------------------------------------
 
 -- Enums
-create type public.ad_status as enum ('pending', 'approved', 'rejected', 'sold');
-create type public.app_role as enum ('admin', 'user');
+create type public.ad_status as enum ('pending', 'approved', 'rejected', 'sold', 'expired', 'draft', 'boosted', 'premium');
+create type public.app_role as enum ('super_admin', 'admin', 'moderator', 'customer_support', 'seller', 'buyer');
 create type public.item_condition as enum ('new', 'used');
 create type public.price_type as enum ('fixed', 'negotiable', 'free');
+create type public.report_status as enum ('pending', 'reviewing', 'resolved', 'dismissed');
+create type public.ticket_status as enum ('open', 'in_progress', 'waiting_on_user', 'resolved', 'closed');
+create type public.ticket_priority as enum ('low', 'medium', 'high', 'urgent');
+create type public.notification_type as enum ('ad_approved', 'ad_rejected', 'new_message', 'new_offer', 'offer_accepted', 'offer_rejected', 'ad_expiring', 'report_update', 'system', 'ticket_update');
+create type public.offer_status as enum ('pending', 'accepted', 'rejected', 'expired');
+create type public.audit_action as enum ('create', 'update', 'delete', 'login', 'logout', 'login_failed', 'approve', 'reject', 'suspend', 'unsuspend', 'verify', 'export', 'bulk_action', 'settings_change');
 
 -- Categories
 create table public.categories (
@@ -19,8 +23,13 @@ create table public.categories (
   name text not null,
   slug text not null unique,
   icon text,
+  parent_id uuid references public.categories(id) on delete set null,
   sort_order int default 0,
-  created_at timestamptz not null default now()
+  meta_title text,
+  meta_description text,
+  is_active boolean default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table public.subcategories (
@@ -42,6 +51,13 @@ create table public.profiles (
   district text,
   area text,
   is_blocked boolean default false,
+  is_verified boolean default false,
+  is_suspended boolean default false,
+  suspended_at timestamptz,
+  suspended_reason text,
+  deleted_at timestamptz,
+  last_login_at timestamptz,
+  last_login_ip text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -71,8 +87,19 @@ create table public.ads (
   area text,
   status public.ad_status not null default 'pending',
   rejection_message text,
+  rejection_reason_code text,
   is_featured boolean default false,
+  is_premium boolean default false,
+  is_boosted boolean default false,
+  is_urgent boolean default false,
+  boosted_until timestamptz,
+  premium_until timestamptz,
+  expires_at timestamptz,
+  scheduled_at timestamptz,
   views_count int default 0,
+  favorites_count int default 0,
+  shares_count int default 0,
+  offers_count int default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -80,6 +107,14 @@ create table public.ads (
 create index ads_status_idx on public.ads (status);
 create index ads_category_idx on public.ads (category_id);
 create index ads_user_idx on public.ads (user_id);
+create index ads_created_at_idx on public.ads (created_at desc);
+create index ads_expires_at_idx on public.ads (expires_at);
+create index ads_is_featured_idx on public.ads (is_featured);
+create index ads_is_premium_idx on public.ads (is_premium);
+create index ads_is_boosted_idx on public.ads (is_boosted);
+create index ads_boosted_until_idx on public.ads (boosted_until);
+create index ads_premium_until_idx on public.ads (premium_until);
+create index ads_scheduled_at_idx on public.ads (scheduled_at);
 
 create table public.ad_images (
   id uuid primary key default gen_random_uuid(),
@@ -97,14 +132,203 @@ create table public.favorites (
   unique (user_id, ad_id)
 );
 
+create index favorites_user_idx on public.favorites (user_id);
+create index favorites_ad_idx on public.favorites (ad_id);
+
 create table public.reports (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   ad_id uuid not null references public.ads(id) on delete cascade,
   reason text not null,
+  reason_code text,
+  status public.report_status not null default 'pending',
+  admin_notes text,
+  resolved_by uuid references auth.users(id),
+  resolved_at timestamptz,
   is_resolved boolean default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index reports_status_idx on public.reports (status);
+create index reports_ad_idx on public.reports (ad_id);
+
+-- -------------------------------------------------------------------------
+-- New Enterprise Tables
+-- -------------------------------------------------------------------------
+
+-- Audit Logs
+create table public.audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  action public.audit_action not null,
+  resource_type text not null,
+  resource_id text,
+  details jsonb,
+  ip_address text,
+  user_agent text,
   created_at timestamptz not null default now()
 );
+
+create index audit_logs_user_idx on public.audit_logs (user_id);
+create index audit_logs_action_idx on public.audit_logs (action);
+create index audit_logs_resource_idx on public.audit_logs (resource_type, resource_id);
+create index audit_logs_created_at_idx on public.audit_logs (created_at desc);
+
+-- Notifications
+create table public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  type public.notification_type not null,
+  title text not null,
+  message text not null,
+  data jsonb,
+  is_read boolean default false,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index notifications_user_idx on public.notifications (user_id);
+create index notifications_unread_idx on public.notifications (user_id) where is_read = false;
+create index notifications_created_at_idx on public.notifications (created_at desc);
+
+-- Messages (ad-based chat between users)
+create table public.messages (
+  id uuid primary key default gen_random_uuid(),
+  sender_id uuid not null references auth.users(id) on delete cascade,
+  receiver_id uuid not null references auth.users(id) on delete cascade,
+  ad_id uuid references public.ads(id) on delete cascade,
+  body text not null,
+  is_read boolean default false,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index messages_sender_idx on public.messages (sender_id);
+create index messages_receiver_idx on public.messages (receiver_id);
+create index messages_ad_idx on public.messages (ad_id);
+create index messages_unread_idx on public.messages (receiver_id) where is_read = false;
+create index messages_created_at_idx on public.messages (created_at desc);
+
+-- Saved Searches
+create table public.saved_searches (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  query text,
+  filters jsonb,
+  category_id uuid references public.categories(id),
+  min_price numeric,
+  max_price numeric,
+  condition public.item_condition,
+  division text,
+  district text,
+  notify_on_match boolean default false,
+  last_notified_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index saved_searches_user_idx on public.saved_searches (user_id);
+create index saved_searches_notify_idx on public.saved_searches (user_id) where notify_on_match = true;
+
+-- Offers (price offers on ads)
+create table public.offers (
+  id uuid primary key default gen_random_uuid(),
+  ad_id uuid not null references public.ads(id) on delete cascade,
+  buyer_id uuid not null references auth.users(id) on delete cascade,
+  seller_id uuid not null references auth.users(id) on delete cascade,
+  amount numeric not null,
+  message text,
+  status public.offer_status not null default 'pending',
+  expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index offers_ad_idx on public.offers (ad_id);
+create index offers_buyer_idx on public.offers (buyer_id);
+create index offers_seller_idx on public.offers (seller_id);
+create index offers_status_idx on public.offers (status);
+
+-- Support Tickets
+create table public.support_tickets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  subject text not null,
+  description text not null,
+  status public.ticket_status not null default 'open',
+  priority public.ticket_priority not null default 'medium',
+  category text,
+  assigned_to uuid references auth.users(id),
+  resolution text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index support_tickets_user_idx on public.support_tickets (user_id);
+create index support_tickets_status_idx on public.support_tickets (status);
+create index support_tickets_priority_idx on public.support_tickets (priority);
+create index support_tickets_assigned_idx on public.support_tickets (assigned_to);
+
+-- Support Ticket Messages
+create table public.support_ticket_messages (
+  id uuid primary key default gen_random_uuid(),
+  ticket_id uuid not null references public.support_tickets(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  body text not null,
+  is_staff boolean default false,
+  created_at timestamptz not null default now()
+);
+
+create index ticket_messages_ticket_idx on public.support_ticket_messages (ticket_id);
+
+-- User Sessions
+create table public.user_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  session_token text,
+  ip_address text,
+  user_agent text,
+  device_info jsonb,
+  is_active boolean default true,
+  last_activity_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+create index user_sessions_user_idx on public.user_sessions (user_id);
+create index user_sessions_active_idx on public.user_sessions (user_id) where is_active = true;
+
+-- Login Attempts
+create table public.login_attempts (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  ip_address text,
+  user_agent text,
+  success boolean not null,
+  failure_reason text,
+  created_at timestamptz not null default now()
+);
+
+create index login_attempts_email_idx on public.login_attempts (email);
+create index login_attempts_created_at_idx on public.login_attempts (created_at desc);
+create index login_attempts_ip_idx on public.login_attempts (ip_address);
+
+-- Ad Stats (daily aggregated stats per ad)
+create table public.ad_stats (
+  id uuid primary key default gen_random_uuid(),
+  ad_id uuid not null references public.ads(id) on delete cascade,
+  stat_date date not null default current_date,
+  views int default 0,
+  favorites int default 0,
+  shares int default 0,
+  offers int default 0,
+  messages int default 0,
+  created_at timestamptz not null default now(),
+  unique (ad_id, stat_date)
+);
+
+create index ad_stats_ad_idx on public.ad_stats (ad_id);
+create index ad_stats_date_idx on public.ad_stats (stat_date);
 
 -- Helper function used by RLS policies to check admin role without recursion
 create or replace function public.has_role(_user_id uuid, _role public.app_role)
@@ -120,6 +344,36 @@ as $$
   )
 $$;
 
+-- Helper to check if user has any admin-level role
+create or replace function public.is_admin(_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.user_roles
+    where user_id = _user_id
+      and role in ('super_admin', 'admin')
+  )
+$$;
+
+-- Helper to check if user has staff-level access
+create or replace function public.is_staff(_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.user_roles
+    where user_id = _user_id
+      and role in ('super_admin', 'admin', 'moderator', 'customer_support')
+  )
+$$;
+
 -- -------------------------------------------------------------------------
 -- Row Level Security
 -- -------------------------------------------------------------------------
@@ -131,43 +385,55 @@ alter table public.ads enable row level security;
 alter table public.ad_images enable row level security;
 alter table public.favorites enable row level security;
 alter table public.reports enable row level security;
+alter table public.audit_logs enable row level security;
+alter table public.notifications enable row level security;
+alter table public.messages enable row level security;
+alter table public.saved_searches enable row level security;
+alter table public.offers enable row level security;
+alter table public.support_tickets enable row level security;
+alter table public.support_ticket_messages enable row level security;
+alter table public.user_sessions enable row level security;
+alter table public.login_attempts enable row level security;
+alter table public.ad_stats enable row level security;
 
 -- Categories / subcategories: publicly readable, admin-writable
 create policy "Categories are viewable by everyone" on public.categories for select using (true);
 create policy "Admins manage categories" on public.categories for all
-  using (public.has_role(auth.uid(), 'admin')) with check (public.has_role(auth.uid(), 'admin'));
+  using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
 
 create policy "Subcategories are viewable by everyone" on public.subcategories for select using (true);
 create policy "Admins manage subcategories" on public.subcategories for all
-  using (public.has_role(auth.uid(), 'admin')) with check (public.has_role(auth.uid(), 'admin'));
+  using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
 
 -- Profiles: viewable by everyone (needed to show seller info), editable by owner
-create policy "Profiles are viewable by everyone" on public.profiles for select using (true);
+create policy "Profiles are viewable by everyone" on public.profiles for select using (deleted_at is null);
 create policy "Users update own profile" on public.profiles for update using (auth.uid() = user_id);
 create policy "Users insert own profile" on public.profiles for insert with check (auth.uid() = user_id);
+create policy "Admins manage profiles" on public.profiles for all
+  using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
 
 -- Roles: only readable by the user themself / admins; only admins can grant roles
 create policy "Users view own roles" on public.user_roles for select
-  using (auth.uid() = user_id or public.has_role(auth.uid(), 'admin'));
+  using (auth.uid() = user_id or public.is_admin(auth.uid()));
 create policy "Admins manage roles" on public.user_roles for all
-  using (public.has_role(auth.uid(), 'admin')) with check (public.has_role(auth.uid(), 'admin'));
+  using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
 
 -- Ads: approved ads are public; owners see all their own ads; admins see everything
-create policy "Approved ads are public" on public.ads for select using (status = 'approved');
+create policy "Approved ads are public" on public.ads for select using (status in ('approved', 'boosted', 'premium'));
 create policy "Owners view their own ads" on public.ads for select using (auth.uid() = user_id);
-create policy "Admins view all ads" on public.ads for select using (public.has_role(auth.uid(), 'admin'));
+create policy "Admins view all ads" on public.ads for select using (public.is_admin(auth.uid()));
 create policy "Users create their own ads" on public.ads for insert with check (auth.uid() = user_id);
 create policy "Owners update their own ads" on public.ads for update using (auth.uid() = user_id);
-create policy "Admins update any ad" on public.ads for update using (public.has_role(auth.uid(), 'admin'));
+create policy "Admins update any ad" on public.ads for update using (public.is_admin(auth.uid()));
 create policy "Owners delete their own ads" on public.ads for delete using (auth.uid() = user_id);
-create policy "Admins delete any ad" on public.ads for delete using (public.has_role(auth.uid(), 'admin'));
+create policy "Admins delete any ad" on public.ads for delete using (public.is_admin(auth.uid()));
 
 -- Ad images follow the parent ad's visibility
 create policy "Ad images follow ad visibility" on public.ad_images for select
   using (exists (
     select 1 from public.ads
     where ads.id = ad_images.ad_id
-      and (ads.status = 'approved' or ads.user_id = auth.uid() or public.has_role(auth.uid(), 'admin'))
+      and (ads.status in ('approved', 'boosted', 'premium') or ads.user_id = auth.uid() or public.is_admin(auth.uid()))
   ));
 create policy "Owners manage their ad images" on public.ad_images for all
   using (exists (select 1 from public.ads where ads.id = ad_images.ad_id and ads.user_id = auth.uid()))
@@ -181,7 +447,62 @@ create policy "Users manage their own favorites" on public.favorites for all
 create policy "Users create reports" on public.reports for insert with check (auth.uid() = user_id);
 create policy "Users view their own reports" on public.reports for select using (auth.uid() = user_id);
 create policy "Admins manage reports" on public.reports for all
-  using (public.has_role(auth.uid(), 'admin')) with check (public.has_role(auth.uid(), 'admin'));
+  using (public.is_staff(auth.uid())) with check (public.is_staff(auth.uid()));
+
+-- Audit Logs: only admins can view; any authenticated user can insert their own
+create policy "Users insert own audit logs" on public.audit_logs for insert with check (auth.uid() = user_id);
+create policy "Admins view audit logs" on public.audit_logs for select using (public.is_admin(auth.uid()));
+
+-- Notifications: private to the owner
+create policy "Users manage their own notifications" on public.notifications for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Messages: sender and receiver can see their messages
+create policy "Users view their messages" on public.messages for select
+  using (auth.uid() = sender_id or auth.uid() = receiver_id);
+create policy "Users send messages" on public.messages for insert with check (auth.uid() = sender_id);
+create policy "Users update their messages" on public.messages for update using (auth.uid() = receiver_id);
+
+-- Saved Searches: private to the owner
+create policy "Users manage their own saved searches" on public.saved_searches for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Offers: buyer and seller can see; buyer creates
+create policy "Buyer and seller view offers" on public.offers for select
+  using (auth.uid() = buyer_id or auth.uid() = seller_id);
+create policy "Buyers create offers" on public.offers for insert with check (auth.uid() = buyer_id);
+create policy "Buyer and seller update offers" on public.offers for update
+  using (auth.uid() = buyer_id or auth.uid() = seller_id);
+
+-- Support Tickets: user owns their tickets, staff can see all
+create policy "Users view own tickets" on public.support_tickets for select
+  using (auth.uid() = user_id or public.is_staff(auth.uid()));
+create policy "Users create tickets" on public.support_tickets for insert with check (auth.uid() = user_id);
+create policy "Users update own tickets" on public.support_tickets for update using (auth.uid() = user_id);
+create policy "Staff manage tickets" on public.support_tickets for update using (public.is_staff(auth.uid()));
+
+-- Support Ticket Messages: ticket owner and staff
+create policy "Ticket participants view messages" on public.support_ticket_messages for select
+  using (
+    exists (select 1 from public.support_tickets t where t.id = support_ticket_messages.ticket_id
+      and (t.user_id = auth.uid() or public.is_staff(auth.uid())))
+  );
+create policy "Users create ticket messages" on public.support_ticket_messages for insert
+  with check (auth.uid() = user_id);
+
+-- User Sessions: private to the owner
+create policy "Users manage their own sessions" on public.user_sessions for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Login Attempts: only admins can view
+create policy "Admins view login attempts" on public.login_attempts for select using (public.is_admin(auth.uid()));
+create policy "System inserts login attempts" on public.login_attempts for insert with check (true);
+
+-- Ad Stats: admins view, ad owner views
+create policy "Admins view ad stats" on public.ad_stats for select using (public.is_admin(auth.uid()));
+create policy "Owners view own ad stats" on public.ad_stats for select
+  using (exists (select 1 from public.ads where ads.id = ad_stats.ad_id and ads.user_id = auth.uid()));
+create policy "System inserts ad stats" on public.ad_stats for insert with check (true);
 
 -- -------------------------------------------------------------------------
 -- Auto-create a profile row whenever a new auth user signs up

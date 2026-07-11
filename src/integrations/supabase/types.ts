@@ -46,20 +46,75 @@ export type Database = {
           },
         ]
       }
+      ad_stats: {
+        Row: {
+          ad_id: string
+          created_at: string
+          favorites: number | null
+          id: string
+          messages: number | null
+          offers: number | null
+          shares: number | null
+          stat_date: string
+          views: number | null
+        }
+        Insert: {
+          ad_id: string
+          created_at?: string
+          favorites?: number | null
+          id?: string
+          messages?: number | null
+          offers?: number | null
+          shares?: number | null
+          stat_date?: string
+          views?: number | null
+        }
+        Update: {
+          ad_id?: string
+          created_at?: string
+          favorites?: number | null
+          id?: string
+          messages?: number | null
+          offers?: number | null
+          shares?: number | null
+          stat_date?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_stats_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ads: {
         Row: {
           area: string | null
+          boosted_until: string | null
           category_id: string
           condition: Database["public"]["Enums"]["item_condition"]
           created_at: string
           description: string | null
           district: string
           division: string
+          expires_at: string | null
+          favorites_count: number | null
           id: string
+          is_boosted: boolean | null
           is_featured: boolean | null
+          is_premium: boolean | null
+          is_urgent: boolean | null
+          offers_count: number | null
+          premium_until: string | null
           price: number | null
           price_type: Database["public"]["Enums"]["price_type"]
           rejection_message: string | null
+          rejection_reason_code: string | null
+          scheduled_at: string | null
+          shares_count: number | null
           slug: string
           status: Database["public"]["Enums"]["ad_status"]
           subcategory_id: string | null
@@ -70,17 +125,28 @@ export type Database = {
         }
         Insert: {
           area?: string | null
+          boosted_until?: string | null
           category_id: string
           condition?: Database["public"]["Enums"]["item_condition"]
           created_at?: string
           description?: string | null
           district: string
           division: string
+          expires_at?: string | null
+          favorites_count?: number | null
           id?: string
+          is_boosted?: boolean | null
           is_featured?: boolean | null
+          is_premium?: boolean | null
+          is_urgent?: boolean | null
+          offers_count?: number | null
+          premium_until?: string | null
           price?: number | null
           price_type?: Database["public"]["Enums"]["price_type"]
           rejection_message?: string | null
+          rejection_reason_code?: string | null
+          scheduled_at?: string | null
+          shares_count?: number | null
           slug: string
           status?: Database["public"]["Enums"]["ad_status"]
           subcategory_id?: string | null
@@ -91,17 +157,28 @@ export type Database = {
         }
         Update: {
           area?: string | null
+          boosted_until?: string | null
           category_id?: string
           condition?: Database["public"]["Enums"]["item_condition"]
           created_at?: string
           description?: string | null
           district?: string
           division?: string
+          expires_at?: string | null
+          favorites_count?: number | null
           id?: string
+          is_boosted?: boolean | null
           is_featured?: boolean | null
+          is_premium?: boolean | null
+          is_urgent?: boolean | null
+          offers_count?: number | null
+          premium_until?: string | null
           price?: number | null
           price_type?: Database["public"]["Enums"]["price_type"]
           rejection_message?: string | null
+          rejection_reason_code?: string | null
+          scheduled_at?: string | null
+          shares_count?: number | null
           slug?: string
           status?: Database["public"]["Enums"]["ad_status"]
           subcategory_id?: string | null
@@ -127,30 +204,81 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: Database["public"]["Enums"]["audit_action"]
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["audit_action"]
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["audit_action"]
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
           icon: string | null
           id: string
+          is_active: boolean | null
+          meta_description: string | null
+          meta_title: string | null
           name: string
+          parent_id: string | null
           slug: string
           sort_order: number | null
+          updated_at: string
         }
         Insert: {
           created_at?: string
           icon?: string | null
           id?: string
+          is_active?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
           name: string
+          parent_id?: string | null
           slug: string
           sort_order?: number | null
+          updated_at?: string
         }
         Update: {
           created_at?: string
           icon?: string | null
           id?: string
+          is_active?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
           name?: string
+          parent_id?: string | null
           slug?: string
           sort_order?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -183,17 +311,162 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          created_at: string
+          email: string
+          failure_reason: string | null
+          id: string
+          ip_address: string | null
+          success: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          success: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          ad_id: string | null
+          body: string
+          created_at: string
+          id: string
+          is_read: boolean | null
+          read_at: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          ad_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          read_at?: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          ad_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          read_at?: string | null
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          is_read: boolean | null
+          message: string
+          read_at: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          read_at?: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          read_at?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      offers: {
+        Row: {
+          ad_id: string
+          amount: number
+          buyer_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          message: string | null
+          seller_id: string
+          status: Database["public"]["Enums"]["offer_status"]
+          updated_at: string
+        }
+        Insert: {
+          ad_id: string
+          amount: number
+          buyer_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          message?: string | null
+          seller_id: string
+          status?: Database["public"]["Enums"]["offer_status"]
+          updated_at?: string
+        }
+        Update: {
+          ad_id?: string
+          amount?: number
+          buyer_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          message?: string | null
+          seller_id?: string
+          status?: Database["public"]["Enums"]["offer_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           area: string | null
           avatar_url: string | null
           created_at: string
+          deleted_at: string | null
           district: string | null
           division: string | null
           full_name: string | null
           id: string
           is_blocked: boolean | null
+          is_suspended: boolean | null
+          is_verified: boolean | null
+          last_login_at: string | null
+          last_login_ip: string | null
           phone_number: string | null
+          suspended_at: string | null
+          suspended_reason: string | null
           updated_at: string
           user_id: string
         }
@@ -201,12 +474,19 @@ export type Database = {
           area?: string | null
           avatar_url?: string | null
           created_at?: string
+          deleted_at?: string | null
           district?: string | null
           division?: string | null
           full_name?: string | null
           id?: string
           is_blocked?: boolean | null
+          is_suspended?: boolean | null
+          is_verified?: boolean | null
+          last_login_at?: string | null
+          last_login_ip?: string | null
           phone_number?: string | null
+          suspended_at?: string | null
+          suspended_reason?: string | null
           updated_at?: string
           user_id: string
         }
@@ -214,12 +494,19 @@ export type Database = {
           area?: string | null
           avatar_url?: string | null
           created_at?: string
+          deleted_at?: string | null
           district?: string | null
           division?: string | null
           full_name?: string | null
           id?: string
           is_blocked?: boolean | null
+          is_suspended?: boolean | null
+          is_verified?: boolean | null
+          last_login_at?: string | null
+          last_login_ip?: string | null
           phone_number?: string | null
+          suspended_at?: string | null
+          suspended_reason?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -228,26 +515,44 @@ export type Database = {
       reports: {
         Row: {
           ad_id: string
+          admin_notes: string | null
           created_at: string
           id: string
           is_resolved: boolean | null
           reason: string
+          reason_code: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          updated_at: string
           user_id: string
         }
         Insert: {
           ad_id: string
+          admin_notes?: string | null
           created_at?: string
           id?: string
           is_resolved?: boolean | null
           reason: string
+          reason_code?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          updated_at?: string
           user_id: string
         }
         Update: {
           ad_id?: string
+          admin_notes?: string | null
           created_at?: string
           id?: string
           is_resolved?: boolean | null
           reason?: string
+          reason_code?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -259,6 +564,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_searches: {
+        Row: {
+          category_id: string | null
+          condition: Database["public"]["Enums"]["item_condition"] | null
+          created_at: string
+          district: string | null
+          division: string | null
+          filters: Json | null
+          id: string
+          last_notified_at: string | null
+          max_price: number | null
+          min_price: number | null
+          name: string
+          notify_on_match: boolean | null
+          query: string | null
+          user_id: string
+        }
+        Insert: {
+          category_id?: string | null
+          condition?: Database["public"]["Enums"]["item_condition"] | null
+          created_at?: string
+          district?: string | null
+          division?: string | null
+          filters?: Json | null
+          id?: string
+          last_notified_at?: string | null
+          max_price?: number | null
+          min_price?: number | null
+          name: string
+          notify_on_match?: boolean | null
+          query?: string | null
+          user_id: string
+        }
+        Update: {
+          category_id?: string | null
+          condition?: Database["public"]["Enums"]["item_condition"] | null
+          created_at?: string
+          district?: string | null
+          division?: string | null
+          filters?: Json | null
+          id?: string
+          last_notified_at?: string | null
+          max_price?: number | null
+          min_price?: number | null
+          name?: string
+          notify_on_match?: boolean | null
+          query?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       subcategories: {
         Row: {
@@ -292,6 +648,75 @@ export type Database = {
           },
         ]
       }
+      support_ticket_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_staff: boolean | null
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_staff?: boolean | null
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_staff?: boolean | null
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string | null
+          created_at: string
+          description: string
+          id: string
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          resolution: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolution?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolution?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -313,6 +738,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          created_at: string
+          device_info: Json | null
+          id: string
+          ip_address: string | null
+          is_active: boolean | null
+          last_activity_at: string
+          session_token: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          last_activity_at?: string
+          session_token?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          last_activity_at?: string
+          session_token?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -325,12 +786,30 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: {
+        Args: {
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_staff: {
+        Args: {
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      ad_status: "pending" | "approved" | "rejected" | "sold"
-      app_role: "admin" | "user"
+      ad_status: "pending" | "approved" | "rejected" | "sold" | "expired" | "draft" | "boosted" | "premium"
+      app_role: "super_admin" | "admin" | "moderator" | "customer_support" | "seller" | "buyer"
       item_condition: "new" | "used"
       price_type: "fixed" | "negotiable" | "free"
+      report_status: "pending" | "reviewing" | "resolved" | "dismissed"
+      ticket_status: "open" | "in_progress" | "waiting_on_user" | "resolved" | "closed"
+      ticket_priority: "low" | "medium" | "high" | "urgent"
+      notification_type: "ad_approved" | "ad_rejected" | "new_message" | "new_offer" | "offer_accepted" | "offer_rejected" | "ad_expiring" | "report_update" | "system" | "ticket_update"
+      offer_status: "pending" | "accepted" | "rejected" | "expired"
+      audit_action: "create" | "update" | "delete" | "login" | "logout" | "login_failed" | "approve" | "reject" | "suspend" | "unsuspend" | "verify" | "export" | "bulk_action" | "settings_change"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -458,10 +937,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      ad_status: ["pending", "approved", "rejected", "sold"],
-      app_role: ["admin", "user"],
+      ad_status: ["pending", "approved", "rejected", "sold", "expired", "draft", "boosted", "premium"],
+      app_role: ["super_admin", "admin", "moderator", "customer_support", "seller", "buyer"],
       item_condition: ["new", "used"],
       price_type: ["fixed", "negotiable", "free"],
+      report_status: ["pending", "reviewing", "resolved", "dismissed"],
+      ticket_status: ["open", "in_progress", "waiting_on_user", "resolved", "closed"],
+      ticket_priority: ["low", "medium", "high", "urgent"],
+      notification_type: ["ad_approved", "ad_rejected", "new_message", "new_offer", "offer_accepted", "offer_rejected", "ad_expiring", "report_update", "system", "ticket_update"],
+      offer_status: ["pending", "accepted", "rejected", "expired"],
+      audit_action: ["create", "update", "delete", "login", "logout", "login_failed", "approve", "reject", "suspend", "unsuspend", "verify", "export", "bulk_action", "settings_change"],
     },
   },
 } as const
