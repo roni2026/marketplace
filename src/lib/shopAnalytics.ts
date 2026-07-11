@@ -802,3 +802,22 @@ export async function getShopBusinessReport(shopId: string, period: ShopReportPe
     };
   }
 }
+
+export async function getShopOrders(shopId: string, options?: { limit?: number; status?: string }): Promise<any[]> {
+  const limit = options?.limit || 20;
+  let query = supabase
+    .from('shop_orders')
+    .select('*')
+    .eq('shop_id', shopId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (options?.status) {
+    query = query.eq('status', options.status);
+  }
+  const { data, error } = await query;
+  if (error) {
+    console.error('getShopOrders error:', error);
+    return [];
+  }
+  return data || [];
+}
