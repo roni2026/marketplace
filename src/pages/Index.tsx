@@ -56,7 +56,7 @@ const Index = () => {
   const fetchData = async () => {
     try {
       const [categoriesRes, featuredRes, recentRes] = await Promise.all([
-        supabase.from('categories').select('*').order('sort_order'),
+        supabase.from('categories').select('id, name, slug, icon, sort_order').order('sort_order'),
         supabase
           .from('ads')
           .select('*, ad_images(image_url), categories(name, slug)')

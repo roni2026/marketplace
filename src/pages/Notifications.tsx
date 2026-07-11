@@ -1,68 +1,140 @@
-import { Helmet } from 'react-helmet-async';
+import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { MobileNav } from '@/components/layout/MobileNav';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useNotifications } from '@/hooks/useNotifications';
-import { Bell, CheckCheck, Trash2, CheckCircle, XCircle, MessageCircle, Tag, AlertCircle, Info } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Bell, Check, Trash2, ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
-const NOTIFICATION_ICONS: Record<string, typeof Bell> = {
-  ad_approved: CheckCircle,
-  ad_rejected: XCircle,
-  new_message: MessageCircle,
-  new_offer: Tag,
-  offer_accepted: CheckCircle,
-  offer_rejected: XCircle,
-  ad_expiring: AlertCircle,
-  report_update: Info,
-  system: Info,
-  ticket_update: Info,
-};
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  is_read: boolean;
+  created_at: string;
+  data: any;
+}
 
 export default function Notifications() {
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+  const { user, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [tableExists, setTableExists] = useState(true);
 
-  const handleMarkAllRead = async () => {
-    await markAllAsRead();
-    toast.success('All notifications marked as read');
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+      return;
+    }
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user, authLoading, navigate]);
+
+  const fetchNotifications = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        // Table might not exist yet - gracefully handle
+        if (error.message?.includes('relation') || error.message?.includes('does not exist') || error.code === '42P01') {
+          setTableExists(false);
+          setNotifications([]);
+        } else {
+          console.error('Notification fetch error:', error);
+          setNotifications([]);
+        }
+      } else {
+        setNotifications(data || []);
+      }
+    } catch (err) {
+      setTableExists(false);
+      setNotifications([]);
+    }
+    setIsLoading(false);
   };
 
-  const handleMarkRead = async (id: string) => {
-    await markAsRead(id);
+  const markAsRead = async (id: string) => {
+    try {
+      await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    } catch {
+      // Table might not exist
+    }
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteNotification(id);
-    toast.success('Notification deleted');
+  const markAllAsRead = async () => {
+    try {
+      await supabase.from('notifications').update({ is_read: true }).eq('user_id', user!.id).eq('is_read', false);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      toast.success('All notifications marked as read');
+    } catch {
+      toast.error('Could not mark notifications as read');
+    }
   };
+
+  const deleteNotification = async (id: string) => {
+    try {
+      await supabase.from('notifications').delete().eq('id', id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      toast.success('Notification deleted');
+    } catch {
+      toast.error('Could not delete notification');
+    }
+  };
+
+  if (authLoading || (isLoading && !tableExists)) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
+          <Skeleton className="h-8 w-48 mb-6" />
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full rounded-lg" />
+            ))}
+          </div>
+        </main>
+        <Footer />
+        <MobileNav />
+      </div>
+    );
+  }
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Helmet>
-        <title>Notifications — BazarBD</title>
-      </Helmet>
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
-        <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <Bell className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Notifications</h1>
-            {unreadCount > 0 && (
-              <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
-                {unreadCount} new
-              </span>
-            )}
+            <div>
+              <h1 className="text-2xl font-bold">{t('nav.notifications', 'Notifications')}</h1>
+              {unreadCount > 0 && (
+                <p className="text-sm text-muted-foreground">{unreadCount} unread</p>
+              )}
+            </div>
           </div>
-          {unreadCount > 0 && (
-            <Button variant="outline" size="sm" onClick={handleMarkAllRead} className="gap-2">
-              <CheckCheck className="h-4 w-4" />
+          {notifications.length > 0 && unreadCount > 0 && (
+            <Button variant="outline" size="sm" onClick={markAllAsRead}>
+              <Check className="h-4 w-4 mr-1" />
               Mark all read
             </Button>
           )}
@@ -70,81 +142,77 @@ export default function Notifications() {
 
         {isLoading ? (
           <div className="space-y-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-20" />
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full rounded-lg" />
             ))}
           </div>
+        ) : !tableExists ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="font-semibold text-lg mb-2">Notifications Coming Soon</h3>
+              <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                The notification system is being set up. You'll see alerts here for new messages, 
+                offers, listing updates, and important announcements once it's active.
+              </p>
+            </CardContent>
+          </Card>
         ) : notifications.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
-              <Bell className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-              <h3 className="font-semibold mb-1">No notifications</h3>
+              <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="font-semibold text-lg mb-2">No Notifications Yet</h3>
               <p className="text-muted-foreground text-sm">
-                You'll see updates about your ads, messages, and offers here.
+                You'll see notifications here when you get messages, offers, or updates about your listings.
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
-            {notifications.map((notification) => {
-              const Icon = NOTIFICATION_ICONS[notification.type] || Bell;
-              return (
-                <Card
-                  key={notification.id}
-                  className={!notification.is_read ? 'border-primary/50 bg-primary/5' : ''}
-                >
-                  <CardContent className="p-4 flex items-start gap-3">
-                    <div className={`p-2 rounded-lg shrink-0 ${
-                      notification.is_read ? 'bg-muted' : 'bg-primary/10'
-                    }`}>
-                      <Icon className={`h-5 w-5 ${
-                        notification.is_read ? 'text-muted-foreground' : 'text-primary'
-                      }`} />
+          <div className="space-y-3">
+            {notifications.map((notification) => (
+              <Card
+                key={notification.id}
+                className={`cursor-pointer hover:shadow-md transition-shadow ${
+                  !notification.is_read ? 'border-primary/30 bg-primary/5' : ''
+                }`}
+                onClick={() => markAsRead(notification.id)}
+              >
+                <CardContent className="p-4 flex items-start gap-3">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-full flex-shrink-0 ${
+                    notification.is_read ? 'bg-muted' : 'bg-primary/10'
+                  }`}>
+                    <Bell className={`h-5 w-5 ${notification.is_read ? 'text-muted-foreground' : 'text-primary'}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-sm">{notification.title}</h4>
+                      {!notification.is_read && (
+                        <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                      )}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className={`font-medium text-sm ${!notification.is_read ? 'font-semibold' : ''}`}>
-                            {notification.title}
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-0.5">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {!notification.is_read && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleMarkRead(notification.id)}
-                            >
-                              <CheckCheck className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive"
-                            onClick={() => handleDelete(notification.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    {notification.body && (
+                      <p className="text-sm text-muted-foreground mt-1">{notification.body}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {new Date(notification.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="flex-shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id); }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </main>
-      <MobileNav />
       <Footer />
+      <MobileNav />
     </div>
   );
 }

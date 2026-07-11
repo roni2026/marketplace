@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
-import { lazy, Suspense } from "react";
+import { AdminPortal } from "@/components/AdminPortal";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import PostAd from "./pages/PostAd";
@@ -27,102 +27,133 @@ import NotFound from "./pages/NotFound";
 import SellerDashboard from "./pages/SellerDashboard";
 import Compare from "./pages/Compare";
 
-// Admin pages - lazy loaded for better performance
-const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
-const AdModeration = lazy(() => import("./pages/admin/AdModeration"));
-const CategoryManagement = lazy(() => import("./pages/admin/CategoryManagement"));
-const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
-const ReportManagement = lazy(() => import("./pages/admin/ReportManagement"));
-const AuditLogPage = lazy(() => import("./pages/admin/AuditLog"));
-const AnalyticsPage = lazy(() => import("./pages/admin/Analytics"));
-const SettingsPage = lazy(() => import("./pages/admin/Settings"));
-const SupportPage = lazy(() => import("./pages/admin/Support"));
-const TrustVerification = lazy(() => import("./pages/admin/TrustVerification"));
-const FraudDetection = lazy(() => import("./pages/admin/FraudDetection"));
-const PermissionsPage = lazy(() => import("./pages/admin/Permissions"));
-const MediaLibrary = lazy(() => import("./pages/admin/MediaLibrary"));
-const ReviewModeration = lazy(() => import("./pages/admin/ReviewModeration"));
-const MessageMonitoring = lazy(() => import("./pages/admin/MessageMonitoring"));
-const CMSPage = lazy(() => import("./pages/admin/CMS"));
-const SEOPage = lazy(() => import("./pages/admin/SEO"));
-const WorkflowAutomation = lazy(() => import("./pages/admin/WorkflowAutomation"));
-const AdminTools = lazy(() => import("./pages/admin/AdminTools"));
-const Reporting = lazy(() => import("./pages/admin/Reporting"));
-const APILogs = lazy(() => import("./pages/admin/APILogs"));
-const SystemMonitoring = lazy(() => import("./pages/admin/SystemMonitoring"));
-const Compliance = lazy(() => import("./pages/admin/Compliance"));
-const Developer = lazy(() => import("./pages/admin/Developer"));
-const BackupRecovery = lazy(() => import("./pages/admin/BackupRecovery"));
+// Admin pages
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdModeration from "./pages/admin/AdModeration";
+import CategoryManagement from "./pages/admin/CategoryManagement";
+import UserManagement from "./pages/admin/UserManagement";
+import ReportManagement from "./pages/admin/ReportManagement";
+import AuditLogPage from "./pages/admin/AuditLog";
+import AnalyticsPage from "./pages/admin/Analytics";
+import SettingsPage from "./pages/admin/Settings";
+import SupportPage from "./pages/admin/Support";
+import TrustVerification from "./pages/admin/TrustVerification";
+import FraudDetection from "./pages/admin/FraudDetection";
+import PermissionsPage from "./pages/admin/Permissions";
+import MediaLibrary from "./pages/admin/MediaLibrary";
+import ReviewModeration from "./pages/admin/ReviewModeration";
+import MessageMonitoring from "./pages/admin/MessageMonitoring";
+import CMSPage from "./pages/admin/CMS";
+import SEOPage from "./pages/admin/SEO";
+import WorkflowAutomation from "./pages/admin/WorkflowAutomation";
+import AdminTools from "./pages/admin/AdminTools";
+import Reporting from "./pages/admin/Reporting";
+import APILogs from "./pages/admin/APILogs";
+import SystemMonitoring from "./pages/admin/SystemMonitoring";
+import Compliance from "./pages/admin/Compliance";
+import Developer from "./pages/admin/Developer";
+import BackupRecovery from "./pages/admin/BackupRecovery";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <HelmetProvider>
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner richColors closeButton position="top-center" />
-            <BrowserRouter>
-              <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/ad/:slug" element={<AdDetails />} />
-                <Route path="/category/:slug" element={<Category />} />
-                <Route path="/categories" element={<Categories />} />
-                <Route path="/search" element={<Search />} />
-                <Route path="/compare" element={<Compare />} />
+// Detect if we're on the admin subdomain (admin.bazarbd.onrender.com)
+const isAdminSubdomain =
+  typeof window !== "undefined" &&
+  window.location.hostname.startsWith("admin.");
 
-                {/* Authenticated Routes */}
-                <Route path="/post-ad" element={<ProtectedRoute><PostAd /></ProtectedRoute>} />
-                <Route path="/my-ads" element={<ProtectedRoute><MyAds /></ProtectedRoute>} />
-                <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-                <Route path="/saved-searches" element={<ProtectedRoute><SavedSearches /></ProtectedRoute>} />
-                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-                <Route path="/seller-dashboard" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
+const App = () => {
+  // If on admin subdomain, render the standalone admin portal
+  if (isAdminSubdomain) {
+    return (
+      <HelmetProvider>
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner richColors closeButton position="top-center" />
+                <BrowserRouter>
+                  <Routes>
+                    {/* All admin routes under the admin subdomain */}
+                    <Route path="/*" element={<AdminPortal />} />
+                  </Routes>
+                  <InstallPrompt />
+                </BrowserRouter>
+              </TooltipProvider>
+            </AuthProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </HelmetProvider>
+    );
+  }
 
-                {/* Admin Routes (require admin role) */}
-                <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-                <Route path="/admin/ads" element={<AdminRoute><AdModeration /></AdminRoute>} />
-                <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
-                <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
-                <Route path="/admin/reports" element={<AdminRoute><ReportManagement /></AdminRoute>} />
-                <Route path="/admin/audit" element={<AdminRoute><AuditLogPage /></AdminRoute>} />
-                <Route path="/admin/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
-                <Route path="/admin/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
-                <Route path="/admin/support" element={<AdminRoute><SupportPage /></AdminRoute>} />
-                <Route path="/admin/trust" element={<AdminRoute><TrustVerification /></AdminRoute>} />
-                <Route path="/admin/fraud" element={<AdminRoute><FraudDetection /></AdminRoute>} />
-                <Route path="/admin/permissions" element={<AdminRoute><PermissionsPage /></AdminRoute>} />
-                <Route path="/admin/media" element={<AdminRoute><MediaLibrary /></AdminRoute>} />
-                <Route path="/admin/reviews" element={<AdminRoute><ReviewModeration /></AdminRoute>} />
-                <Route path="/admin/messages" element={<AdminRoute><MessageMonitoring /></AdminRoute>} />
-                <Route path="/admin/cms" element={<AdminRoute><CMSPage /></AdminRoute>} />
-                <Route path="/admin/seo" element={<AdminRoute><SEOPage /></AdminRoute>} />
-                <Route path="/admin/workflow" element={<AdminRoute><WorkflowAutomation /></AdminRoute>} />
-                <Route path="/admin/tools" element={<AdminRoute><AdminTools /></AdminRoute>} />
-                <Route path="/admin/reporting" element={<AdminRoute><Reporting /></AdminRoute>} />
-                <Route path="/admin/api-logs" element={<AdminRoute><APILogs /></AdminRoute>} />
-                <Route path="/admin/monitoring" element={<AdminRoute><SystemMonitoring /></AdminRoute>} />
-                <Route path="/admin/compliance" element={<AdminRoute><Compliance /></AdminRoute>} />
-                <Route path="/admin/developer" element={<AdminRoute><Developer /></AdminRoute>} />
-                <Route path="/admin/backup" element={<AdminRoute><BackupRecovery /></AdminRoute>} />
+  // Normal customer marketplace app
+  return (
+    <HelmetProvider>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner richColors closeButton position="top-center" />
+              <BrowserRouter>
+                <Routes>
+                  {/* Public Routes */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/ad/:slug" element={<AdDetails />} />
+                  <Route path="/category/:slug" element={<Category />} />
+                  <Route path="/categories" element={<Categories />} />
+                  <Route path="/search" element={<Search />} />
+                  <Route path="/compare" element={<Compare />} />
 
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              </Suspense>
-              <InstallPrompt />
-            </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
-  </HelmetProvider>
-);
+                  {/* Authenticated Routes */}
+                  <Route path="/post-ad" element={<ProtectedRoute><PostAd /></ProtectedRoute>} />
+                  <Route path="/my-ads" element={<ProtectedRoute><MyAds /></ProtectedRoute>} />
+                  <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+                  <Route path="/saved-searches" element={<ProtectedRoute><SavedSearches /></ProtectedRoute>} />
+                  <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                  <Route path="/seller-dashboard" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
+
+                  {/* Admin Routes (require admin role) - accessible from main domain too */}
+                  <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                  <Route path="/admin/ads" element={<AdminRoute><AdModeration /></AdminRoute>} />
+                  <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
+                  <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
+                  <Route path="/admin/reports" element={<AdminRoute><ReportManagement /></AdminRoute>} />
+                  <Route path="/admin/audit" element={<AdminRoute><AuditLogPage /></AdminRoute>} />
+                  <Route path="/admin/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
+                  <Route path="/admin/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
+                  <Route path="/admin/support" element={<AdminRoute><SupportPage /></AdminRoute>} />
+                  <Route path="/admin/trust" element={<AdminRoute><TrustVerification /></AdminRoute>} />
+                  <Route path="/admin/fraud" element={<AdminRoute><FraudDetection /></AdminRoute>} />
+                  <Route path="/admin/permissions" element={<AdminRoute><PermissionsPage /></AdminRoute>} />
+                  <Route path="/admin/media" element={<AdminRoute><MediaLibrary /></AdminRoute>} />
+                  <Route path="/admin/reviews" element={<AdminRoute><ReviewModeration /></AdminRoute>} />
+                  <Route path="/admin/messages" element={<AdminRoute><MessageMonitoring /></AdminRoute>} />
+                  <Route path="/admin/cms" element={<AdminRoute><CMSPage /></AdminRoute>} />
+                  <Route path="/admin/seo" element={<AdminRoute><SEOPage /></AdminRoute>} />
+                  <Route path="/admin/workflow" element={<AdminRoute><WorkflowAutomation /></AdminRoute>} />
+                  <Route path="/admin/tools" element={<AdminRoute><AdminTools /></AdminRoute>} />
+                  <Route path="/admin/reporting" element={<AdminRoute><Reporting /></AdminRoute>} />
+                  <Route path="/admin/api-logs" element={<AdminRoute><APILogs /></AdminRoute>} />
+                  <Route path="/admin/monitoring" element={<AdminRoute><SystemMonitoring /></AdminRoute>} />
+                  <Route path="/admin/compliance" element={<AdminRoute><Compliance /></AdminRoute>} />
+                  <Route path="/admin/developer" element={<AdminRoute><Developer /></AdminRoute>} />
+                  <Route path="/admin/backup" element={<AdminRoute><BackupRecovery /></AdminRoute>} />
+
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <InstallPrompt />
+              </BrowserRouter>
+            </TooltipProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </HelmetProvider>
+  );
+};
 
 export default App;
