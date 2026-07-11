@@ -17,6 +17,7 @@ import { useSavedSearches } from '@/hooks/useSavedSearches';
 import { DIVISIONS, DISTRICTS } from '@/lib/constants';
 import { Bookmark, SlidersHorizontal, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -48,6 +49,7 @@ export default function Search() {
   const query = searchParams.get('q') || '';
   const { user } = useAuth();
   const { saveSearch } = useSavedSearches();
+  const { t } = useTranslation();
   
   const [ads, setAds] = useState<Ad[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -150,11 +152,11 @@ export default function Search() {
 
   const handleSaveSearch = async () => {
     if (!user) {
-      toast.error('Please login to save searches');
+      toast.error(t('toast.pleaseLoginSaveSearch'));
       return;
     }
     if (!saveSearchName.trim()) {
-      toast.error('Please enter a name for your saved search');
+      toast.error(t('toast.enterSearchName'));
       return;
     }
 
@@ -170,9 +172,9 @@ export default function Search() {
     });
 
     if (error) {
-      toast.error('Failed to save search');
+      toast.error(t('toast.searchSaveFailed'));
     } else {
-      toast.success('Search saved! View it in your saved searches.');
+      toast.success(t('toast.searchSaved'));
       setShowSaveDialog(false);
       setSaveSearchName('');
     }
@@ -192,18 +194,18 @@ export default function Search() {
   const activeFilterCount = [minPrice, maxPrice, condition !== 'all' ? condition : '', division !== 'all' ? division : '', district !== 'all' ? district : '', categoryId !== 'all' ? categoryId : ''].filter(Boolean).length;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ scrollPaddingTop: '5rem' }}>
+    <div className="min-h-screen flex flex-col">
       <Helmet>
-        <title>{query ? `Search results for "${query}"` : 'All Ads'} — BazarBD</title>
+        <title>{query ? t('search.searchResults', { query }) : t('search.allAds')} — BazarBD</title>
       </Helmet>
       <Header />
-      <main className="flex-1 container mx-auto px-4 sm:px-6 py-8 pb-20 lg:pb-8">
+      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">
-              {query ? `Search results for "${query}"` : 'All Ads'}
+              {query ? t('search.searchResults', { query }) : t('search.allAds')}
             </h1>
-            <p className="text-muted-foreground">{totalCount} ads found</p>
+            <p className="text-muted-foreground">{t('search.adsFound', { count: totalCount })}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -213,7 +215,7 @@ export default function Search() {
               onClick={() => setShowFilters(!showFilters)}
             >
               <SlidersHorizontal className="h-4 w-4" />
-              Filters
+              {t('search.filters')}
               {activeFilterCount > 0 && (
                 <span className="bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full">
                   {activeFilterCount}
@@ -228,19 +230,19 @@ export default function Search() {
                 onClick={() => setShowSaveDialog(true)}
               >
                 <Bookmark className="h-4 w-4" />
-                Save Search
+                {t('search.saveSearch')}
               </Button>
             )}
             <SortSelect value={sort} onChange={(v) => { setSort(v); setPage(1); }} />
           </div>
         </div>
 
-        {/* Advanced Filters - bottom sheet on mobile, inline panel on desktop */}
+        {/* Advanced Filters */}
         {showFilters && (
-          <div className="mb-6 p-4 bg-card border border-border rounded-lg space-y-4 fixed inset-x-0 bottom-0 z-50 rounded-t-xl shadow-2xl sm:static sm:rounded-lg sm:shadow-none max-h-[85vh] overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="mb-6 p-4 bg-card border border-border rounded-lg space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs">Min Price</Label>
+                <Label className="text-xs">{t('search.minPrice')}</Label>
                 <Input
                   type="number"
                   value={minPrice}
@@ -249,7 +251,7 @@ export default function Search() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs">Max Price</Label>
+                <Label className="text-xs">{t('search.maxPrice')}</Label>
                 <Input
                   type="number"
                   value={maxPrice}
@@ -258,26 +260,26 @@ export default function Search() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs">Condition</Label>
+                <Label className="text-xs">{t('search.condition')}</Label>
                 <Select value={condition} onValueChange={(v) => { setCondition(v); setPage(1); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Any</SelectItem>
-                    <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="used">Used</SelectItem>
+                    <SelectItem value="all">{t('search.any')}</SelectItem>
+                    <SelectItem value="new">{t('postAd.new')}</SelectItem>
+                    <SelectItem value="used">{t('postAd.used')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs">Category</Label>
+                <Label className="text-xs">{t('search.category')}</Label>
                 <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setPage(1); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="all">{t('search.allCategories')}</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
@@ -285,13 +287,13 @@ export default function Search() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs">Division</Label>
+                <Label className="text-xs">{t('search.division')}</Label>
                 <Select value={division} onValueChange={(v) => { setDivision(v); setDistrict('all'); setPage(1); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Divisions</SelectItem>
+                    <SelectItem value="all">{t('search.allDivisions')}</SelectItem>
                     {DIVISIONS.map((div) => (
                       <SelectItem key={div} value={div}>{div}</SelectItem>
                     ))}
@@ -299,13 +301,13 @@ export default function Search() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs">District</Label>
+                <Label className="text-xs">{t('search.district')}</Label>
                 <Select value={district} onValueChange={(v) => { setDistrict(v); setPage(1); }} disabled={division === 'all'}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Districts</SelectItem>
+                    <SelectItem value="all">{t('search.allDistricts')}</SelectItem>
                     {(DISTRICTS[division] || []).map((dist) => (
                       <SelectItem key={dist} value={dist}>{dist}</SelectItem>
                     ))}
@@ -315,25 +317,25 @@ export default function Search() {
             </div>
             {activeFilterCount > 0 && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Clear all filters
+                {t('search.clearFilters')}
               </Button>
             )}
           </div>
         )}
 
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} className="h-64 rounded-lg" />
             ))}
           </div>
         ) : ads.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No ads found. Try adjusting your filters.</p>
+            <p className="text-muted-foreground">{t('search.noResults')}</p>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {ads.map((ad) => (
                 <AdCard
                   key={ad.id}
@@ -350,17 +352,17 @@ export default function Search() {
                   disabled={page === 1}
                   onClick={() => setPage(p => p - 1)}
                 >
-                  Previous
+                  {t('search.previous')}
                 </Button>
                 <span className="flex items-center px-4">
-                  Page {page} of {totalPages}
+                  {t('search.page', { current: page, total: totalPages })}
                 </span>
                 <Button
                   variant="outline"
                   disabled={page === totalPages}
                   onClick={() => setPage(p => p + 1)}
                 >
-                  Next
+                  {t('search.next')}
                 </Button>
               </div>
             )}
@@ -372,14 +374,14 @@ export default function Search() {
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save This Search</DialogTitle>
+            <DialogTitle>{t('search.saveThisSearch')}</DialogTitle>
             <DialogDescription>
-              Save your current search criteria to get notified when new ads match.
+              {t('search.saveSearchDesc')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="searchName">Search Name</Label>
+              <Label htmlFor="searchName">{t('search.searchName')}</Label>
               <Input
                 id="searchName"
                 value={saveSearchName}
@@ -389,7 +391,7 @@ export default function Search() {
             </div>
             <Button onClick={handleSaveSearch} className="w-full gap-2">
               <Save className="h-4 w-4" />
-              Save Search
+              {t('search.saveSearch')}
             </Button>
           </div>
         </DialogContent>

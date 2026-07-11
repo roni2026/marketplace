@@ -28,6 +28,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { logAdAction } from '@/lib/audit';
+import { useTranslation } from 'react-i18next';
 
 interface Ad {
   id: string;
@@ -48,6 +49,7 @@ interface Ad {
 export default function MyAds() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  const { t } = useTranslation();
   const [ads, setAds] = useState<Ad[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -94,10 +96,10 @@ export default function MyAds() {
   const handleDelete = async (adId: string) => {
     const { error } = await supabase.from('ads').delete().eq('id', adId);
     if (error) {
-      toast.error('Failed to delete ad');
+      toast.error(t('toast.adDeleteFailed'));
     } else {
       await logAdAction('delete', adId);
-      toast.success('Ad deleted successfully');
+      toast.success(t('toast.adDeleted'));
       fetchAds();
     }
   };
@@ -113,9 +115,9 @@ export default function MyAds() {
       .eq('id', adId);
     
     if (error) {
-      toast.error('Failed to renew ad');
+      toast.error(t('toast.adRenewFailed'));
     } else {
-      toast.success('Ad renewed for 30 days');
+      toast.success(t('toast.adRenewed'));
       fetchAds();
     }
   };
@@ -124,9 +126,9 @@ export default function MyAds() {
     if (selectedIds.length === 0) return;
     const { error } = await supabase.from('ads').delete().in('id', selectedIds);
     if (error) {
-      toast.error('Failed to delete ads');
+      toast.error(t('toast.adsDeleteFailed'));
     } else {
-      toast.success(`${selectedIds.length} ads deleted`);
+      toast.success(t('toast.adsDeleted', { count: selectedIds.length }));
       setSelectedIds([]);
       fetchAds();
     }
@@ -141,9 +143,9 @@ export default function MyAds() {
       .in('id', selectedIds);
     
     if (error) {
-      toast.error('Failed to renew ads');
+      toast.error(t('toast.adsRenewFailed'));
     } else {
-      toast.success(`${selectedIds.length} ads renewed`);
+      toast.success(t('toast.adsRenewed', { count: selectedIds.length }));
       setSelectedIds([]);
       fetchAds();
     }
@@ -171,11 +173,11 @@ export default function MyAds() {
     if (filteredAds.length === 0) {
       return (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">No ads found.</p>
+          <p className="text-muted-foreground">{t('myAds.noAds')}</p>
           <Link to="/post-ad">
             <Button className="mt-4 gap-2">
               <Plus className="h-4 w-4" />
-              Post Your First Ad
+              {t('myAds.postFirstAd')}
             </Button>
           </Link>
         </div>
@@ -187,35 +189,35 @@ export default function MyAds() {
         {/* Bulk Actions */}
         {selectedIds.length > 0 && (
           <div className="flex items-center gap-3 p-3 bg-card border border-border rounded-lg">
-            <span className="text-sm font-medium">{selectedIds.length} selected</span>
+            <span className="text-sm font-medium">{selectedIds.length} {t('myAds.selected')}</span>
             <Button variant="outline" size="sm" className="gap-2" onClick={handleBulkRenew}>
               <RefreshCw className="h-4 w-4" />
-              Renew Selected
+              {t('myAds.renewSelected')}
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2 text-destructive">
                   <Trash2 className="h-4 w-4" />
-                  Delete Selected
+                  {t('myAds.deleteSelected')}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete {selectedIds.length} ads?</AlertDialogTitle>
+                  <AlertDialogTitle>{t('myAds.deleteAdsConfirm', { count: selectedIds.length })}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. These ads will be permanently deleted.
+                    {t('myAds.deleteAdsWarning')}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>{t('profile.cancel')}</AlertDialogCancel>
                   <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground">
-                    Delete All
+                    {t('myAds.deleteAll')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
             <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
-              Clear
+              {t('myAds.clear')}
             </Button>
           </div>
         )}
@@ -294,39 +296,39 @@ export default function MyAds() {
                       {isExpired && ad.status === 'approved' && (
                         <div className="mt-2 flex items-start gap-2 text-sm text-orange-600 bg-orange-500/10 p-2 rounded">
                           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                          <span>This ad has expired. Renew to make it visible again.</span>
+                          <span>This ad has expired. {t('myAds.adExpired')}</span>
                         </div>
                       )}
 
                       <div className="flex items-center gap-2 mt-3">
                         <Button variant="outline" size="sm" className="gap-2" onClick={() => handleRenew(ad.id)}>
                           <RefreshCw className="h-3 w-3" />
-                          Renew
+                          {t('myAds.renew')}
                         </Button>
                         <Link to={`/post-ad?edit=${ad.id}`}>
                           <Button variant="outline" size="sm" className="gap-2">
                             <Edit className="h-3 w-3" />
-                            Edit
+                            {t('myAds.edit')}
                           </Button>
                         </Link>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="outline" size="sm" className="gap-2 text-destructive">
                               <Trash2 className="h-3 w-3" />
-                              Delete
+                              {t('myAds.deleteAd')}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete this ad?</AlertDialogTitle>
+                              <AlertDialogTitle>{t('myAds.deleteAdConfirm')}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This action cannot be undone. "{ad.title}" will be permanently deleted.
+                                {t('myAds.deleteAdWarning', { title: ad.title })}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogCancel>{t('profile.cancel')}</AlertDialogCancel>
                               <AlertDialogAction onClick={() => handleDelete(ad.id)} className="bg-destructive text-destructive-foreground">
-                                Delete
+                                {t('myAds.deleteAd')}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -366,11 +368,11 @@ export default function MyAds() {
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <div className="mb-6 flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold">My Ads</h1>
+          <h1 className="text-2xl font-bold">{t('myAds.myAds')}</h1>
           <Link to="/post-ad">
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              Post Ad
+              {t('myAds.postAd')}
             </Button>
           </Link>
         </div>
@@ -378,7 +380,7 @@ export default function MyAds() {
         {/* Search */}
         <div className="mb-4">
           <Input
-            placeholder="Search your ads..."
+            placeholder={t('myAds.searchAds')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-sm"
@@ -387,11 +389,11 @@ export default function MyAds() {
 
         <Tabs defaultValue="all">
           <TabsList>
-            <TabsTrigger value="all">All ({filterAdsByStatus(null).length})</TabsTrigger>
-            <TabsTrigger value="pending">Pending ({filterAdsByStatus('pending').length})</TabsTrigger>
-            <TabsTrigger value="approved">Approved ({filterAdsByStatus('approved').length})</TabsTrigger>
-            <TabsTrigger value="rejected">Rejected ({filterAdsByStatus('rejected').length})</TabsTrigger>
-            <TabsTrigger value="sold">Sold ({filterAdsByStatus('sold').length})</TabsTrigger>
+            <TabsTrigger value="all">{t('myAds.all')} ({filterAdsByStatus(null).length})</TabsTrigger>
+            <TabsTrigger value="pending">{t('myAds.pending')} ({filterAdsByStatus('pending').length})</TabsTrigger>
+            <TabsTrigger value="approved">{t('myAds.approved')} ({filterAdsByStatus('approved').length})</TabsTrigger>
+            <TabsTrigger value="rejected">{t('myAds.rejected')} ({filterAdsByStatus('rejected').length})</TabsTrigger>
+            <TabsTrigger value="sold">{t('myAds.sold')} ({filterAdsByStatus('sold').length})</TabsTrigger>
           </TabsList>
           
           <TabsContent value="all" className="mt-6">

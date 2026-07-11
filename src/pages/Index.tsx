@@ -10,6 +10,7 @@ import { RecentlyViewed } from '@/components/home/RecentlyViewed';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslation } from 'react-i18next';
 
 interface Category {
   id: string;
@@ -35,6 +36,7 @@ interface Ad {
 
 const Index = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [featuredAds, setFeaturedAds] = useState<Ad[]>([]);
   const [recentAds, setRecentAds] = useState<Ad[]>([]);
@@ -92,23 +94,23 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ scrollPaddingTop: '5rem' }}>
+    <div className="min-h-screen flex flex-col">
       <Helmet>
-        <title>BazarBD — Buy & Sell Anything in Bangladesh</title>
+        <title>{t('homepage.title')}</title>
         <meta
           name="description"
-          content="Browse thousands of free classified ads for electronics, vehicles, property and more across Bangladesh, or post your own in minutes."
+          content={t('homepage.description')}
         />
       </Helmet>
       <Header />
       <main className="flex-1 pb-16 lg:pb-0">
         <HeroBanner />
         
-        <div className="container mx-auto px-4 sm:px-6">
+        <div className="container mx-auto px-4">
           {isLoading ? (
             <div className="py-8">
               <Skeleton className="h-8 w-48 mb-6" />
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <Skeleton key={i} className="h-24 rounded-lg" />
                 ))}
@@ -121,7 +123,7 @@ const Index = () => {
           {isLoading ? (
             <div className="py-8">
               <Skeleton className="h-8 w-48 mb-6" />
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="h-64 rounded-lg" />
                 ))}
@@ -130,12 +132,12 @@ const Index = () => {
           ) : (
             <>
               <AdSection 
-                title="Featured Ads" 
+                title={t('homepage.featuredAds')} 
                 ads={featuredAds} 
                 favorites={favorites}
               />
               <AdSection 
-                title="Recent Ads" 
+                title={t('homepage.recentAds')} 
                 ads={recentAds} 
                 viewAllLink="/search"
                 favorites={favorites}

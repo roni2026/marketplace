@@ -8,6 +8,8 @@ import { useMessages } from '@/hooks/useMessages';
 import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +31,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
   const { unreadCount: unreadNotifications } = useNotifications();
   const { unreadCount: unreadMessages } = useMessages();
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useTranslation();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,14 +45,14 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
         className="text-foreground/80 hover:text-primary transition-colors"
         onClick={() => mobile && setIsOpen(false)}
       >
-        Home
+        {t('nav.home')}
       </Link>
       <Link 
         to="/categories" 
         className="text-foreground/80 hover:text-primary transition-colors"
         onClick={() => mobile && setIsOpen(false)}
       >
-        Categories
+        {t('nav.categories')}
       </Link>
       {user && (
         <Link 
@@ -58,7 +61,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
           onClick={() => mobile && setIsOpen(false)}
         >
           <Heart className="h-4 w-4" />
-          Favorites
+          {t('nav.favorites')}
         </Link>
       )}
       {isAdmin && (
@@ -68,14 +71,14 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
           onClick={() => mobile && setIsOpen(false)}
         >
           <Settings className="h-4 w-4" />
-          Admin
+          {t('nav.admin')}
         </Link>
       )}
     </>
   );
 
   return (
-    <header className="sticky top-0 z-50 bg-card border-b border-border shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <header className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
@@ -97,7 +100,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
             <div className="relative w-full">
               <Input
                 type="text"
-                placeholder="Search for anything..."
+                placeholder={t('search.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 className="pr-10"
@@ -107,7 +110,6 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                 size="icon" 
                 variant="ghost" 
                 className="absolute right-0 top-0 h-full"
-                aria-label="Search"
               >
                 <Search className="h-4 w-4" />
               </Button>
@@ -124,11 +126,12 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
             <div className="hidden sm:block">
               <ThemeToggle />
             </div>
+            <LanguageSwitcher />
 
             {/* Notification Bell */}
             {user && (
               <Link to="/notifications" className="relative">
-                <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+                <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-5 w-5" />
                   {unreadNotifications > 0 && (
                     <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full px-1">
@@ -142,7 +145,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
             {/* Messages Icon */}
             {user && (
               <Link to="/messages" className="relative">
-                <Button variant="ghost" size="icon" className="relative" aria-label="Messages">
+                <Button variant="ghost" size="icon" className="relative">
                   <MessageCircle className="h-5 w-5" />
                   {unreadMessages > 0 && (
                     <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full px-1">
@@ -158,12 +161,12 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                 <Link to="/post-ad">
                   <Button className="gap-2">
                     <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Post Ad</span>
+                    <span className="hidden sm:inline">{t('nav.postAd')}</span>
                   </Button>
                 </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" aria-label="User menu">
+                    <Button variant="outline" size="icon">
                       <User className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -171,23 +174,23 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                     <DropdownMenuItem asChild>
                       <Link to="/profile" className="flex items-center gap-2">
                         <User className="h-4 w-4" />
-                        Profile
+                        {t('nav.profile')}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/my-ads" className="flex items-center gap-2">
-                        My Ads
+                        {t('nav.myAds')}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/saved-searches" className="flex items-center gap-2">
-                        Saved Searches
+                        {t('nav.savedSearches')}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/messages" className="flex items-center gap-2">
                         <MessageCircle className="h-4 w-4" />
-                        Messages
+                        {t('nav.messages')}
                         {unreadMessages > 0 && (
                           <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">
                             {unreadMessages}
@@ -198,7 +201,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut} className="flex items-center gap-2 text-destructive">
                       <LogOut className="h-4 w-4" />
-                      Sign Out
+                      {t('nav.logout')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -207,7 +210,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
               <Link to="/auth">
                 <Button variant="outline" className="gap-2">
                   <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">Login</span>
+                  <span className="hidden sm:inline">{t('nav.login')}</span>
                 </Button>
               </Link>
             )}
@@ -215,16 +218,16 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
             {/* Mobile Menu */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild className="lg:hidden">
-                <Button variant="ghost" size="icon" aria-label="Open menu">
+                <Button variant="ghost" size="icon">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72 sm:w-80" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+              <SheetContent side="right" className="w-72">
                 <div className="flex flex-col gap-6 mt-8">
                   <form onSubmit={handleSearch} className="relative">
                     <Input
                       type="text"
-                      placeholder="Search..."
+                      placeholder={t('search.searchMobile')}
                       value={searchQuery}
                       onChange={(e) => onSearchChange?.(e.target.value)}
                       className="pr-10"
@@ -234,7 +237,6 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                       size="icon" 
                       variant="ghost" 
                       className="absolute right-0 top-0 h-full"
-                      aria-label="Search"
                     >
                       <Search className="h-4 w-4" />
                     </Button>
@@ -250,7 +252,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                         onClick={() => setIsOpen(false)}
                       >
                         <Bell className="h-4 w-4" />
-                        Notifications
+                        {t('nav.notifications')}
                         {unreadNotifications > 0 && (
                           <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5">
                             {unreadNotifications}
@@ -263,7 +265,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                         onClick={() => setIsOpen(false)}
                       >
                         <MessageCircle className="h-4 w-4" />
-                        Messages
+                        {t('nav.messages')}
                         {unreadMessages > 0 && (
                           <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5">
                             {unreadMessages}
@@ -275,12 +277,12 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
                         className="text-foreground/80 hover:text-primary transition-colors"
                         onClick={() => setIsOpen(false)}
                       >
-                        Saved Searches
+                        {t('nav.savedSearches')}
                       </Link>
                     </nav>
                   )}
                   <div className="flex items-center justify-between border-t border-border pt-4">
-                    <span className="text-sm text-foreground/80">Theme</span>
+                    <span className="text-sm text-foreground/80">{t('common.theme')}</span>
                     <ThemeToggle />
                   </div>
                 </div>

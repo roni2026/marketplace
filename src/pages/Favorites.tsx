@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Heart } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Ad {
   id: string;
@@ -28,6 +29,7 @@ interface Ad {
 export default function Favorites() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  const { t } = useTranslation();
   const [ads, setAds] = useState<Ad[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -72,7 +74,7 @@ export default function Favorites() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
-        <h1 className="text-2xl font-bold mb-6">My Favorites</h1>
+        <h1 className="text-2xl font-bold mb-6">{t('favorites.myFavorites')}</h1>
 
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -83,12 +85,12 @@ export default function Favorites() {
         ) : ads.length === 0 ? (
           <div className="text-center py-12">
             <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">No favorites yet</h2>
+            <h2 className="text-xl font-semibold mb-2">{t('favorites.noFavorites')}</h2>
             <p className="text-muted-foreground mb-4">
-              Start saving ads you like by clicking the heart icon.
+              {t('favorites.noFavoritesDesc')}
             </p>
             <Link to="/">
-              <Button>Browse Ads</Button>
+              <Button>{t('favorites.browseAds')}</Button>
             </Link>
           </div>
         ) : (

@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { formatDistanceToNow } from 'date-fns';
 import { logAudit } from '@/lib/audit';
+import { useTranslation } from 'react-i18next';
 
 interface Profile {
   full_name: string | null;
@@ -52,6 +53,7 @@ interface Session {
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading, profileCompletion, refreshProfile } = useAuth();
+  const { t } = useTranslation();
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -131,9 +133,9 @@ export default function ProfilePage() {
         .getPublicUrl(fileName);
 
       setProfile(prev => ({ ...prev, avatar_url: urlData.publicUrl }));
-      toast.success('Avatar uploaded');
+      toast.success(t('toast.avatarUploaded'));
     } catch (error) {
-      toast.error('Failed to upload avatar');
+      toast.error(t('toast.avatarUploadFailed'));
     }
   };
 
@@ -159,9 +161,9 @@ export default function ProfilePage() {
     setIsSaving(false);
 
     if (error) {
-      toast.error('Failed to update profile');
+      toast.error(t('toast.profileUpdateFailed'));
     } else {
-      toast.success('Profile updated successfully');
+      toast.success(t('toast.profileUpdated'));
       refreshProfile();
     }
   };
@@ -178,10 +180,10 @@ export default function ProfilePage() {
       .eq('user_id', user.id);
 
     if (error) {
-      toast.error('Failed to delete account');
+      toast.error(t('toast.accountDeleteFailed'));
     } else {
       await logAudit({ action: 'delete', resourceType: 'user', resourceId: user.id });
-      toast.success('Account scheduled for deletion');
+      toast.success(t('toast.accountDeleted'));
       await supabase.auth.signOut();
       navigate('/');
     }
@@ -193,7 +195,7 @@ export default function ProfilePage() {
       .update({ is_active: false })
       .eq('id', sessionId);
     fetchSessions();
-    toast.success('Session revoked');
+    toast.success(t('toast.sessionRevoked'));
   };
 
   if (authLoading || isLoading) {
@@ -213,14 +215,14 @@ export default function ProfilePage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold">Profile Completion</h3>
+                <h3 className="font-semibold">{t('profile.profileCompletion')}</h3>
                 <span className="text-2xl font-bold text-primary">{profileCompletion}%</span>
               </div>
               <Progress value={profileCompletion} className="h-2" />
               <p className="text-sm text-muted-foreground mt-2">
                 {profileCompletion < 100 
-                  ? 'Complete your profile to increase trust and visibility.'
-                  : 'Your profile is complete!'}
+                  ? t('profile.completeProfile')
+                  : t('profile.profileComplete')}
               </p>
             </CardContent>
           </Card>
@@ -236,17 +238,17 @@ export default function ProfilePage() {
                 )}
                 <div>
                   <p className="font-semibold">
-                    {profile.is_verified ? 'Verified Account' : 'Not Verified'}
+                    {profile.is_verified ? t('profile.verifiedAccount') : t('profile.notVerified')}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {profile.is_verified 
-                      ? 'Your account is verified'
-                      : 'Verify your phone number to build trust'}
+                      ? t('profile.verifiedDesc')
+                      : t('profile.notVerifiedDesc')}
                   </p>
                 </div>
               </div>
               {!profile.is_verified && (
-                <Badge variant="secondary">Pending</Badge>
+                <Badge variant="secondary">{t('profile.pending')}</Badge>
               )}
             </CardContent>
           </Card>
@@ -254,7 +256,7 @@ export default function ProfilePage() {
           {/* Profile Form */}
           <Card>
             <CardHeader>
-              <CardTitle>My Profile</CardTitle>
+              <CardTitle>{t('profile.myProfile')}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -270,7 +272,7 @@ export default function ProfilePage() {
                     <Label htmlFor="avatar" className="cursor-pointer">
                       <div className="flex items-center gap-2 text-sm text-primary hover:underline">
                         <Upload className="h-4 w-4" />
-                        Upload Photo
+                        {t('profile.uploadPhoto')}
                       </div>
                     </Label>
                     <input
@@ -286,36 +288,36 @@ export default function ProfilePage() {
 
                 {/* Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">{t('profile.fullName')}</Label>
                   <Input
                     id="name"
                     value={profile.full_name || ''}
                     onChange={(e) => setProfile(prev => ({ ...prev, full_name: e.target.value }))}
-                    placeholder="Your name"
+                    placeholder={t('profile.namePlaceholder')}
                   />
                 </div>
 
                 {/* Phone */}
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">{t('profile.phoneNumber')}</Label>
                   <Input
                     id="phone"
                     value={profile.phone_number || ''}
                     onChange={(e) => setProfile(prev => ({ ...prev, phone_number: e.target.value }))}
-                    placeholder="+880 1XXX-XXXXXX"
+                    placeholder={t('profile.phonePlaceholder')}
                   />
                 </div>
 
                 {/* Location */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Division</Label>
+                    <Label>{t('profile.division')}</Label>
                     <Select
                       value={profile.division || ''}
                       onValueChange={(v) => setProfile(prev => ({ ...prev, division: v, district: '' }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select division" />
+                        <SelectValue placeholder={t('profile.selectDivision')} />
                       </SelectTrigger>
                       <SelectContent>
                         {DIVISIONS.map((div) => (
@@ -325,14 +327,14 @@ export default function ProfilePage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>District</Label>
+                    <Label>{t('profile.district')}</Label>
                     <Select
                       value={profile.district || ''}
                       onValueChange={(v) => setProfile(prev => ({ ...prev, district: v }))}
                       disabled={!profile.division}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select district" />
+                        <SelectValue placeholder={t('profile.selectDistrict')} />
                       </SelectTrigger>
                       <SelectContent>
                         {(DISTRICTS[profile.division || ''] || []).map((dist) => (
@@ -344,18 +346,18 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="area">Area</Label>
+                  <Label htmlFor="area">{t('profile.area')}</Label>
                   <Input
                     id="area"
                     value={profile.area || ''}
                     onChange={(e) => setProfile(prev => ({ ...prev, area: e.target.value }))}
-                    placeholder="e.g., Gulshan, Mirpur..."
+                    placeholder={t('profile.areaPlaceholder')}
                   />
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isSaving}>
                   {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Save Changes
+                  {t('profile.saveChanges')}
                 </Button>
               </form>
             </CardContent>
@@ -366,21 +368,21 @@ export default function ProfilePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Monitor className="h-5 w-5" />
-                Active Sessions
+                {t('profile.activeSessions')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {sessions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No active sessions found.</p>
+                <p className="text-sm text-muted-foreground">{t('profile.noSessions')}</p>
               ) : (
                 sessions.map((session) => (
                   <div key={session.id} className="flex items-center justify-between gap-3 p-3 border border-border rounded-lg">
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">
-                        {session.user_agent || 'Unknown device'}
+                        {session.user_agent || t('profile.unknownDevice')}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {session.ip_address || 'Unknown IP'} · Active {formatDistanceToNow(new Date(session.last_activity_at), { addSuffix: true })}
+                        {session.ip_address || t('profile.unknownIP')} · {t('profile.active')} {formatDistanceToNow(new Date(session.last_activity_at), { addSuffix: true })}
                       </p>
                     </div>
                     {session.is_active && (
@@ -404,34 +406,34 @@ export default function ProfilePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base text-destructive">
                 <AlertTriangle className="h-5 w-5" />
-                Danger Zone
+                {t('profile.dangerZone')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="font-medium text-sm">Delete Account</p>
+                  <p className="font-medium text-sm">{t('profile.deleteAccount')}</p>
                   <p className="text-xs text-muted-foreground">
-                    Soft-delete your account. Your data will be hidden but can be restored.
+                    {t('profile.deleteAccountDesc')}
                   </p>
                 </div>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" className="text-destructive border-destructive/50">
-                      Delete
+                      {t('profile.delete')}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                      <AlertDialogTitle>{t('profile.deleteAccountConfirm')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will hide your profile and ads. You can contact support to restore your account within 30 days.
+                        {t('profile.deleteAccountWarning')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel>{t('profile.cancel')}</AlertDialogCancel>
                       <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground">
-                        Delete Account
+                        {t('profile.deleteAccountButton')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

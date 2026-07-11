@@ -17,6 +17,7 @@ import { DIVISIONS, DISTRICTS, generateSlug } from '@/lib/constants';
 import { validateTitle, validateDescription, validatePrice, validateLocation, validateImageFile, sanitizeText, sanitizeRichText } from '@/lib/validation';
 import { moderateContent, getSpamScore } from '@/lib/moderation';
 import { logAdAction } from '@/lib/audit';
+import { useTranslation } from 'react-i18next';
 
 interface Category {
   id: string;
@@ -33,6 +34,7 @@ interface Subcategory {
 export default function PostAd() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  const { t } = useTranslation();
   
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -86,7 +88,7 @@ export default function PostAd() {
     const imageFiles = files.filter((f) => f.type.startsWith('image/'));
     if (imageFiles.length === 0) return;
     if (images.length + imageFiles.length > 5) {
-      toast.error('Maximum 5 images allowed');
+      toast.error(t('toast.maxImages'));
       return;
     }
 
@@ -182,7 +184,7 @@ export default function PostAd() {
     e.preventDefault();
     
     if (!user) {
-      toast.error('Please login to post an ad');
+      toast.error(t('toast.pleaseLoginPostAd'));
       return;
     }
 
@@ -212,12 +214,12 @@ export default function PostAd() {
     }
 
     if (!categoryId) {
-      toast.error('Please select a category');
+      toast.error(t('toast.selectCategory'));
       return;
     }
 
     if (images.length === 0) {
-      toast.error('Please add at least one image');
+      toast.error(t('toast.addImage'));
       return;
     }
 
@@ -225,7 +227,7 @@ export default function PostAd() {
     const moderationResult = moderateContent(title + ' ' + description);
     if (moderationResult.flags.length > 0) {
       if (moderationResult.flags.some(f => f.startsWith('profanity:'))) {
-        toast.error('Your ad contains inappropriate language. Please revise.');
+        toast.error(t('toast.inappropriateLanguage'));
         return;
       }
     }
@@ -233,14 +235,14 @@ export default function PostAd() {
     // Check spam score
     const spamScore = getSpamScore(title + ' ' + description);
     if (spamScore >= 60) {
-      toast.error('Your ad content appears to be spam. Please revise.');
+      toast.error(t('toast.spamContent'));
       return;
     }
 
     // Check for duplicates
     const isDuplicate = await checkDuplicate(title, description);
     if (isDuplicate) {
-      toast.error('You already have a very similar ad. Please modify your listing.');
+      toast.error(t('toast.duplicateAd'));
       return;
     }
 
@@ -293,12 +295,12 @@ export default function PostAd() {
       await logAdAction('create', ad.id, { title: sanitizedTitle, spam_score: spamScore });
 
       toast.success(scheduleDate 
-        ? 'Ad scheduled successfully! It will be published on the selected date.'
-        : 'Ad posted successfully! It will be visible after admin approval.');
+        ? t('toast.adScheduled')
+        : t('toast.adPosted'));
       navigate('/my-ads');
     } catch (error: any) {
       console.error('Error posting ad:', error);
-      toast.error(error.message || 'Failed to post ad');
+      toast.error(error.message || t('toast.adPostFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -315,23 +317,23 @@ export default function PostAd() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 container mx-auto px-4 sm:px-6 py-8 pb-20 lg:pb-8">
+      <main className="flex-1 container mx-auto px-4 py-8">
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle className="text-xl sm:text-2xl">Post an Ad</CardTitle>
+            <CardTitle className="text-2xl">{t('postAd.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Images */}
               <div className="space-y-2">
-                <Label>Images (max 5) *</Label>
+                <Label>{t('postAd.images')}</Label>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {imagePreviews.map((preview, index) => (
                     <div key={index} className="relative aspect-square rounded-lg overflow-hidden border group">
-                      <img src={preview} alt="" loading="lazy" className="w-full h-full object-cover" />
+                      <img src={preview} alt="" className="w-full h-full object-cover" />
                       {index === 0 && (
                         <span className="absolute bottom-1 left-1 text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
-                          Cover
+                          {t('postAd.cover')}
                         </span>
                       )}
                       <button
@@ -369,13 +371,13 @@ export default function PostAd() {
                       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                       onDragLeave={() => setIsDragging(false)}
                       onDrop={handleDrop}
-                      className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors min-h-[100px] ${
+                      className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
                         isDragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary'
                       }`}
                     >
                       <ImageIcon className="h-6 w-6 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground mt-1 text-center px-1">
-                        {isDragging ? 'Drop here' : 'Add or drag'}
+                        {isDragging ? t('postAd.dropHere') : t('postAd.addOrDrag')}
                       </span>
                       <input
                         type="file"
@@ -388,18 +390,18 @@ export default function PostAd() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  The first photo is used as the cover image. Use the arrows to reorder. Max 5MB per image.
+                  {t('postAd.imageHint')}
                 </p>
               </div>
 
               {/* Title */}
               <div className="space-y-2">
-                <Label htmlFor="title">Title *</Label>
+                <Label htmlFor="title">{t('postAd.titleLabel')}</Label>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="What are you selling?"
+                  placeholder={t('postAd.titlePlaceholder')}
                   maxLength={100}
                   required
                 />
@@ -412,12 +414,12 @@ export default function PostAd() {
               </div>
 
               {/* Category */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Category *</Label>
+                  <Label>{t('postAd.categoryLabel')}</Label>
                   <Select value={categoryId} onValueChange={setCategoryId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={t('postAd.selectCategory')} />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((cat) => (
@@ -429,10 +431,10 @@ export default function PostAd() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Subcategory</Label>
+                  <Label>{t('postAd.subcategory')}</Label>
                   <Select value={subcategoryId} onValueChange={setSubcategoryId} disabled={!categoryId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select subcategory" />
+                      <SelectValue placeholder={t('postAd.selectSubcategory')} />
                     </SelectTrigger>
                     <SelectContent>
                       {filteredSubcategories.map((sub) => (
@@ -447,7 +449,7 @@ export default function PostAd() {
 
               {/* Price */}
               <div className="space-y-4">
-                <Label>Price Type</Label>
+                <Label>{t('postAd.priceType')}</Label>
                 <RadioGroup
                   value={priceType}
                   onValueChange={(v) => setPriceType(v as typeof priceType)}
@@ -455,21 +457,21 @@ export default function PostAd() {
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="fixed" id="fixed" />
-                    <Label htmlFor="fixed">Fixed</Label>
+                    <Label htmlFor="fixed">{t('postAd.fixed')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="negotiable" id="negotiable" />
-                    <Label htmlFor="negotiable">Negotiable</Label>
+                    <Label htmlFor="negotiable">{t('postAd.negotiable')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="free" id="free" />
-                    <Label htmlFor="free">Free</Label>
+                    <Label htmlFor="free">{t('postAd.free')}</Label>
                   </div>
                 </RadioGroup>
                 
                 {priceType !== 'free' && (
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price (৳)</Label>
+                    <Label htmlFor="price">{t('postAd.priceLabel')}</Label>
                     <Input
                       id="price"
                       type="number"
@@ -484,7 +486,7 @@ export default function PostAd() {
 
               {/* Condition */}
               <div className="space-y-2">
-                <Label>Condition</Label>
+                <Label>{t('postAd.conditionLabel')}</Label>
                 <RadioGroup
                   value={condition}
                   onValueChange={(v) => setCondition(v as typeof condition)}
@@ -492,23 +494,23 @@ export default function PostAd() {
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="new" id="new" />
-                    <Label htmlFor="new">New</Label>
+                    <Label htmlFor="new">{t('postAd.new')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="used" id="used" />
-                    <Label htmlFor="used">Used</Label>
+                    <Label htmlFor="used">{t('postAd.used')}</Label>
                   </div>
                 </RadioGroup>
               </div>
 
               {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t('postAd.descriptionLabel')}</Label>
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe your item in detail..."
+                  placeholder={t('postAd.descriptionPlaceholder')}
                   rows={5}
                   maxLength={5000}
                 />
@@ -516,12 +518,12 @@ export default function PostAd() {
               </div>
 
               {/* Location */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Division *</Label>
+                  <Label>{t('postAd.divisionLabel')}</Label>
                   <Select value={division} onValueChange={(v) => { setDivision(v); setDistrict(''); }}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select division" />
+                      <SelectValue placeholder={t('postAd.selectDivision')} />
                     </SelectTrigger>
                     <SelectContent>
                       {DIVISIONS.map((div) => (
@@ -533,10 +535,10 @@ export default function PostAd() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>District *</Label>
+                  <Label>{t('postAd.districtLabel')}</Label>
                   <Select value={district} onValueChange={setDistrict} disabled={!division}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select district" />
+                      <SelectValue placeholder={t('postAd.selectDistrict')} />
                     </SelectTrigger>
                     <SelectContent>
                       {(DISTRICTS[division] || []).map((dist) => (
@@ -550,21 +552,21 @@ export default function PostAd() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="area">Area (Optional)</Label>
+                <Label htmlFor="area">{t('postAd.area')}</Label>
                 <Input
                   id="area"
                   value={area}
                   onChange={(e) => setArea(e.target.value)}
-                  placeholder="e.g., Gulshan, Mirpur..."
+                  placeholder={t('postAd.areaPlaceholder')}
                 />
               </div>
 
               {/* Scheduling & Urgent */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="schedule" className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
-                    Schedule (Optional)
+                    {t('postAd.schedule')}
                   </Label>
                   <Input
                     id="schedule"
@@ -573,10 +575,10 @@ export default function PostAd() {
                     onChange={(e) => setScheduleDate(e.target.value)}
                     min={new Date().toISOString().slice(0, 16)}
                   />
-                  <p className="text-xs text-muted-foreground">Publish at a later date</p>
+                  <p className="text-xs text-muted-foreground">{t('postAd.scheduleHint')}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Mark as Urgent</Label>
+                  <Label>{t('postAd.markUrgent')}</Label>
                   <div className="flex items-center space-x-2 pt-2">
                     <input
                       type="checkbox"
@@ -586,15 +588,15 @@ export default function PostAd() {
                       className="rounded border-border"
                     />
                     <Label htmlFor="urgent" className="text-sm font-normal cursor-pointer">
-                      Show urgent badge
+                      {t('postAd.showUrgentBadge')}
                     </Label>
                   </div>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading} style={{ minHeight: '48px' }}>
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                {scheduleDate ? 'Schedule Ad' : 'Post Ad'}
+                {scheduleDate ? t('postAd.scheduleAdButton') : t('postAd.postAdButton')}
               </Button>
             </form>
           </CardContent>

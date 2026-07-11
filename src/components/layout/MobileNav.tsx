@@ -1,6 +1,7 @@
 import { NavLink } from "@/components/NavLink";
 import { Home, Grid3x3, PlusCircle, Heart, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 /**
@@ -9,19 +10,19 @@ import { cn } from "@/lib/utils";
  */
 export function MobileNav() {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const items = [
-    { to: "/", label: "Home", icon: Home, end: true },
-    { to: "/categories", label: "Categories", icon: Grid3x3 },
-    { to: "/post-ad", label: "Sell", icon: PlusCircle, primary: true },
-    { to: "/favorites", label: "Saved", icon: Heart },
-    { to: user ? "/profile" : "/auth", label: user ? "Profile" : "Login", icon: User },
+    { to: "/", label: t('nav.home'), icon: Home, end: true },
+    { to: "/categories", label: t('nav.categories'), icon: Grid3x3 },
+    { to: "/post-ad", label: t('nav.sell'), icon: PlusCircle, primary: true },
+    { to: "/favorites", label: t('nav.saved'), icon: Heart },
+    { to: user ? "/profile" : "/auth", label: user ? t('nav.profile') : t('nav.login'), icon: User },
   ];
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur border-t border-border"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur border-t border-border pb-[env(safe-area-inset-bottom)]"
       aria-label="Primary"
     >
       <div className="grid grid-cols-5">
@@ -30,7 +31,7 @@ export function MobileNav() {
             key={item.label}
             to={item.to}
             end={item.end}
-            className="flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium text-muted-foreground transition-all active:scale-95 active:opacity-70"
+            className="flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium text-muted-foreground transition-colors"
             activeClassName="!text-primary"
           >
             <span
@@ -38,7 +39,6 @@ export function MobileNav() {
                 "flex items-center justify-center rounded-full transition-colors",
                 item.primary ? "h-9 w-9 -mt-4 bg-primary text-primary-foreground shadow-lg" : "h-6 w-6"
               )}
-              style={{ minHeight: '44px', minWidth: '44px' }}
             >
               <item.icon className={cn(item.primary ? "h-5 w-5" : "h-5 w-5")} />
             </span>

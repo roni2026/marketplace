@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -24,6 +25,7 @@ const signupSchema = z.object({
 export default function Auth() {
   const navigate = useNavigate();
   const { user, signIn, signUp, isLoading: authLoading } = useAuth();
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   
   const [loginEmail, setLoginEmail] = useState('');
@@ -54,12 +56,12 @@ export default function Auth() {
     
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
-        toast.error('Invalid email or password');
+        toast.error(t('auth.invalidCredentials'));
       } else {
         toast.error(error.message);
       }
     } else {
-      toast.success('Welcome back!');
+      toast.success(t('auth.welcomeBack'));
       navigate('/');
     }
   };
@@ -83,12 +85,12 @@ export default function Auth() {
     
     if (error) {
       if (error.message.includes('already registered')) {
-        toast.error('This email is already registered. Please login instead.');
+        toast.error(t('auth.alreadyRegistered'));
       } else {
         toast.error(error.message);
       }
     } else {
-      toast.success('Account created successfully!');
+      toast.success(t('auth.accountCreated'));
       navigate('/');
     }
   };
@@ -109,37 +111,37 @@ export default function Auth() {
             <img src="/brand/logo-light.png" alt="BazarBD" className="h-9 w-auto dark:hidden" />
             <img src="/brand/logo-dark.png" alt="BazarBD" className="h-9 w-auto hidden dark:block" />
           </div>
-          <CardTitle className="text-2xl">Welcome</CardTitle>
+          <CardTitle className="text-2xl">{t('auth.welcome')}</CardTitle>
           <CardDescription>
-            Login or create an account to start buying and selling
+            {t('auth.welcomeDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="login">{t('auth.login')}</TabsTrigger>
+              <TabsTrigger value="signup">{t('auth.signUp')}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
+                  <Label htmlFor="login-email">{t('auth.email')}</Label>
                   <Input
                     id="login-email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
+                  <Label htmlFor="login-password">{t('auth.password')}</Label>
                   <Input
                     id="login-password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder={t('auth.passwordPlaceholder')}
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
@@ -147,7 +149,7 @@ export default function Auth() {
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Login
+                  {t('auth.loginButton')}
                 </Button>
               </form>
             </TabsContent>
@@ -155,33 +157,33 @@ export default function Auth() {
             <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
+                  <Label htmlFor="signup-name">{t('auth.fullName')}</Label>
                   <Input
                     id="signup-name"
                     type="text"
-                    placeholder="Your Name"
+                    placeholder={t('auth.namePlaceholder')}
                     value={signupName}
                     onChange={(e) => setSignupName(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">{t('auth.email')}</Label>
                   <Input
                     id="signup-email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     value={signupEmail}
                     onChange={(e) => setSignupEmail(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">{t('auth.password')}</Label>
                   <Input
                     id="signup-password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder={t('auth.passwordPlaceholder')}
                     value={signupPassword}
                     onChange={(e) => setSignupPassword(e.target.value)}
                     required
@@ -189,7 +191,7 @@ export default function Auth() {
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Create Account
+                  {t('auth.createAccount')}
                 </Button>
               </form>
             </TabsContent>
