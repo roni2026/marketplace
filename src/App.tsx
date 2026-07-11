@@ -23,6 +23,10 @@ import Messages from "./pages/Messages";
 import SavedSearches from "./pages/SavedSearches";
 import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
+import SellerDashboard from "./pages/SellerDashboard";
+import Compare from "./pages/Compare";
+
+// Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdModeration from "./pages/admin/AdModeration";
 import CategoryManagement from "./pages/admin/CategoryManagement";
@@ -32,6 +36,22 @@ import AuditLogPage from "./pages/admin/AuditLog";
 import AnalyticsPage from "./pages/admin/Analytics";
 import SettingsPage from "./pages/admin/Settings";
 import SupportPage from "./pages/admin/Support";
+import TrustVerification from "./pages/admin/TrustVerification";
+import FraudDetection from "./pages/admin/FraudDetection";
+import PermissionsPage from "./pages/admin/Permissions";
+import MediaLibrary from "./pages/admin/MediaLibrary";
+import ReviewModeration from "./pages/admin/ReviewModeration";
+import MessageMonitoring from "./pages/admin/MessageMonitoring";
+import CMSPage from "./pages/admin/CMS";
+import SEOPage from "./pages/admin/SEO";
+import WorkflowAutomation from "./pages/admin/WorkflowAutomation";
+import AdminTools from "./pages/admin/AdminTools";
+import Reporting from "./pages/admin/Reporting";
+import APILogs from "./pages/admin/APILogs";
+import SystemMonitoring from "./pages/admin/SystemMonitoring";
+import Compliance from "./pages/admin/Compliance";
+import Developer from "./pages/admin/Developer";
+import BackupRecovery from "./pages/admin/BackupRecovery";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +72,7 @@ const App = () => (
                 <Route path="/category/:slug" element={<Category />} />
                 <Route path="/categories" element={<Categories />} />
                 <Route path="/search" element={<Search />} />
+                <Route path="/compare" element={<Compare />} />
 
                 {/* Authenticated Routes */}
                 <Route path="/post-ad" element={<ProtectedRoute><PostAd /></ProtectedRoute>} />
@@ -61,6 +82,7 @@ const App = () => (
                 <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
                 <Route path="/saved-searches" element={<ProtectedRoute><SavedSearches /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/seller-dashboard" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
 
                 {/* Admin Routes (require admin role) */}
                 <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -72,6 +94,22 @@ const App = () => (
                 <Route path="/admin/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
                 <Route path="/admin/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
                 <Route path="/admin/support" element={<AdminRoute><SupportPage /></AdminRoute>} />
+                <Route path="/admin/trust" element={<AdminRoute><TrustVerification /></AdminRoute>} />
+                <Route path="/admin/fraud" element={<AdminRoute><FraudDetection /></AdminRoute>} />
+                <Route path="/admin/permissions" element={<AdminRoute><PermissionsPage /></AdminRoute>} />
+                <Route path="/admin/media" element={<AdminRoute><MediaLibrary /></AdminRoute>} />
+                <Route path="/admin/reviews" element={<AdminRoute><ReviewModeration /></AdminRoute>} />
+                <Route path="/admin/messages" element={<AdminRoute><MessageMonitoring /></AdminRoute>} />
+                <Route path="/admin/cms" element={<AdminRoute><CMSPage /></AdminRoute>} />
+                <Route path="/admin/seo" element={<AdminRoute><SEOPage /></AdminRoute>} />
+                <Route path="/admin/workflow" element={<AdminRoute><WorkflowAutomation /></AdminRoute>} />
+                <Route path="/admin/tools" element={<AdminRoute><AdminTools /></AdminRoute>} />
+                <Route path="/admin/reporting" element={<AdminRoute><Reporting /></AdminRoute>} />
+                <Route path="/admin/api-logs" element={<AdminRoute><APILogs /></AdminRoute>} />
+                <Route path="/admin/monitoring" element={<AdminRoute><SystemMonitoring /></AdminRoute>} />
+                <Route path="/admin/compliance" element={<AdminRoute><Compliance /></AdminRoute>} />
+                <Route path="/admin/developer" element={<AdminRoute><Developer /></AdminRoute>} />
+                <Route path="/admin/backup" element={<AdminRoute><BackupRecovery /></AdminRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
