@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { checkIsAdmin } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -152,10 +153,32 @@ function FullScreenLoader() {
 }
 
 export function AdminRoute({ children }: { children: ReactNode }) {
-  const { user, isLoading, isAdmin } = useAuth();
+  const { user, isLoading, isAdmin, refreshRoles } = useAuth();
+  const [rechecking, setRechecking] = useState(false);
+  const [fallbackAdmin, setFallbackAdmin] = useState<boolean | null>(null);
+
+  // When visiting /admin, re-check roles in case they were added via SQL
+  // after the initial login. Also do a direct admin check as fallback.
+  useEffect(() => {
+    if (!user || isLoading) return;
+
+    // If useAuth says not admin, do a fresh direct check
+    if (isAdmin === false) {
+      setRechecking(true);
+      checkIsAdmin(user.id).then((result) => {
+        setFallbackAdmin(result);
+        setRechecking(false);
+      });
+    }
+  }, [user, isLoading, isAdmin]);
 
   // Still resolving the session, or the admin check hasn't returned yet.
   if (isLoading || (user && isAdmin === null)) {
+    return <FullScreenLoader />;
+  }
+
+  // Re-checking admin status via fallback
+  if (rechecking) {
     return <FullScreenLoader />;
   }
 
@@ -164,11 +187,16 @@ export function AdminRoute({ children }: { children: ReactNode }) {
     return <AdminLogin />;
   }
 
-  // Logged in but not an admin → show access denied
-  if (isAdmin === false) {
-    return <AccessDenied />;
+  // If useAuth says admin, render
+  if (isAdmin === true) {
+    return <>{children}</>;
   }
 
-  // Confirmed admin → render the admin page
-  return <>{children}</>;
+  // If fallback check says admin, render
+  if (fallbackAdmin === true) {
+    return <>{children}</>;
+  }
+
+  // Logged in but not an admin → show access denied
+  return <AccessDenied />;
 }

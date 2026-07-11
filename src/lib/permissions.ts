@@ -115,12 +115,56 @@ export function isStaffRole(roles: AppRole[]): boolean {
 }
 
 export async function fetchUserRoles(userId: string): Promise<AppRole[]> {
-  const { data } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', userId);
+  try {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
 
-  return (data?.map((r) => r.role as AppRole)) || [];
+    if (error) {
+      // Table might not exist or enum might not match - try raw query
+      console.warn('fetchUserRoles error, trying fallback:', error.message);
+      return [];
+    }
+
+    return (data?.map((r) => r.role as AppRole)) || [];
+  } catch (err) {
+    console.warn('fetchUserRoles failed:', err);
+    return [];
+  }
+}
+
+/**
+ * Direct admin check - queries user_roles table for any admin-level role.
+ * This is a fallback that doesn't depend on the AppRole enum type matching.
+ */
+export async function checkIsAdmin(userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .in('role', ['admin', 'super_admin', 'moderator']);
+
+    if (error) {
+      // If the .in() filter fails (maybe enum mismatch), try without it
+      const { data: allData, error: allError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+
+      if (allError) return false;
+
+      return (allData || []).some((r: any) => {
+        const role = String(r.role).toLowerCase();
+        return role === 'admin' || role === 'super_admin' || role === 'moderator';
+      });
+    }
+
+    return (data || []).length > 0;
+  } catch {
+    return false;
+  }
 }
 
 export const ALL_PERMISSIONS = Object.keys(ROLE_PERMISSIONS) as Permission[];

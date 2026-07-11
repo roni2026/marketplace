@@ -35,6 +35,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshRoles: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -178,6 +179,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshRoles = async () => {
+    if (user) {
+      await checkRoles(user.id);
+    }
+  };
+
   const hasPermission = useCallback(
     (permission: Permission) => checkPermission(roles, permission),
     [roles]
@@ -190,7 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{
       user, session, isLoading, isAdmin, roles, profile, profileCompletion,
       hasPermission, isStaff,
-      signUp, signIn, signOut, refreshProfile,
+      signUp, signIn, signOut, refreshProfile, refreshRoles,
     }}>
       {children}
     </AuthContext.Provider>
