@@ -8,12 +8,16 @@
 
 -- Enums
 do $$ begin
+DO $$ BEGIN
     create type public.media_type as enum ('image', 'video', '360');
 exception when duplicate_object then null; end $$;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
+DO $$ BEGIN
     create type public.condition_grade as enum ('new', 'like_new', 'good', 'fair', 'poor');
 exception when duplicate_object then null; end $$;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- -------------------------------------------------------------------------
 -- Listing Variants (size, color, etc.)
@@ -195,7 +199,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Listing templates: only owner
 DO $$ BEGIN
-    create policy "Users manage own templates" on public.listing_templates for all
+  create policy "Users manage own templates" on public.listing_templates for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -210,7 +214,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Price drop alerts: only owner
 DO $$ BEGIN
-    create policy "Users manage own price drop alerts" on public.price_drop_alerts for all
+  create policy "Users manage own price drop alerts" on public.price_drop_alerts for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -256,13 +260,13 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Media library: only owner
 DO $$ BEGIN
-    create policy "Users manage own media library" on public.media_library for all
+  create policy "Users manage own media library" on public.media_library for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Image optimizations: owner of the media item
 DO $$ BEGIN
-    create policy "Users manage own image optimizations" on public.image_optimizations for all
+  create policy "Users manage own image optimizations" on public.image_optimizations for all
   using (exists (select 1 from public.media_library where media_library.id = image_optimizations.media_id and media_library.user_id = auth.uid()))
   with check (exists (select 1 from public.media_library where media_library.id = image_optimizations.media_id and media_library.user_id = auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
