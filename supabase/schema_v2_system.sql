@@ -324,3 +324,22 @@ create policy "Admins can manage scheduled reports" on public.scheduled_reports 
 create policy "Admins can manage custom reports" on public.custom_reports for all using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
+
+-- =========================================================================
+-- Updated At triggers
+-- =========================================================================
+
+create or replace function public.update_updated_at_v14()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_admin_widgets_updated_at on public.admin_dashboard_widgets;
+create trigger trg_admin_widgets_updated_at
+  before update on public.admin_dashboard_widgets
+  for each row execute procedure public.update_updated_at_v14();
