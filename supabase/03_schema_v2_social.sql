@@ -13,7 +13,7 @@ DO $$ BEGIN
 -- Enhanced Messaging tables
 -- -------------------------------------------------------------------------
 
-create table public.message_reactions (
+CREATE TABLE IF NOT EXISTS public.message_reactions (
   id uuid primary key default gen_random_uuid(),
   message_id uuid not null references public.messages(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
