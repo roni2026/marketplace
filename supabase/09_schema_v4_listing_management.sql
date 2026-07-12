@@ -27,39 +27,29 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-DO $$ BEGIN
     create type public.warranty_type as enum ('none', 'manufacturer', 'seller');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
-DO $$ BEGIN
     create type public.shipping_method as enum ('local_pickup', 'nationwide', 'international');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
-DO $$ BEGIN
     create type public.shipping_fee_type as enum ('free', 'flat_rate', 'calculated');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
-DO $$ BEGIN
     create type public.history_action as enum (
     'created', 'edited', 'price_changed', 'photo_changed', 'status_changed',
     'renewed', 'relisted', 'marked_sold', 'archived', 'restored',
     'deleted', 'duplicated', 'published', 'scheduled', 'paused', 'resumed',
     'hidden', 'bulk_updated'
   );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-DO $$ BEGIN
     create type public.attribute_data_type as enum ('text', 'number', 'select', 'multiselect', 'boolean', 'date');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================
 -- Extend ads table with Phase 4 columns
@@ -339,48 +329,56 @@ alter table public.bulk_listing_operations enable row level security;
 -- Listing types: public read, admin write
 DO $$ BEGIN
   create policy "Public can view listing types" on public.listing_types for select using (true);
-create policy "Admins manage listing types" on public.listing_types for all
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Admins manage listing types" on public.listing_types for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Item conditions: public read, admin write
 DO $$ BEGIN
   create policy "Public can view item conditions" on public.item_conditions for select using (true);
-create policy "Admins manage item conditions" on public.item_conditions for all
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Admins manage item conditions" on public.item_conditions for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Category attributes: public read, admin write
 DO $$ BEGIN
   create policy "Public can view category attributes" on public.category_attributes for select using (true);
-create policy "Admins manage category attributes" on public.category_attributes for all
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Admins manage category attributes" on public.category_attributes for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Listing history: ad owner and admins can view, ad owner can insert
 DO $$ BEGIN
-  create policy "Ad owner views listing history" on public.listing_history for select
+    create policy "Ad owner views listing history" on public.listing_history for select
   using (exists (select 1 from public.ads where ads.id = listing_history.ad_id and (ads.user_id = auth.uid() or public.is_admin(auth.uid()))));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Ad owner inserts listing history" on public.listing_history for insert
+    create policy "Ad owner inserts listing history" on public.listing_history for insert
   with check (exists (select 1 from public.ads where ads.id = listing_history.ad_id and ads.user_id = auth.uid()) or public.is_admin(auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Listing analytics: ad owner and admins can view, system inserts
 DO $$ BEGIN
-  create policy "Ad owner views listing analytics" on public.listing_analytics for select
+    create policy "Ad owner views listing analytics" on public.listing_analytics for select
   using (exists (select 1 from public.ads where ads.id = listing_analytics.ad_id and (ads.user_id = auth.uid() or public.is_admin(auth.uid()))));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   create policy "System inserts listing analytics" on public.listing_analytics for insert with check (true);
-create policy "Ad owner updates listing analytics" on public.listing_analytics for update
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Ad owner updates listing analytics" on public.listing_analytics for update
   using (exists (select 1 from public.ads where ads.id = listing_analytics.ad_id and ads.user_id = auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Bulk listing operations: only owner
 DO $$ BEGIN
-  create policy "Users manage own bulk operations" on public.bulk_listing_operations for all
+    create policy "Users manage own bulk operations" on public.bulk_listing_operations for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
