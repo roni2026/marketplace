@@ -146,7 +146,7 @@ create or replace function public.calculate_seller_rating(target_user_id uuid)
 returns numeric
 language plpgsql
 security definer
-as $$
+as $func$
 declare
   v_avg numeric;
 begin
@@ -156,14 +156,14 @@ begin
 
   return round(v_avg, 2);
 end;
-$$;
+$func$;
 
 -- Calculate buyer rating from approved buyer reviews
 create or replace function public.calculate_buyer_rating(target_user_id uuid)
 returns numeric
 language plpgsql
 security definer
-as $$
+as $func$
 declare
   v_avg numeric;
 begin
@@ -173,14 +173,14 @@ begin
 
   return round(v_avg, 2);
 end;
-$$;
+$func$;
 
 -- Count total sales
 create or replace function public.count_sales(target_user_id uuid)
 returns int
 language plpgsql
 security definer
-as $$
+as $func$
 declare
   v_count int;
 begin
@@ -190,14 +190,14 @@ begin
 
   return v_count;
 end;
-$$;
+$func$;
 
 -- Count total purchases (ads bought by user — tracked via sold ads where buyer is known)
 create or replace function public.count_purchases(target_user_id uuid)
 returns int
 language plpgsql
 security definer
-as $$
+as $func$
 declare
   v_count int;
 begin
@@ -214,14 +214,14 @@ begin
 
   return v_count;
 end;
-$$;
+$func$;
 
 -- Count followers
 create or replace function public.count_followers(target_user_id uuid)
 returns int
 language plpgsql
 security definer
-as $$
+as $func$
 declare
   v_count int;
 begin
@@ -231,14 +231,14 @@ begin
 
   return v_count;
 end;
-$$;
+$func$;
 
 -- Count following
 create or replace function public.count_following(target_user_id uuid)
 returns int
 language plpgsql
 security definer
-as $$
+as $func$
 declare
   v_count int;
 begin
@@ -248,14 +248,14 @@ begin
 
   return v_count;
 end;
-$$;
+$func$;
 
 -- Count seller reviews
 create or replace function public.count_seller_reviews(target_user_id uuid)
 returns int
 language plpgsql
 security definer
-as $$
+as $func$
 declare
   v_count int;
 begin
@@ -265,14 +265,14 @@ begin
 
   return v_count;
 end;
-$$;
+$func$;
 
 -- Count buyer reviews
 create or replace function public.count_buyer_reviews(target_user_id uuid)
 returns int
 language plpgsql
 security definer
-as $$
+as $func$
 declare
   v_count int;
 begin
@@ -282,14 +282,14 @@ begin
 
   return v_count;
 end;
-$$;
+$func$;
 
 -- Refresh profile stats (call after relevant changes)
 create or replace function public.refresh_profile_stats(target_user_id uuid)
 returns void
 language plpgsql
 security definer
-as $$
+as $func$
 declare
   v_seller_rating numeric;
   v_buyer_rating numeric;
@@ -367,21 +367,21 @@ begin
     updated_at = now()
   where user_id = target_user_id;
 end;
-$$;
+$func$;
 
 -- Update last_active_at trigger
 create or replace function public.update_last_active()
 returns trigger
 language plpgsql
 security definer
-as $$
+as $func$
 begin
   update public.profiles
   set last_active_at = now()
   where user_id = new.user_id;
   return new;
 end;
-$$;
+$func$;
 
 -- Trigger: update last_active_at on session activity
 drop trigger if exists trg_update_last_active on public.user_sessions;
@@ -395,13 +395,13 @@ create or replace function public.trigger_refresh_stats_on_follow()
 returns trigger
 language plpgsql
 security definer
-as $$
+as $func$
 begin
   perform public.refresh_profile_stats(new.following_id);
   perform public.refresh_profile_stats(new.follower_id);
   return new;
 end;
-$$;
+$func$;
 
 drop trigger if exists trg_refresh_stats_follow_insert on public.user_follows;
 create trigger trg_refresh_stats_follow_insert
@@ -413,13 +413,13 @@ create or replace function public.trigger_refresh_stats_on_follow_delete()
 returns trigger
 language plpgsql
 security definer
-as $$
+as $func$
 begin
   perform public.refresh_profile_stats(old.following_id);
   perform public.refresh_profile_stats(old.follower_id);
   return old;
 end;
-$$;
+$func$;
 
 drop trigger if exists trg_refresh_stats_follow_delete on public.user_follows;
 create trigger trg_refresh_stats_follow_delete
@@ -432,12 +432,12 @@ create or replace function public.trigger_refresh_stats_on_review()
 returns trigger
 language plpgsql
 security definer
-as $$
+as $func$
 begin
   perform public.refresh_profile_stats(new.seller_id);
   return new;
 end;
-$$;
+$func$;
 
 drop trigger if exists trg_refresh_stats_review_insert on public.reviews;
 create trigger trg_refresh_stats_review_insert
@@ -450,12 +450,12 @@ create or replace function public.trigger_refresh_stats_on_buyer_review()
 returns trigger
 language plpgsql
 security definer
-as $$
+as $func$
 begin
   perform public.refresh_profile_stats(new.buyer_id);
   return new;
 end;
-$$;
+$func$;
 
 drop trigger if exists trg_refresh_stats_buyer_review_insert on public.buyer_reviews;
 create trigger trg_refresh_stats_buyer_review_insert
@@ -468,14 +468,14 @@ create or replace function public.trigger_refresh_stats_on_ad_sold()
 returns trigger
 language plpgsql
 security definer
-as $$
+as $func$
 begin
   if new.status = 'sold' and (old.status is null or old.status <> 'sold') then
     perform public.refresh_profile_stats(new.user_id);
   end if;
   return new;
 end;
-$$;
+$func$;
 
 drop trigger if exists trg_refresh_stats_ad_sold on public.ads;
 create trigger trg_refresh_stats_ad_sold

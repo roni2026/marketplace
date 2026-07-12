@@ -326,7 +326,7 @@ CREATE OR REPLACE FUNCTION public.calculate_trust_score(target_user_id UUID)
 RETURNS NUMERIC
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS $$
+as $func$
 DECLARE
   v_score NUMERIC := 50.00;
   v_business_verified BOOLEAN;
@@ -382,14 +382,14 @@ BEGIN
 
   RETURN v_score;
 END;
-$$;
+$func$;
 
 -- Calculate fraud risk score for a user
 CREATE OR REPLACE FUNCTION public.calculate_fraud_risk(target_user_id UUID)
 RETURNS NUMERIC
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS $$
+as $func$
 DECLARE
   v_risk NUMERIC := 0.00;
   v_unresolved_flags INTEGER;
@@ -429,14 +429,14 @@ BEGIN
 
   RETURN v_risk;
 END;
-$$;
+$func$;
 
 -- Check if a user is shadow banned
 CREATE OR REPLACE FUNCTION public.check_shadow_ban(target_user_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS $$
+as $func$
 DECLARE
   v_banned BOOLEAN;
 BEGIN
@@ -445,4 +445,4 @@ BEGIN
   ) INTO v_banned;
   RETURN v_banned;
 END;
-$$;
+$func$;
