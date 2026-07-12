@@ -7,7 +7,10 @@
 -- -------------------------------------------------------------------------
 
 -- Enums
-create type public.blog_status as enum ('draft', 'published', 'archived');
+do $$ begin
+  create type public.blog_status as enum ('draft', 'published', 'archived');
+exception when duplicate_object then null;
+end $$;
 
 -- -------------------------------------------------------------------------
 -- Notification Center
@@ -26,6 +29,7 @@ create table public.notification_preferences (
   seller_alerts boolean default true,
   admin_announcements boolean default true,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   unique(user_id)
 );
 
@@ -451,3 +455,11 @@ create policy "Admins can manage sitemap entries"
       where ur.user_id = auth.uid() and ur.role in ('super_admin', 'admin')
     )
   );
+
+-- -------------------------------------------------------------------------
+-- Updated_at trigger for notification_preferences
+-- -------------------------------------------------------------------------
+drop trigger if exists trg_notifications_updated_at on public.notification_preferences;
+create trigger trg_notifications_updated_at
+  before update on public.notification_preferences
+  for each row execute function public.set_updated_at();
