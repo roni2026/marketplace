@@ -1,480 +1,401 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+/**
+ * AdModeration — Redesigned admin ad moderation with tabs, data table,
+ * bulk actions, quick approve/reject, and confirmation dialogs.
+ */
+
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { PageHeader } from '@/components/admin/PageHeader';
-import { DataTable, Column } from '@/components/admin/DataTable';
-import { formatPrice } from '@/lib/constants';
+import { DataTable, type Column } from '@/components/admin/DataTable';
+import { StatCard, StatCardGrid } from '@/components/admin/StatCard';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+  DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useAdminPortal } from '@/hooks/useAdminPortal';
+import { exportData, downloadExport } from '@/lib/adminPortal';
 import { toast } from 'sonner';
-import { logAdAction } from '@/lib/audit';
 import { format } from 'date-fns';
 import {
-  Check, X, Eye, Star, MapPin, Calendar, Zap, AlertTriangle, Trash2,
-  History, User as UserIcon, Search, Filter, Download, Upload,
-  Package, Tag, DollarSign, TrendingUp, Clock,
+  FileCheck, CheckCircle2, XCircle, Trash2, Star, Zap, Eye,
+  Download, Package, Clock, AlertTriangle,
 } from 'lucide-react';
 
 interface Ad {
   id: string;
-  user_id: string;
   title: string;
   slug: string;
-  price: number | null;
-  price_type: string;
-  condition: string;
-  division: string;
-  district: string;
-  description: string | null;
+  description: string;
+  price: number;
   status: string;
+  category_id: string | null;
+  user_id: string;
   is_featured: boolean;
-  is_premium: boolean | null;
-  is_boosted: boolean | null;
-  is_urgent: boolean | null;
+  is_boosted: boolean;
+  boosted_until: string | null;
   created_at: string;
-  ad_images: { image_url: string }[];
-  categories: { name: string } | null;
-  profiles: { full_name: string | null; phone_number: string | null } | null;
+  updated_at: string;
+  deleted_at: string | null;
+  rejection_message: string | null;
+  images: string[];
+  categories?: { name: string } | null;
+  profiles?: { full_name: string | null; email: string | null } | null;
 }
-
-interface AuditLogEntry {
-  id: string;
-  user_id: string | null;
-  action: string;
-  resource_type: string;
-  resource_id: string | null;
-  details: Record<string, unknown> | null;
-  created_at: string;
-  profiles?: { full_name: string | null } | null;
-}
-
-const REJECTION_REASONS = [
-  { code: 'prohibited_item', label: 'Prohibited item' },
-  { code: 'duplicate_ad', label: 'Duplicate ad' },
-  { code: 'spam', label: 'Spam or scam' },
-  { code: 'inappropriate_content', label: 'Inappropriate content' },
-  { code: 'misleading_info', label: 'Misleading information' },
-  { code: 'wrong_category', label: 'Wrong category' },
-  { code: 'poor_quality', label: 'Poor quality images/description' },
-  { code: 'price_violation', label: 'Unrealistic price' },
-];
-
-const ACTION_LABELS: Record<string, string> = {
-  create: 'Created', update: 'Updated', delete: 'Deleted', approve: 'Approved',
-  reject: 'Rejected', login: 'Login', logout: 'Logout', login_failed: 'Login Failed',
-  suspend: 'Suspended', unsuspend: 'Unsuspended', verify: 'Verified',
-  export: 'Exported', bulk_action: 'Bulk Action', settings_change: 'Settings Changed',
-};
-
-const ACTION_COLORS: Record<string, string> = {
-  approve: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  reject: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  create: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  update: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  delete: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  suspend: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-  unsuspend: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  verify: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-};
 
 export default function AdModeration() {
-  const { user, isAdmin } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { quickApprove, quickReject, quickFeature, quickBoost, bulkOperation, logActivity } = useAdminPortal();
   const [ads, setAds] = useState<Ad[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedAd, setSelectedAd] = useState<Ad | null>(null);
-  const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [rejectionMessage, setRejectionMessage] = useState('');
-  const [rejectionReasonCode, setRejectionReasonCode] = useState('');
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('pending');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [adAuditLogs, setAdAuditLogs] = useState<Record<string, AuditLogEntry[]>>({});
-  const [expandedAuditAd, setExpandedAuditAd] = useState<string | null>(null);
-  const [auditLoading, setAuditLoading] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, featured: 0 });
+  const [confirmAction, setConfirmAction] = useState<{ type: string; adId?: string; reason?: string } | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) { navigate('/auth'); return; }
-    if (isAdmin === false) { navigate('/'); return; }
-    if (isAdmin) fetchAds();
-  }, [user, isAdmin, navigate, activeTab]);
-
-  const fetchAds = async () => {
-    setIsLoading(true);
+  const fetchAds = useCallback(async () => {
+    setLoading(true);
     let query = supabase
       .from('ads')
-      .select('*, ad_images(image_url), categories(name), profiles!ads_user_id_fkey(full_name, phone_number)')
+      .select('*, categories(name), profiles!ads_user_id_fkey(full_name, email)')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
-    if (activeTab !== 'all') query = query.eq('status', activeTab);
-    const { data } = await query;
+    if (activeTab === 'pending') query = query.eq('status', 'pending');
+    else if (activeTab === 'approved') query = query.eq('status', 'approved');
+    else if (activeTab === 'rejected') query = query.eq('status', 'rejected');
+    else if (activeTab === 'featured') query = query.eq('is_featured', true);
+
+    if (activeTab === 'all' && statusFilter !== 'all') {
+      query = query.eq('status', statusFilter);
+    }
+
+    const { data, error } = await query.limit(200);
+    if (error) { toast.error('Failed to load listings'); console.error(error); }
     setAds((data as Ad[]) || []);
-    setIsLoading(false);
-  };
 
-  const fetchAdAuditLogs = async (adId: string) => {
-    setAuditLoading(adId);
-    try {
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select('*, profiles!audit_logs_user_id_fkey(full_name)')
-        .eq('resource_type', 'ad')
-        .eq('resource_id', adId)
-        .order('created_at', { ascending: false })
-        .limit(20);
+    const [pendingRes, approvedRes, rejectedRes, featuredRes] = await Promise.all([
+      supabase.from('ads').select('id', { count: 'exact', head: true }).eq('status', 'pending').is('deleted_at', null),
+      supabase.from('ads').select('id', { count: 'exact', head: true }).eq('status', 'approved').is('deleted_at', null),
+      supabase.from('ads').select('id', { count: 'exact', head: true }).eq('status', 'rejected').is('deleted_at', null),
+      supabase.from('ads').select('id', { count: 'exact', head: true }).eq('is_featured', true).is('deleted_at', null),
+    ]);
+    setStats({
+      pending: pendingRes.count ?? 0,
+      approved: approvedRes.count ?? 0,
+      rejected: rejectedRes.count ?? 0,
+      featured: featuredRes.count ?? 0,
+    });
+    setLoading(false);
+  }, [activeTab, statusFilter]);
 
-      if (error) {
-        const { data: fallbackData } = await supabase
-          .from('audit_logs')
-          .select('*')
-          .eq('resource_type', 'ad')
-          .eq('resource_id', adId)
-          .order('created_at', { ascending: false })
-          .limit(20);
-        setAdAuditLogs((prev) => ({ ...prev, [adId]: (fallbackData as AuditLogEntry[]) || [] }));
-      } else {
-        setAdAuditLogs((prev) => ({ ...prev, [adId]: (data as AuditLogEntry[]) || [] }));
-      }
-    } catch {
-      setAdAuditLogs((prev) => ({ ...prev, [adId]: [] }));
+  useEffect(() => { fetchAds(); }, [fetchAds]);
+
+  const handleApprove = useCallback(async (adId: string) => {
+    setActionLoading(adId);
+    const success = await quickApprove(adId);
+    if (success) setAds(prev => prev.filter(a => a.id !== adId));
+    setActionLoading(null);
+  }, [quickApprove]);
+
+  const handleReject = useCallback(async (adId: string, reason: string) => {
+    setActionLoading(adId);
+    const success = await quickReject(adId, reason);
+    if (success) setAds(prev => prev.filter(a => a.id !== adId));
+    setActionLoading(null);
+  }, [quickReject]);
+
+  const handleFeature = useCallback(async (adId: string) => {
+    const success = await quickFeature(adId);
+    if (success) fetchAds();
+  }, [quickFeature, fetchAds]);
+
+  const handleBoost = useCallback(async (adId: string) => {
+    const success = await quickBoost(adId, 7);
+    if (success) fetchAds();
+  }, [quickBoost, fetchAds]);
+
+  const handleDelete = useCallback(async (adId: string) => {
+    const { error } = await supabase.from('ads').update({ deleted_at: new Date().toISOString(), status: 'archived' }).eq('id', adId);
+    if (error) { toast.error('Failed to delete listing'); return; }
+    if (user) await logActivity('delete_listing', 'ad', adId);
+    toast.success('Listing deleted');
+    setAds(prev => prev.filter(a => a.id !== adId));
+  }, [user, logActivity]);
+
+  const handleBulkApprove = useCallback(async () => {
+    if (!user) return;
+    await bulkOperation('approve_listings', Array.from(selectedIds));
+    setSelectedIds(new Set());
+    fetchAds();
+  }, [user, bulkOperation, selectedIds, fetchAds]);
+
+  const handleBulkReject = useCallback(async () => {
+    if (!user) return;
+    await bulkOperation('reject_listings', Array.from(selectedIds));
+    setSelectedIds(new Set());
+    fetchAds();
+  }, [user, bulkOperation, selectedIds, fetchAds]);
+
+  const handleBulkDelete = useCallback(async () => {
+    for (const id of selectedIds) {
+      await supabase.from('ads').update({ deleted_at: new Date().toISOString(), status: 'archived' }).eq('id', id);
     }
-    setAuditLoading(null);
-  };
+    if (user) await logActivity('bulk_delete_listings', 'ad', undefined, { count: selectedIds.size });
+    toast.success(`Deleted ${selectedIds.size} listings`);
+    setSelectedIds(new Set());
+    fetchAds();
+  }, [user, selectedIds, logActivity, fetchAds]);
 
-  const toggleAuditLog = (adId: string) => {
-    if (expandedAuditAd === adId) {
-      setExpandedAuditAd(null);
-    } else {
-      setExpandedAuditAd(adId);
-      if (!adAuditLogs[adId]) fetchAdAuditLogs(adId);
+  const handleExport = useCallback(async () => {
+    const csv = await exportData('ads', 'csv');
+    if (csv) downloadExport(csv, 'listings_export.csv', 'csv');
+  }, [exportData, downloadExport]);
+
+  const handleConfirm = useCallback(() => {
+    if (!confirmAction) return;
+    if (confirmAction.type === 'reject' && confirmAction.adId) {
+      handleReject(confirmAction.adId, rejectReason || 'Rejected by admin');
+    } else if (confirmAction.type === 'delete' && confirmAction.adId) {
+      handleDelete(confirmAction.adId);
+    } else if (confirmAction.type === 'bulk_delete') {
+      handleBulkDelete();
     }
+    setConfirmAction(null);
+    setRejectReason('');
+  }, [confirmAction, rejectReason, handleReject, handleDelete, handleBulkDelete]);
+
+  const statusBadge = (status: string) => {
+    const variant = status === 'approved' ? 'success' : status === 'pending' ? 'warning' : status === 'rejected' ? 'destructive' : 'secondary';
+    return <Badge variant={variant as any} className="text-[10px]">{status}</Badge>;
   };
 
-  const handleApprove = async (adId: string) => {
-    const { error } = await supabase.from('ads').update({ status: 'approved', updated_at: new Date().toISOString() }).eq('id', adId);
-    if (error) { toast.error('Failed to approve ad'); return; }
-    await logAdAction('approve', adId);
-    const ad = ads.find(a => a.id === adId);
-    if (ad) {
-      await supabase.from('notifications').insert({
-        user_id: ad.user_id, type: 'ad_approved', title: 'Ad Approved',
-        message: `Your ad "${ad.title}" has been approved and is now live.`, data: { ad_id: adId },
-      }).catch(() => {});
-    }
-    toast.success('Ad approved');
-    fetchAds();
-  };
-
-  const handleReject = async () => {
-    if (!selectedAd || !rejectionMessage.trim()) {
-      if (!selectedAd) return;
-      toast.error('Please provide a rejection reason');
-      return;
-    }
-    const { error } = await supabase.from('ads').update({
-      status: 'rejected', rejection_message: rejectionMessage,
-      rejection_reason_code: rejectionReasonCode || null, updated_at: new Date().toISOString(),
-    }).eq('id', selectedAd.id);
-    if (error) { toast.error('Failed to reject ad'); return; }
-    await logAdAction('reject', selectedAd.id, { reason: rejectionReasonCode });
-    await supabase.from('notifications').insert({
-      user_id: selectedAd.user_id, type: 'ad_rejected', title: 'Ad Rejected',
-      message: `Your ad "${selectedAd.title}" was rejected: ${rejectionMessage}`, data: { ad_id: selectedAd.id },
-    }).catch(() => {});
-    toast.success('Ad rejected');
-    setShowRejectDialog(false);
-    setRejectionMessage('');
-    setRejectionReasonCode('');
-    setSelectedAd(null);
-    fetchAds();
-  };
-
-  const handleBulkApprove = async () => {
-    if (selectedIds.length === 0) return;
-    const { error } = await supabase.from('ads').update({ status: 'approved', updated_at: new Date().toISOString() }).in('id', selectedIds);
-    if (error) { toast.error('Failed to approve ads'); return; }
-    for (const adId of selectedIds) await logAdAction('approve', adId, { bulk: true });
-    toast.success(`${selectedIds.length} ads approved`);
-    setSelectedIds([]);
-    fetchAds();
-  };
-
-  const handleBulkReject = async () => {
-    if (selectedIds.length === 0) return;
-    const { error } = await supabase.from('ads').update({
-      status: 'rejected', rejection_message: 'Bulk rejected by moderator',
-      rejection_reason_code: 'spam', updated_at: new Date().toISOString(),
-    }).in('id', selectedIds);
-    if (error) { toast.error('Failed to reject ads'); return; }
-    for (const adId of selectedIds) await logAdAction('reject', adId, { bulk: true, reason: 'spam' });
-    toast.success(`${selectedIds.length} ads rejected`);
-    setSelectedIds([]);
-    fetchAds();
-  };
-
-  const handleDelete = async (adId: string) => {
-    const { error } = await supabase.from('ads').delete().eq('id', adId);
-    if (error) { toast.error('Failed to delete ad'); return; }
-    await logAdAction('delete', adId);
-    toast.success('Ad deleted');
-    fetchAds();
-  };
-
-  const handleFeature = async (adId: string, featured: boolean) => {
-    const { error } = await supabase.from('ads').update({ is_featured: !featured, updated_at: new Date().toISOString() }).eq('id', adId);
-    if (error) { toast.error('Failed to update ad'); return; }
-    await logAdAction('update', adId, { featured: !featured });
-    toast.success(!featured ? 'Ad featured' : 'Ad unfeatured');
-    fetchAds();
-  };
-
-  const toggleSelect = (adId: string) => {
-    setSelectedIds(prev => prev.includes(adId) ? prev.filter(id => id !== adId) : [...prev, adId]);
-  };
-
-  if (!isAdmin) {
-    return <div className="min-h-screen flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>;
-  }
-
-  const filteredAds = ads.filter(ad => {
-    if (searchTerm) {
-      const q = searchTerm.toLowerCase();
-      if (!ad.title.toLowerCase().includes(q) && !ad.description?.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
+  const columns: Column<Ad>[] = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Title',
+      sortable: true,
+      sortValue: (r) => r.title,
+      render: (r) => (
+        <div className="flex items-center gap-1.5">
+          <Package className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium">{r.title}</p>
+            {r.images && r.images.length > 0 && (
+              <p className="text-[10px] text-muted-foreground">{r.images.length} image(s)</p>
+            )}
+          </div>
+        </div>
+      ),
+      exportValue: (r) => r.title,
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      render: (r) => <span className="text-xs text-muted-foreground">{r.categories?.name || 'Uncategorized'}</span>,
+      exportValue: (r) => r.categories?.name || '',
+    },
+    {
+      key: 'price',
+      label: 'Price',
+      sortable: true,
+      sortValue: (r) => r.price,
+      align: 'right',
+      render: (r) => <span className="text-xs font-medium">${r.price?.toLocaleString() || 0}</span>,
+      exportValue: (r) => r.price,
+    },
+    {
+      key: 'seller',
+      label: 'Seller',
+      render: (r) => <span className="text-[11px] text-muted-foreground">{r.profiles?.full_name || r.profiles?.email || r.user_id.slice(0, 8)}</span>,
+      exportValue: (r) => r.profiles?.full_name || r.profiles?.email || '',
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      sortValue: (r) => r.status,
+      render: (r) => statusBadge(r.status),
+      exportValue: (r) => r.status,
+    },
+    {
+      key: 'flags',
+      label: 'Flags',
+      align: 'center',
+      render: (r) => (
+        <div className="flex items-center justify-center gap-1">
+          {r.is_featured && <Star className="h-3 w-3 text-amber-500" />}
+          {r.is_boosted && <Zap className="h-3 w-3 text-purple-500" />}
+          {!r.is_featured && !r.is_boosted && <span className="text-muted-foreground">—</span>}
+        </div>
+      ),
+    },
+    {
+      key: 'created_at',
+      label: 'Created',
+      sortable: true,
+      sortValue: (r) => r.created_at,
+      render: (r) => <span className="text-[11px] text-muted-foreground">{format(new Date(r.created_at), 'MMM d, yyyy')}</span>,
+      exportValue: (r) => r.created_at,
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      align: 'right',
+      render: (r) => (
+        <div className="flex items-center justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+          {r.status === 'pending' && (
+            <>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-green-600 hover:bg-green-50 dark:hover:bg-green-950" disabled={actionLoading === r.id} onClick={() => handleApprove(r.id)} title="Approve">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-600 hover:bg-red-50 dark:hover:bg-red-950" disabled={actionLoading === r.id} onClick={() => { setConfirmAction({ type: 'reject', adId: r.id }); setRejectReason(''); }} title="Reject">
+                <XCircle className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          )}
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950" onClick={() => handleFeature(r.id)} title="Feature">
+            <Star className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950" onClick={() => handleBoost(r.id)} title="Boost">
+            <Zap className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600" onClick={() => setConfirmAction({ type: 'delete', adId: r.id })} title="Delete">
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ),
+    },
+  ], [actionLoading, handleApprove, handleFeature, handleBoost]);
 
   return (
     <AdminLayout>
       <PageHeader
         title="Ad Moderation"
-        description="Review, approve, reject, and manage all marketplace listings"
-        breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Marketplace' }, { label: 'Ad Moderation' }]}
+        description="Review and moderate marketplace listings"
         actions={
-          <>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="h-3.5 w-3.5" /> Export
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Upload className="h-3.5 w-3.5" /> Import
-            </Button>
-          </>
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={handleExport}>
+            <Download className="h-3.5 w-3.5" /> Export
+          </Button>
         }
       />
 
-      {/* Stats summary */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        {[
-          { label: 'Pending', value: ads.filter(a => a.status === 'pending').length, color: 'text-yellow-500', icon: Clock },
-          { label: 'Approved', value: ads.filter(a => a.status === 'approved').length, color: 'text-green-500', icon: Check },
-          { label: 'Rejected', value: ads.filter(a => a.status === 'rejected').length, color: 'text-red-500', icon: X },
-          { label: 'Featured', value: ads.filter(a => a.is_featured).length, color: 'text-blue-500', icon: Star },
-          { label: 'Total', value: ads.length, color: 'text-purple-500', icon: Package },
-        ].map(s => (
-          <Card key={s.label}>
-            <CardContent className="p-3 flex items-center gap-3">
-              <s.icon className={`h-5 w-5 ${s.color}`} />
-              <div>
-                <p className="text-lg font-bold">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <StatCardGrid>
+        <StatCard title="Pending" value={stats.pending} icon={Clock} color="yellow" loading={loading} />
+        <StatCard title="Approved" value={stats.approved} icon={CheckCircle2} color="green" loading={loading} />
+        <StatCard title="Rejected" value={stats.rejected} icon={XCircle} color="red" loading={loading} />
+        <StatCard title="Featured" value={stats.featured} icon={Star} color="purple" loading={loading} />
+      </StatCardGrid>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
-          <TabsList>
-            <TabsTrigger value="pending">Pending ({ads.filter(a => a.status === 'pending').length})</TabsTrigger>
-            <TabsTrigger value="approved">Approved ({ads.filter(a => a.status === 'approved').length})</TabsTrigger>
-            <TabsTrigger value="rejected">Rejected ({ads.filter(a => a.status === 'rejected').length})</TabsTrigger>
-            <TabsTrigger value="sold">Sold ({ads.filter(a => a.status === 'sold').length})</TabsTrigger>
-            <TabsTrigger value="all">All ({ads.length})</TabsTrigger>
-          </TabsList>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search ads..." className="pl-8 h-9 w-48" />
-            </div>
-          </div>
-        </div>
-
-        {/* Bulk Actions */}
-        {selectedIds.length > 0 && (
-          <div className="flex items-center gap-3 p-3 mb-4 bg-card border border-border rounded-lg">
-            <span className="text-sm font-medium">{selectedIds.length} selected</span>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleBulkApprove}>
-              <Check className="h-4 w-4" /> Approve All
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2 text-destructive" onClick={handleBulkReject}>
-              <X className="h-4 w-4" /> Reject All
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>Clear</Button>
-          </div>
-        )}
-
-        {['pending', 'approved', 'rejected', 'sold', 'all'].map(tab => (
-          <TabsContent key={tab} value={tab} className="mt-0">
-            {isLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Card key={i}><CardContent className="p-4"><Skeleton className="h-24 w-full" /></CardContent></Card>
-                ))}
-              </div>
-            ) : filteredAds.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground">
-                <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                <p>No ads in this category.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredAds.map(ad => {
-                  const imageUrl = ad.ad_images?.[0]?.image_url || '/placeholder.svg';
-                  return (
-                    <Card key={ad.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex gap-4">
-                          {activeTab === 'pending' && (
-                            <Checkbox checked={selectedIds.includes(ad.id)} onCheckedChange={() => toggleSelect(ad.id)} className="mt-1" />
-                          )}
-                          <div className="w-24 h-24 rounded-lg overflow-hidden bg-muted shrink-0">
-                            <img src={imageUrl} alt={ad.title} className="w-full h-full object-cover" onError={e => { e.currentTarget.src = '/placeholder.svg'; }} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <h3 className="font-semibold truncate">{ad.title}</h3>
-                                <p className="text-lg font-bold text-primary mt-0.5">{formatPrice(ad.price, ad.price_type)}</p>
-                                <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                                  <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{ad.district}</span>
-                                  <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(ad.created_at).toLocaleDateString()}</span>
-                                  {ad.categories && <Badge variant="secondary" className="text-xs">{ad.categories.name}</Badge>}
-                                </div>
-                                {ad.profiles && (
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    by {ad.profiles.full_name || 'Unknown'}{ad.profiles.phone_number && ` · ${ad.profiles.phone_number}`}
-                                  </p>
-                                )}
-                                {ad.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{ad.description}</p>}
-                                <div className="flex gap-1 mt-2">
-                                  {ad.is_featured && <Badge className="bg-primary text-primary-foreground text-xs"><Star className="h-3 w-3 mr-1" />Featured</Badge>}
-                                  {ad.is_premium && <Badge className="bg-purple-600 text-white text-xs">Premium</Badge>}
-                                  {ad.is_boosted && <Badge className="bg-blue-600 text-white text-xs">Boosted</Badge>}
-                                  {ad.is_urgent && <Badge className="bg-red-600 text-white text-xs"><Zap className="h-3 w-3 mr-1" />Urgent</Badge>}
-                                </div>
-                              </div>
-                              <div className="flex flex-col gap-2 shrink-0">
-                                {ad.status === 'pending' && (
-                                  <>
-                                    <Button size="sm" className="gap-2" onClick={() => handleApprove(ad.id)}>
-                                      <Check className="h-4 w-4" /> Approve
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="gap-2 text-destructive" onClick={() => { setSelectedAd(ad); setShowRejectDialog(true); }}>
-                                      <X className="h-4 w-4" /> Reject
-                                    </Button>
-                                  </>
-                                )}
-                                <Button variant="ghost" size="sm" className="gap-2" onClick={() => handleFeature(ad.id, ad.is_featured)}>
-                                  <Star className={`h-4 w-4 ${ad.is_featured ? 'fill-current text-yellow-500' : ''}`} />
-                                  {ad.is_featured ? 'Unfeature' : 'Feature'}
-                                </Button>
-                                <Button variant="ghost" size="sm" className="gap-2 text-destructive" onClick={() => handleDelete(ad.id)}>
-                                  <Trash2 className="h-4 w-4" /> Delete
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Audit Log History */}
-                        <div className="mt-3 pt-3 border-t">
-                          <button onClick={() => toggleAuditLog(ad.id)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                            <History className="h-4 w-4" />
-                            {expandedAuditAd === ad.id ? 'Hide' : 'Show'} Audit History
-                            {adAuditLogs[ad.id] && adAuditLogs[ad.id].length > 0 && (
-                              <Badge variant="secondary" className="text-xs">{adAuditLogs[ad.id].length} actions</Badge>
-                            )}
-                          </button>
-                          {expandedAuditAd === ad.id && (
-                            <div className="mt-3 space-y-2">
-                              {auditLoading === ad.id ? (
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                  Loading audit history...
-                                </div>
-                              ) : adAuditLogs[ad.id] && adAuditLogs[ad.id].length > 0 ? (
-                                <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                                  {adAuditLogs[ad.id].map(log => (
-                                    <div key={log.id} className="flex items-start gap-3 text-sm py-1.5 px-2 rounded-md hover:bg-accent/50">
-                                      <div className="shrink-0 mt-0.5">
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${ACTION_COLORS[log.action] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
-                                          {ACTION_LABELS[log.action] || log.action}
-                                        </span>
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                                          <UserIcon className="h-3 w-3" />
-                                          <span className="font-medium text-foreground">{log.profiles?.full_name || 'System'}</span>
-                                          <span>·</span>
-                                          <span>{format(new Date(log.created_at), 'MMM d, yyyy HH:mm:ss')}</span>
-                                        </div>
-                                        {log.details && Object.keys(log.details).length > 0 && (
-                                          <p className="text-xs text-muted-foreground mt-0.5">{JSON.stringify(log.details)}</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="text-sm text-muted-foreground italic">No audit history found for this ad.</p>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </TabsContent>
-        ))}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
+        <TabsList className="h-8">
+          <TabsTrigger value="pending" className="text-xs">Pending ({stats.pending})</TabsTrigger>
+          <TabsTrigger value="all" className="text-xs">All Listings</TabsTrigger>
+          <TabsTrigger value="approved" className="text-xs">Approved ({stats.approved})</TabsTrigger>
+          <TabsTrigger value="rejected" className="text-xs">Rejected ({stats.rejected})</TabsTrigger>
+          <TabsTrigger value="featured" className="text-xs">Featured ({stats.featured})</TabsTrigger>
+        </TabsList>
       </Tabs>
 
+      <div className="mt-3">
+        <DataTable
+          columns={columns}
+          data={ads}
+          searchable
+          searchPlaceholder="Search by title..."
+          searchKeys={['title'] as any}
+          pageSize={15}
+          loading={loading}
+          selectable
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
+          getRowId={(r) => r.id}
+          emptyMessage="No listings found"
+          onExport={handleExport}
+          bulkActions={
+            <>
+              <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={handleBulkApprove}>
+                <CheckCircle2 className="h-3 w-3" /> Approve All
+              </Button>
+              <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={handleBulkReject}>
+                <XCircle className="h-3 w-3" /> Reject All
+              </Button>
+              <Button size="sm" variant="destructive" className="h-7 gap-1 text-xs" onClick={() => setConfirmAction({ type: 'bulk_delete' })}>
+                <Trash2 className="h-3 w-3" /> Delete All
+              </Button>
+            </>
+          }
+          filters={activeTab === 'all' ? (
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-8 w-32 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="sold">Sold</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : undefined}
+        />
+      </div>
+
       {/* Reject Dialog */}
-      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Reject Ad</DialogTitle></DialogHeader>
-          <div className="space-y-4">
+      <Dialog open={!!confirmAction} onOpenChange={(open) => { if (!open) { setConfirmAction(null); setRejectReason(''); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">
+              {confirmAction?.type === 'reject' ? 'Reject Listing' :
+               confirmAction?.type === 'delete' ? 'Delete Listing' :
+               confirmAction?.type === 'bulk_delete' ? 'Delete Selected Listings' : 'Confirm Action'}
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              {confirmAction?.type === 'reject'
+                ? 'Provide a reason for rejecting this listing (optional):'
+                : 'This action cannot be undone.'}
+            </DialogDescription>
+          </DialogHeader>
+          {confirmAction?.type === 'reject' && (
             <div className="space-y-2">
-              <Label>Reason Code</Label>
-              <Select value={rejectionReasonCode} onValueChange={setRejectionReasonCode}>
-                <SelectTrigger><SelectValue placeholder="Select a reason" /></SelectTrigger>
-                <SelectContent>
-                  {REJECTION_REASONS.map(r => <SelectItem key={r.code} value={r.code}>{r.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Label className="text-xs">Rejection Reason</Label>
+              <Textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Reason for rejection..."
+                className="text-xs"
+                maxLength={500}
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="rejectionMsg">Rejection Message</Label>
-              <Textarea id="rejectionMsg" value={rejectionMessage} onChange={e => setRejectionMessage(e.target.value)} placeholder="Explain why this ad is being rejected..." rows={4} />
-            </div>
-          </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleReject}>Reject Ad</Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { setConfirmAction(null); setRejectReason(''); }}>
+              Cancel
+            </Button>
+            <Button
+              variant={confirmAction?.type === 'reject' ? 'default' : 'destructive'}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={handleConfirm}
+            >
+              {confirmAction?.type === 'reject' ? 'Reject' : 'Delete'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
