@@ -260,12 +260,12 @@ create index if not exists idx_summary_queue_scheduled on public.notification_su
 create or replace function public.update_updated_at_v13()
 returns trigger
 language plpgsql
-as $$
+as $func$
 begin
   new.updated_at = now();
   return new;
 end;
-$$;
+$func$;
 
 drop trigger if exists trg_notifications_updated_at on public.notifications;
 create trigger trg_notifications_updated_at
@@ -319,7 +319,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 declare
   v_notification_id uuid;
 begin
@@ -338,7 +338,7 @@ begin
 
   return v_notification_id;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: get_unread_notification_count
@@ -349,7 +349,7 @@ returns int
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   return (
     select count(*) from public.notifications
@@ -359,7 +359,7 @@ begin
       and is_archived = false
   );
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: get_notifications_by_category
@@ -382,7 +382,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   return query
   select
@@ -402,7 +402,7 @@ begin
   order by n.is_pinned desc, n.created_at desc
   limit p_limit offset p_offset;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: mark_notification_read
@@ -413,14 +413,14 @@ returns boolean
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   update public.notifications
   set is_read = true, read_at = now()
   where id = p_notification_id and user_id = p_user_id;
   return found;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: mark_all_notifications_read
@@ -431,7 +431,7 @@ returns int
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   update public.notifications
   set is_read = true, read_at = now()
@@ -441,7 +441,7 @@ begin
     and (p_category = 'all' or category::text = p_category);
   return count(*) from public.notifications where user_id = p_user_id and is_read = true and read_at = now();
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: archive_notification
@@ -452,14 +452,14 @@ returns boolean
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   update public.notifications
   set is_archived = true, archived_at = now()
   where id = p_notification_id and user_id = p_user_id;
   return found;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: delete_notification
@@ -470,14 +470,14 @@ returns boolean
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   update public.notifications
   set is_deleted = true, deleted_at = now()
   where id = p_notification_id and user_id = p_user_id;
   return found;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: pin_notification
@@ -488,14 +488,14 @@ returns boolean
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   update public.notifications
   set is_pinned = p_pin
   where id = p_notification_id and user_id = p_user_id;
   return found;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: track_notification_click
@@ -506,13 +506,13 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   update public.notifications
   set click_count = click_count + 1
   where id = p_notification_id;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: is_in_quiet_hours
@@ -523,7 +523,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 declare
   v_qh record;
   v_current_time time;
@@ -540,7 +540,7 @@ begin
     return v_current_time >= v_qh.start_time or v_current_time < v_qh.end_time;
   end if;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: should_send_notification
@@ -556,7 +556,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 declare
   v_pref record;
   v_in_quiet boolean;
@@ -597,7 +597,7 @@ begin
 
   return true;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: create_admin_notification
@@ -615,7 +615,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 declare
   v_id uuid;
 begin
@@ -624,7 +624,7 @@ begin
   returning id into v_id;
   return v_id;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Seed default notification templates

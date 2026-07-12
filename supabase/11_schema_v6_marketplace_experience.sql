@@ -224,12 +224,12 @@ create index if not exists idx_recently_viewed_user_viewed on public.recently_vi
 create or replace function public.update_updated_at_v6()
 returns trigger
 language plpgsql
-as $$
+as $func$
 begin
   new.updated_at = now();
   return new;
 end;
-$$;
+$func$;
 
 drop trigger if exists trg_seller_reports_updated_at on public.seller_reports;
 create trigger trg_seller_reports_updated_at before update on public.seller_reports
@@ -258,12 +258,12 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   insert into public.user_activity (user_id, activity_type, entity_type, entity_id, metadata)
   values (p_user_id, p_activity_type, p_entity_type, p_entity_id, p_metadata);
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: record_recently_viewed
@@ -277,14 +277,14 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   insert into public.recently_viewed (user_id, ad_id, viewed_at)
   values (p_user_id, p_ad_id, now())
   on conflict (user_id, ad_id) do update
   set viewed_at = now();
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: get_sponsored_listings
@@ -316,7 +316,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   return query
   select
@@ -338,7 +338,7 @@ begin
   order by sl.priority desc, sl.created_at desc
   limit p_limit;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Row Level Security

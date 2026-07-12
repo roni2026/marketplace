@@ -166,12 +166,12 @@ create index if not exists idx_conversation_mute_settings on public.conversation
 create or replace function public.update_updated_at_v8()
 returns trigger
 language plpgsql
-as $$
+as $func$
 begin
   new.updated_at = now();
   return new;
 end;
-$$;
+$func$;
 
 drop trigger if exists trg_conversations_updated_at on public.conversations;
 create trigger trg_conversations_updated_at before update on public.conversations
@@ -202,7 +202,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 declare
   conv_id uuid;
   p1 uuid;
@@ -230,7 +230,7 @@ begin
 
   return conv_id;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: update_conversation_last_message
@@ -246,7 +246,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   update public.conversations
   set
@@ -258,7 +258,7 @@ begin
     unread_count_p2 = case when p_sender_id = participant_2 then unread_count_p2 else unread_count_p2 + 1 end
   where id = p_conversation_id;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: mark_conversation_read
@@ -272,7 +272,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   update public.conversations
   set
@@ -293,7 +293,7 @@ begin
   )
   and is_read = false;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Row Level Security
