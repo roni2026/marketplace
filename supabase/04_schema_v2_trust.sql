@@ -29,25 +29,25 @@ CREATE INDEX IF NOT EXISTS idx_business_verifications_created_at ON public.busin
 ALTER TABLE public.business_verifications ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  CREATE POLICY "Users can view own business verification" ON public.business_verifications
+    CREATE POLICY "Users can view own business verification" ON public.business_verifications
   FOR SELECT USING (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Users can insert own business verification" ON public.business_verifications
+    CREATE POLICY "Users can insert own business verification" ON public.business_verifications
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Users can update own business verification" ON public.business_verifications
+    CREATE POLICY "Users can update own business verification" ON public.business_verifications
   FOR UPDATE USING (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can view all business verifications" ON public.business_verifications
+    CREATE POLICY "Admins can view all business verifications" ON public.business_verifications
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can update business verifications" ON public.business_verifications
+    CREATE POLICY "Admins can update business verifications" ON public.business_verifications
   FOR UPDATE USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin'))
   );
@@ -72,25 +72,25 @@ CREATE INDEX IF NOT EXISTS idx_address_verifications_status ON public.address_ve
 ALTER TABLE public.address_verifications ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  CREATE POLICY "Users can view own address verification" ON public.address_verifications
+    CREATE POLICY "Users can view own address verification" ON public.address_verifications
   FOR SELECT USING (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Users can insert own address verification" ON public.address_verifications
+    CREATE POLICY "Users can insert own address verification" ON public.address_verifications
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Users can update own address verification" ON public.address_verifications
+    CREATE POLICY "Users can update own address verification" ON public.address_verifications
   FOR UPDATE USING (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can view all address verifications" ON public.address_verifications
+    CREATE POLICY "Admins can view all address verifications" ON public.address_verifications
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can update address verifications" ON public.address_verifications
+    CREATE POLICY "Admins can update address verifications" ON public.address_verifications
   FOR UPDATE USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin'))
   );
@@ -116,23 +116,23 @@ CREATE INDEX IF NOT EXISTS idx_seller_scores_fraud_risk ON public.seller_scores(
 ALTER TABLE public.seller_scores ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  CREATE POLICY "Users can view own seller scores" ON public.seller_scores
+    CREATE POLICY "Users can view own seller scores" ON public.seller_scores
   FOR SELECT USING (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can view all seller scores" ON public.seller_scores
+    CREATE POLICY "Admins can view all seller scores" ON public.seller_scores
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin', 'moderator'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can update seller scores" ON public.seller_scores
+    CREATE POLICY "Admins can update seller scores" ON public.seller_scores
   FOR UPDATE USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "System can insert seller scores" ON public.seller_scores
+    CREATE POLICY "System can insert seller scores" ON public.seller_scores
   FOR INSERT WITH CHECK (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -160,23 +160,23 @@ CREATE INDEX IF NOT EXISTS idx_fraud_flags_created_at ON public.fraud_flags(crea
 ALTER TABLE public.fraud_flags ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  CREATE POLICY "Users can view own fraud flags" ON public.fraud_flags
+    CREATE POLICY "Users can view own fraud flags" ON public.fraud_flags
   FOR SELECT USING (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can view all fraud flags" ON public.fraud_flags
+    CREATE POLICY "Admins can view all fraud flags" ON public.fraud_flags
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin', 'moderator'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can update fraud flags" ON public.fraud_flags
+    CREATE POLICY "Admins can update fraud flags" ON public.fraud_flags
   FOR UPDATE USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin', 'moderator'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "System can insert fraud flags" ON public.fraud_flags
+    CREATE POLICY "System can insert fraud flags" ON public.fraud_flags
   FOR INSERT WITH CHECK (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -200,21 +200,21 @@ CREATE INDEX IF NOT EXISTS idx_device_fingerprints_ip ON public.device_fingerpri
 ALTER TABLE public.device_fingerprints ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  CREATE POLICY "Users can view own device fingerprints" ON public.device_fingerprints
+    CREATE POLICY "Users can view own device fingerprints" ON public.device_fingerprints
   FOR SELECT USING (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can view all device fingerprints" ON public.device_fingerprints
+    CREATE POLICY "Admins can view all device fingerprints" ON public.device_fingerprints
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin', 'moderator'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "System can insert device fingerprints" ON public.device_fingerprints
+    CREATE POLICY "System can insert device fingerprints" ON public.device_fingerprints
   FOR INSERT WITH CHECK (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "System can update device fingerprints" ON public.device_fingerprints
+    CREATE POLICY "System can update device fingerprints" ON public.device_fingerprints
   FOR UPDATE USING (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -239,19 +239,19 @@ CREATE INDEX IF NOT EXISTS idx_ip_reputation_blacklisted ON public.ip_reputation
 ALTER TABLE public.ip_reputation ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  CREATE POLICY "Admins can view IP reputation" ON public.ip_reputation
+    CREATE POLICY "Admins can view IP reputation" ON public.ip_reputation
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin', 'moderator'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can update IP reputation" ON public.ip_reputation
+    CREATE POLICY "Admins can update IP reputation" ON public.ip_reputation
   FOR UPDATE USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "System can insert IP reputation" ON public.ip_reputation
+    CREATE POLICY "System can insert IP reputation" ON public.ip_reputation
   FOR INSERT WITH CHECK (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -274,13 +274,13 @@ CREATE INDEX IF NOT EXISTS idx_blacklisted_items_value ON public.blacklisted_ite
 ALTER TABLE public.blacklisted_items ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  CREATE POLICY "Admins can view blacklist" ON public.blacklisted_items
+    CREATE POLICY "Admins can view blacklist" ON public.blacklisted_items
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin', 'moderator'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can manage blacklist" ON public.blacklisted_items
+    CREATE POLICY "Admins can manage blacklist" ON public.blacklisted_items
   FOR ALL USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin'))
   );
@@ -302,13 +302,13 @@ CREATE INDEX IF NOT EXISTS idx_shadow_bans_user_id ON public.shadow_bans(user_id
 ALTER TABLE public.shadow_bans ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  CREATE POLICY "Admins can view shadow bans" ON public.shadow_bans
+    CREATE POLICY "Admins can view shadow bans" ON public.shadow_bans
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin', 'moderator'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can manage shadow bans" ON public.shadow_bans
+    CREATE POLICY "Admins can manage shadow bans" ON public.shadow_bans
   FOR ALL USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin'))
   );
@@ -333,17 +333,17 @@ CREATE INDEX IF NOT EXISTS idx_permission_overrides_permission ON public.permiss
 ALTER TABLE public.permission_overrides ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  CREATE POLICY "Users can view own permission overrides" ON public.permission_overrides
+    CREATE POLICY "Users can view own permission overrides" ON public.permission_overrides
   FOR SELECT USING (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can view all permission overrides" ON public.permission_overrides
+    CREATE POLICY "Admins can view all permission overrides" ON public.permission_overrides
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  CREATE POLICY "Admins can manage permission overrides" ON public.permission_overrides
+    CREATE POLICY "Admins can manage permission overrides" ON public.permission_overrides
   FOR ALL USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('super_admin', 'admin'))
   );
