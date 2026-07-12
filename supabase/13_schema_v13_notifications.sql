@@ -12,38 +12,28 @@
 -- =========================================================================
 
 do $$ begin
-DO $$ BEGIN
-    create type public.notification_category as enum (
+  create type public.notification_category as enum (
     'account', 'listings', 'offers', 'messages', 'saved_searches',
     'wishlist', 'reviews', 'orders', 'payments', 'delivery',
     'system', 'security', 'promotions', 'admin'
   );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-DO $$ BEGIN
-    create type public.notification_priority as enum ('low', 'normal', 'high', 'urgent');
+  create type public.notification_priority as enum ('low', 'normal', 'high', 'urgent');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
-DO $$ BEGIN
-    create type public.notification_channel as enum ('in_app', 'push', 'email', 'sms');
+  create type public.notification_channel as enum ('in_app', 'push', 'email', 'sms');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
-DO $$ BEGIN
-    create type public.notification_frequency as enum ('instant', 'daily', 'weekly', 'disabled');
+  create type public.notification_frequency as enum ('instant', 'daily', 'weekly', 'disabled');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
-DO $$ BEGIN
-    create type public.delivery_status as enum ('pending', 'sent', 'delivered', 'read', 'failed', 'bounced');
+  create type public.delivery_status as enum ('pending', 'sent', 'delivered', 'read', 'failed', 'bounced');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================
 -- Notifications table (unified notification center)
