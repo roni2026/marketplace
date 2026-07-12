@@ -8,16 +8,12 @@
 
 -- Enums
 do $$ begin
-DO $$ BEGIN
     create type public.media_type as enum ('image', 'video', '360');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
-DO $$ BEGIN
     create type public.condition_grade as enum ('new', 'like_new', 'good', 'fair', 'poor');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- -------------------------------------------------------------------------
 -- Listing Variants (size, color, etc.)
@@ -190,34 +186,40 @@ alter table public.image_optimizations enable row level security;
 -- Listing variants: owner of the ad can manage; public can view
 DO $$ BEGIN
   create policy "Public can view listing variants" on public.listing_variants for select using (true);
-create policy "Ad owner manages variants" on public.listing_variants for all
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Ad owner manages variants" on public.listing_variants for all
   using (exists (select 1 from public.ads where ads.id = listing_variants.ad_id and ads.user_id = auth.uid()))
   with check (exists (select 1 from public.ads where ads.id = listing_variants.ad_id and ads.user_id = auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Listing templates: only owner
 DO $$ BEGIN
-  create policy "Users manage own templates" on public.listing_templates for all
+    create policy "Users manage own templates" on public.listing_templates for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Price history: public can view, ad owner can insert
 DO $$ BEGIN
   create policy "Public can view price history" on public.price_history for select using (true);
-create policy "Ad owner inserts price history" on public.price_history for insert
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Ad owner inserts price history" on public.price_history for insert
   with check (exists (select 1 from public.ads where ads.id = price_history.ad_id and ads.user_id = auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Price drop alerts: only owner
 DO $$ BEGIN
-  create policy "Users manage own price drop alerts" on public.price_drop_alerts for all
+    create policy "Users manage own price drop alerts" on public.price_drop_alerts for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Ad media: public can view, ad owner can manage
 DO $$ BEGIN
   create policy "Public can view ad media" on public.ad_media for select using (true);
-create policy "Ad owner manages media" on public.ad_media for all
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Ad owner manages media" on public.ad_media for all
   using (exists (select 1 from public.ads where ads.id = ad_media.ad_id and ads.user_id = auth.uid()))
   with check (exists (select 1 from public.ads where ads.id = ad_media.ad_id and ads.user_id = auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -225,7 +227,9 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 -- Ad locations: public can view, ad owner can manage
 DO $$ BEGIN
   create policy "Public can view ad locations" on public.ad_locations for select using (true);
-create policy "Ad owner manages locations" on public.ad_locations for all
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Ad owner manages locations" on public.ad_locations for all
   using (exists (select 1 from public.ads where ads.id = ad_locations.ad_id and ads.user_id = auth.uid()))
   with check (exists (select 1 from public.ads where ads.id = ad_locations.ad_id and ads.user_id = auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -233,7 +237,9 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 -- Regions: public read, admin write
 DO $$ BEGIN
   create policy "Public can view regions" on public.regions for select using (true);
-create policy "Admins manage regions" on public.regions for all
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Admins manage regions" on public.regions for all
   using (exists (select 1 from public.user_roles where user_roles.user_id = auth.uid() and user_roles.role in ('super_admin', 'admin')))
   with check (exists (select 1 from public.user_roles where user_roles.user_id = auth.uid() and user_roles.role in ('super_admin', 'admin')));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -241,20 +247,22 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 -- Cities: public read, admin write
 DO $$ BEGIN
   create policy "Public can view cities" on public.cities for select using (true);
-create policy "Admins manage cities" on public.cities for all
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Admins manage cities" on public.cities for all
   using (exists (select 1 from public.user_roles where user_roles.user_id = auth.uid() and user_roles.role in ('super_admin', 'admin')))
   with check (exists (select 1 from public.user_roles where user_roles.user_id = auth.uid() and user_roles.role in ('super_admin', 'admin')));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Media library: only owner
 DO $$ BEGIN
-  create policy "Users manage own media library" on public.media_library for all
+    create policy "Users manage own media library" on public.media_library for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Image optimizations: owner of the media item
 DO $$ BEGIN
-  create policy "Users manage own image optimizations" on public.image_optimizations for all
+    create policy "Users manage own image optimizations" on public.image_optimizations for all
   using (exists (select 1 from public.media_library where media_library.id = image_optimizations.media_id and media_library.user_id = auth.uid()))
   with check (exists (select 1 from public.media_library where media_library.id = image_optimizations.media_id and media_library.user_id = auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
