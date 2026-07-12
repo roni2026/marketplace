@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { DataTable, Column } from '@/components/admin/DataTable';
@@ -26,16 +29,7 @@ interface Order {
   created_at: string;
 }
 
-const MOCK_ORDERS: Order[] = Array.from({ length: 50 }, (_, i) => ({
-  id: `ord_${i.toString().padStart(4, '0')}`,
-  order_number: `#ORD-${(1000 + i).toString()}`,
-  customer_name: ['Rahim Uddin', 'Karim Ali', 'Fatima Begum', 'Ali Hassan', 'Sadia Islam'][i % 5],
-  product_name: ['iPhone 13 Pro', 'Samsung TV', 'Honda Motorcycle', 'Sofa Set', 'Laptop Stand'][i % 5],
-  amount: Math.floor(Math.random() * 80000) + 500,
-  status: (['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'] as const)[Math.floor(Math.random() * 6)],
-  payment_status: (['paid', 'pending', 'failed', 'refunded'] as const)[Math.floor(Math.random() * 4)],
-  created_at: subDays(new Date(), Math.floor(Math.random() * 30)).toISOString(),
-}));
+// Orders are fetched from the database (offers table or a dedicated orders table).
 
 export default function Orders() {
   const { user, isAdmin } = useAuth();
@@ -43,14 +37,59 @@ export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
     if (isAdmin === false) { navigate('/'); return; }
     if (isAdmin) {
-      setOrders(MOCK_ORDERS);
-      setIsLoading(false);
+      fetchOrders();
     }
   }, [user, isAdmin, navigate]);
+
+  const fetchOrders = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch offers as orders (offers represent transactions in the marketplace)
+      const { data, error } = await supabase
+        .from('offers')
+        .select(`
+          id,
+          amount,
+          status,
+          created_at,
+          ad_id,
+          buyer_id,
+          seller_id,
+          ads:ad_id (title, slug),
+          profiles:buyer_id (full_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const mapped: Order[] = data.map((o: any) => ({
+          id: o.id,
+          order_number: `#OFF-${o.id.slice(0, 8).toUpperCase()}`,
+          customer_name: o.profiles?.full_name || 'Unknown Customer',
+          product_name: o.ads?.title || 'Unknown Product',
+          amount: o.amount || 0,
+          status: o.status === 'accepted' ? 'delivered' : o.status === 'pending' ? 'pending' : o.status === 'rejected' ? 'cancelled' : 'processing',
+          payment_status: o.status === 'accepted' ? 'paid' : 'pending',
+          created_at: o.created_at,
+        }));
+        setOrders(mapped);
+      } else {
+        setOrders([]);
+      }
+    } catch (err: any) {
+      console.error('Error fetching orders:', err);
+      setOrders([]);
+    }
+    setIsLoading(false);
+  };
 
   if (!isAdmin) {
     return <div className="min-h-screen flex items-center justify-center"><Skeleton className="h-64 w-64" /></div>;
@@ -125,9 +164,22 @@ export default function Orders() {
       </StatCardGrid>
 
       <div className="mt-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40 h-9"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="shipped">Shipped</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <DataTable
           columns={columns}
-          data={orders}
+          data={statusFilter === 'all' ? orders : orders.filter(o => o.status === statusFilter)}
           searchable
           searchPlaceholder="Search orders..."
           searchKeys={['order_number', 'customer_name', 'product_name', 'status']}
@@ -139,6 +191,13 @@ export default function Orders() {
               <Button variant="outline" size="sm" className="h-7 text-xs">Mark Shipped</Button>
               <Button variant="outline" size="sm" className="h-7 text-xs">Export Selected</Button>
             </>
+          }
+          emptyState={
+            <div className="text-center py-12">
+              <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="font-semibold text-lg mb-2">No Orders Yet</h3>
+              <p className="text-muted-foreground text-sm">Orders will appear here once buyers start making offers.</p>
+            </div>
           }
         />
       </div>

@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard, StatCardGrid } from '@/components/admin/StatCard';
 import { format, subDays } from 'date-fns';
 import {
-  Mail, Bell, Download, Plus, Send, Eye, Click, MousePointerClick,
+  Mail, Bell, Download, Plus, Send, Eye, MousePointerClick,
   TrendingUp, Users, MessageSquare,
 } from 'lucide-react';
 import {
@@ -29,13 +31,8 @@ interface Campaign {
   created_at: string;
 }
 
-const MOCK_CAMPAIGNS: Campaign[] = [
-  { id: '1', name: 'Eid Sale 2026', type: 'email', status: 'active', sent: 12500, opened: 4200, clicked: 890, created_at: subDays(new Date(), 5).toISOString() },
-  { id: '2', name: 'New Arrivals Alert', type: 'push', status: 'completed', sent: 8000, opened: 3200, clicked: 650, created_at: subDays(new Date(), 10).toISOString() },
-  { id: '3', name: 'Summer Promo', type: 'email', status: 'scheduled', sent: 0, opened: 0, clicked: 0, created_at: subDays(new Date(), 2).toISOString() },
-  { id: '4', name: 'Cart Abandonment', type: 'email', status: 'active', sent: 3400, opened: 1800, clicked: 420, created_at: subDays(new Date(), 15).toISOString() },
-  { id: '5', name: 'Flash Sale Notification', type: 'push', status: 'draft', sent: 0, opened: 0, clicked: 0, created_at: subDays(new Date(), 1).toISOString() },
-];
+// Campaigns are fetched from the database (notifications table or a dedicated campaigns table).
+// If no campaigns table exists, we show an empty state with a call-to-action.
 
 export default function Campaigns() {
   const { user, isAdmin } = useAuth();
@@ -47,10 +44,44 @@ export default function Campaigns() {
     if (!user) { navigate('/auth'); return; }
     if (isAdmin === false) { navigate('/'); return; }
     if (isAdmin) {
-      setCampaigns(MOCK_CAMPAIGNS);
-      setIsLoading(false);
+      fetchCampaigns();
     }
   }, [user, isAdmin, navigate]);
+
+  const fetchCampaigns = async () => {
+    setIsLoading(true);
+    try {
+      // Try to fetch from a campaigns table if it exists
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('id, notification_type, title, created_at')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // Map notifications to campaign format
+        const mapped: Campaign[] = data.map((n: any) => ({
+          id: n.id,
+          name: n.title || 'Untitled Campaign',
+          type: n.notification_type === 'ticket_update' ? 'email' : 'push',
+          status: 'completed' as const,
+          sent: 1,
+          opened: 0,
+          clicked: 0,
+          created_at: n.created_at,
+        }));
+        setCampaigns(mapped);
+      } else {
+        setCampaigns([]);
+      }
+    } catch (err: any) {
+      console.error('Error fetching campaigns:', err);
+      setCampaigns([]);
+    }
+    setIsLoading(false);
+  };
 
   if (!isAdmin) {
     return <div className="min-h-screen flex items-center justify-center"><Skeleton className="h-64 w-64" /></div>;
@@ -64,8 +95,8 @@ export default function Campaigns() {
 
   const chartData = Array.from({ length: 14 }, (_, i) => ({
     date: format(subDays(new Date(), 13 - i), 'MMM d'),
-    sent: Math.floor(Math.random() * 2000) + 200,
-    opened: Math.floor(Math.random() * 800) + 100,
+    sent: campaigns.filter(c => format(new Date(c.created_at), 'MMM d') === format(subDays(new Date(), 13 - i), 'MMM d')).reduce((s, c) => s + c.sent, 0),
+    opened: campaigns.filter(c => format(new Date(c.created_at), 'MMM d') === format(subDays(new Date(), 13 - i), 'MMM d')).reduce((s, c) => s + c.opened, 0),
   }));
 
   return (
@@ -123,6 +154,15 @@ export default function Campaigns() {
         <h2 className="text-sm font-semibold">All Campaigns</h2>
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
+        ) : campaigns.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="font-semibold text-lg mb-2">No Campaigns Yet</h3>
+              <p className="text-muted-foreground text-sm mb-4">Create your first marketing campaign to get started.</p>
+              <Button size="sm" className="gap-2"><Plus className="h-3.5 w-3.5" /> New Campaign</Button>
+            </CardContent>
+          </Card>
         ) : (
           campaigns.map(c => (
             <Card key={c.id} className="hover:shadow-sm transition-shadow">

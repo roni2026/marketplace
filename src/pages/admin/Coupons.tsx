@@ -34,13 +34,7 @@ interface Coupon {
   created_at: string;
 }
 
-const MOCK_COUPONS: Coupon[] = [
-  { id: '1', code: 'WELCOME10', type: 'percentage', value: 10, status: 'active', used_count: 234, max_uses: 1000, expires_at: null, created_at: new Date(Date.now() - 30 * 86400000).toISOString() },
-  { id: '2', code: 'EID2026', type: 'percentage', value: 25, status: 'active', used_count: 89, max_uses: 500, expires_at: new Date(Date.now() + 15 * 86400000).toISOString(), created_at: new Date(Date.now() - 7 * 86400000).toISOString() },
-  { id: '3', code: 'FLAT500', type: 'fixed', value: 500, status: 'active', used_count: 56, max_uses: null, expires_at: null, created_at: new Date(Date.now() - 60 * 86400000).toISOString() },
-  { id: '4', code: 'SUMMER20', type: 'percentage', value: 20, status: 'expired', used_count: 412, max_uses: 500, expires_at: new Date(Date.now() - 10 * 86400000).toISOString(), created_at: new Date(Date.now() - 90 * 86400000).toISOString() },
-  { id: '5', code: 'NEWUSER', type: 'fixed', value: 200, status: 'disabled', used_count: 1023, max_uses: null, expires_at: null, created_at: new Date(Date.now() - 120 * 86400000).toISOString() },
-];
+// Coupons are managed in-memory until a dedicated coupons table is created in the database.
 
 export default function Coupons() {
   const { user, isAdmin } = useAuth();
@@ -54,7 +48,9 @@ export default function Coupons() {
     if (!user) { navigate('/auth'); return; }
     if (isAdmin === false) { navigate('/'); return; }
     if (isAdmin) {
-      setCoupons(MOCK_COUPONS);
+      // Coupons are currently managed in-memory. When a coupons table is added to the DB,
+      // this will fetch from supabase. For now, start with an empty list.
+      setCoupons([]);
       setIsLoading(false);
     }
   }, [user, isAdmin, navigate]);

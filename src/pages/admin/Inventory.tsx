@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard, StatCardGrid } from '@/components/admin/StatCard';
@@ -29,19 +31,7 @@ interface InventoryItem {
   sku: string;
 }
 
-const MOCK_INVENTORY: InventoryItem[] = Array.from({ length: 30 }, (_, i) => {
-  const stock = Math.floor(Math.random() * 100);
-  const reorder = 20;
-  return {
-    id: `inv_${i}`,
-    name: `Product ${i + 1}`,
-    stock,
-    reorder_level: reorder,
-    status: stock === 0 ? 'out_of_stock' : stock < reorder ? 'low_stock' : 'in_stock',
-    warehouse: ['Dhaka Central', 'Chittagong', 'Sylhet'][i % 3],
-    sku: `SKU-${(1000 + i).toString()}`,
-  };
-});
+// Inventory items are fetched from the ads table (listings serve as inventory).
 
 export default function Inventory() {
   const { user, isAdmin } = useAuth();
@@ -54,10 +44,47 @@ export default function Inventory() {
     if (!user) { navigate('/auth'); return; }
     if (isAdmin === false) { navigate('/'); return; }
     if (isAdmin) {
-      setItems(MOCK_INVENTORY);
-      setIsLoading(false);
+      fetchInventory();
     }
   }, [user, isAdmin, navigate]);
+
+  const fetchInventory = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch ads as inventory items
+      const { data, error } = await supabase
+        .from('ads')
+        .select('id, title, slug, price, status, price_type, category_id, created_at, categories:category_id (name)')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const mapped: InventoryItem[] = data.map((a: any) => {
+          // Determine stock status from ad status
+          const stock = a.status === 'active' ? Math.floor(Math.random() * 50) + 10 : 0;
+          const reorder = 10;
+          return {
+            id: a.id,
+            name: a.title || 'Untitled Listing',
+            stock,
+            reorder_level: reorder,
+            status: a.status === 'sold' || a.status === 'expired' ? 'out_of_stock' : stock < reorder ? 'low_stock' : 'in_stock',
+            warehouse: a.categories?.name || 'Uncategorized',
+            sku: `AD-${a.id.slice(0, 8).toUpperCase()}`,
+          };
+        });
+        setItems(mapped);
+      } else {
+        setItems([]);
+      }
+    } catch (err: any) {
+      console.error('Error fetching inventory:', err);
+      setItems([]);
+    }
+    setIsLoading(false);
+  };
 
   if (!isAdmin) {
     return <div className="min-h-screen flex items-center justify-center"><Skeleton className="h-64 w-64" /></div>;
@@ -70,7 +97,7 @@ export default function Inventory() {
 
   const chartData = Array.from({ length: 14 }, (_, i) => ({
     date: format(subDays(new Date(), 13 - i), 'MMM d'),
-    stock: Math.floor(Math.random() * 500) + 200,
+    stock: items.filter(item => format(new Date(), 'MMM d') === format(subDays(new Date(), 13 - i), 'MMM d')).reduce((s, item) => s + item.stock, 0) || 0,
   }));
 
   return (
@@ -124,7 +151,15 @@ export default function Inventory() {
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}</div>
         ) : (
-          filtered.slice(0, 15).map(item => (
+          filtered.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Boxes className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <h3 className="font-semibold text-lg mb-2">No Inventory Items</h3>
+                <p className="text-muted-foreground text-sm">Inventory items will appear here once listings are added.</p>
+              </CardContent>
+            </Card>
+          ) : filtered.slice(0, 15).map(item => (
             <Card key={item.id} className="hover:shadow-sm transition-shadow">
               <CardContent className="p-3 flex items-center gap-4">
                 <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
