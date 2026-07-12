@@ -1,443 +1,185 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+/**
+ * CategoryManagement — Admin category CRUD with nested tree, SEO fields, and dialogs.
+ */
+
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { PageHeader } from '@/components/admin/PageHeader';
+import { StatCard, StatCardGrid } from '@/components/admin/StatCard';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/hooks/useAuth';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { AdminLayout } from '@/components/admin/AdminLayout';
+import { useAuth } from '@/hooks/useAuth';
+import { useAdminPortal } from '@/hooks/useAdminPortal';
 import { toast } from 'sonner';
-import { FolderTree, Plus, Edit, Trash2, ChevronRight, Search } from 'lucide-react';
-import { generateSlug } from '@/lib/constants';
+import { format } from 'date-fns';
+import { FolderTree, Plus, Edit2, Trash2, ChevronRight, ChevronDown, Download } from 'lucide-react';
+import { exportData, downloadExport } from '@/lib/adminPortal';
 
 interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  icon: string | null;
-  parent_id: string | null;
-  sort_order: number | null;
-  meta_title: string | null;
-  meta_description: string | null;
-  is_active: boolean | null;
-  subcategories: Subcategory[];
+  id: string; name: string; slug: string; parent_id: string | null;
+  icon: string | null; is_active: boolean; sort_order: number;
+  seo_title: string | null; seo_description: string | null; created_at: string;
 }
-
-interface Subcategory {
-  id: string;
-  name: string;
-  slug: string;
-  category_id: string;
-}
-
-const CATEGORY_ICONS = [
-  'Smartphone', 'Car', 'Home', 'Briefcase', 'Shirt', 'Wrench', 'Sofa', 'GraduationCap',
-  'Laptop', 'Camera', 'Gamepad2', 'Bike', 'Boat', 'Plane', 'Building', 'Dog', 'Cat',
-  'Book', 'Music', 'PaintBucket', 'Hammer', 'Scissors', 'Pill', 'Dumbbell',
-];
 
 export default function CategoryManagement() {
-  const { user, isAdmin } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { logActivity } = useAdminPortal();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showDialog, setShowDialog] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [isSubcategory, setIsSubcategory] = useState(false);
-  const [parentCategoryId, setParentCategoryId] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Category | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ name: '', slug: '', parent_id: 'none', icon: '', sort_order: '0', is_active: true, seo_title: '', seo_description: '' });
 
-  // Form state
-  const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
-  const [icon, setIcon] = useState('Smartphone');
-  const [sortOrder, setSortOrder] = useState('0');
-  const [metaTitle, setMetaTitle] = useState('');
-  const [metaDescription, setMetaDescription] = useState('');
-  const [isActive, setIsActive] = useState(true);
+  const fetchCategories = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.from('categories').select('*').order('sort_order', { ascending: true });
+    setCategories((data as Category[]) || []);
+    setLoading(false);
+  }, []);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    if (isAdmin === false) {
-      navigate('/');
-      return;
-    }
-    if (isAdmin) {
-      fetchCategories();
-    }
-  }, [user, isAdmin, navigate]);
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
-  const fetchCategories = async () => {
-    setIsLoading(true);
-    const [catRes, subRes] = await Promise.all([
-      supabase.from('categories').select('*').order('sort_order'),
-      supabase.from('subcategories').select('*'),
-    ]);
+  const rootCategories = useMemo(() => categories.filter(c => !c.parent_id), [categories]);
+  const getChildren = (parentId: string) => categories.filter(c => c.parent_id === parentId);
 
-    const cats = (catRes.data as Category[]) || [];
-    const subs = (subRes.data as Subcategory[]) || [];
-
-    // Group subcategories under their parent categories
-    const grouped = cats.map(cat => ({
-      ...cat,
-      subcategories: subs.filter(s => s.category_id === cat.id),
-    }));
-
-    setCategories(grouped);
-    setSubcategories(subs);
-    setIsLoading(false);
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   };
 
-  const openAddDialog = (isSub: boolean = false, parentId?: string) => {
-    setEditingCategory(null);
-    setIsSubcategory(isSub);
-    setParentCategoryId(parentId || '');
-    setName('');
-    setSlug('');
-    setIcon('Smartphone');
-    setSortOrder('0');
-    setMetaTitle('');
-    setMetaDescription('');
-    setIsActive(true);
-    setShowDialog(true);
+  const handleEdit = (cat: Category) => {
+    setEditing(cat);
+    setFormData({ name: cat.name, slug: cat.slug, parent_id: cat.parent_id || 'none', icon: cat.icon || '', sort_order: String(cat.sort_order), is_active: cat.is_active, seo_title: cat.seo_title || '', seo_description: cat.seo_description || '' });
+    setShowForm(true);
   };
 
-  const openEditDialog = (category: Category, isSub: boolean = false) => {
-    setEditingCategory(category);
-    setIsSubcategory(isSub);
-    setParentCategoryId(category.parent_id || '');
-    setName(category.name);
-    setSlug(category.slug);
-    setIcon(category.icon || 'Smartphone');
-    setSortOrder(String(category.sort_order || 0));
-    setMetaTitle(category.meta_title || '');
-    setMetaDescription(category.meta_description || '');
-    setIsActive(category.is_active ?? true);
-    setShowDialog(true);
+  const handleAdd = () => {
+    setEditing(null);
+    setFormData({ name: '', slug: '', parent_id: 'none', icon: '', sort_order: '0', is_active: true, seo_title: '', seo_description: '' });
+    setShowForm(true);
   };
 
-  const handleSave = async () => {
-    if (!name.trim()) {
-      toast.error('Name is required');
-      return;
-    }
-
-    const finalSlug = slug.trim() || generateSlug(name);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     const payload = {
-      name: name.trim(),
-      slug: finalSlug,
-      icon,
-      sort_order: parseInt(sortOrder) || 0,
-      meta_title: metaTitle.trim() || null,
-      meta_description: metaDescription.trim() || null,
-      is_active: isActive,
-      updated_at: new Date().toISOString(),
+      name: formData.name,
+      slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
+      parent_id: formData.parent_id === 'none' ? null : formData.parent_id,
+      icon: formData.icon || null,
+      sort_order: parseInt(formData.sort_order) || 0,
+      is_active: formData.is_active,
+      seo_title: formData.seo_title || null,
+      seo_description: formData.seo_description || null,
     };
-
-    if (editingCategory) {
-      if (isSubcategory) {
-        const { error } = await supabase
-          .from('subcategories')
-          .update({ name: name.trim(), slug: finalSlug })
-          .eq('id', editingCategory.id);
-        if (error) {
-          toast.error('Failed to update subcategory');
-        } else {
-          toast.success('Subcategory updated');
-        }
-      } else {
-        const { error } = await supabase
-          .from('categories')
-          .update(payload)
-          .eq('id', editingCategory.id);
-        if (error) {
-          toast.error('Failed to update category');
-        } else {
-          toast.success('Category updated');
-        }
-      }
+    if (editing) {
+      const { error } = await supabase.from('categories').update(payload).eq('id', editing.id);
+      if (error) { toast.error('Failed to update category'); return; }
+      if (user) await logActivity('update_category', 'category', editing.id, { name: formData.name });
+      toast.success('Category updated');
     } else {
-      if (isSubcategory) {
-        const { error } = await supabase
-          .from('subcategories')
-          .insert({
-            name: name.trim(),
-            slug: finalSlug,
-            category_id: parentCategoryId,
-          });
-        if (error) {
-          toast.error('Failed to create subcategory');
-        } else {
-          toast.success('Subcategory created');
-        }
-      } else {
-        const { error } = await supabase
-          .from('categories')
-          .insert(payload);
-        if (error) {
-          toast.error('Failed to create category');
-        } else {
-          toast.success('Category created');
-        }
-      }
+      const { error } = await supabase.from('categories').insert(payload);
+      if (error) { toast.error('Failed to create category'); return; }
+      if (user) await logActivity('create_category', 'category', undefined, { name: formData.name });
+      toast.success('Category created');
     }
-
-    setShowDialog(false);
+    setShowForm(false);
     fetchCategories();
   };
 
-  const handleDelete = async (id: string, isSub: boolean) => {
-    const table = isSub ? 'subcategories' : 'categories';
-    const { error } = await supabase.from(table).delete().eq('id', id);
-    if (error) {
-      toast.error('Failed to delete');
-    } else {
-      toast.success('Deleted successfully');
-      fetchCategories();
-    }
+  const handleDelete = async (id: string) => {
+    const children = getChildren(id);
+    if (children.length > 0) { toast.error('Cannot delete category with subcategories'); setConfirmDelete(null); return; }
+    const { error } = await supabase.from('categories').delete().eq('id', id);
+    if (error) { toast.error('Failed to delete category'); return; }
+    if (user) await logActivity('delete_category', 'category', id);
+    toast.success('Category deleted');
+    setConfirmDelete(null);
+    fetchCategories();
   };
 
-  if (!isAdmin) {
+  const handleExport = async () => {
+    const csv = await exportData('categories', 'csv');
+    if (csv) downloadExport(csv, 'categories_export.csv', 'csv');
+  };
+
+  const renderCategory = (cat: Category, level: number = 0) => {
+    const children = getChildren(cat.id);
+    const hasChildren = children.length > 0;
+    const isExpanded = expandedIds.has(cat.id);
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Skeleton className="h-64 w-64" />
+      <div key={cat.id}>
+        <div className="flex items-center gap-2 border-b border-border/50 px-3 py-2 hover:bg-accent/30" style={{ paddingLeft: `${12 + level * 20}px` }}>
+          {hasChildren ? (
+            <button onClick={() => toggleExpand(cat.id)} className="text-muted-foreground">{isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}</button>
+          ) : <span className="w-3.5" />}
+          <FolderTree className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="flex-1 text-xs font-medium">{cat.name}</span>
+          <Badge variant="secondary" className="text-[9px]">{cat.slug}</Badge>
+          <Badge variant={cat.is_active ? 'success' : 'secondary'} className="text-[9px]">{cat.is_active ? 'Active' : 'Inactive'}</Badge>
+          <span className="text-[10px] text-muted-foreground">Order: {cat.sort_order}</span>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleEdit(cat)}><Edit2 className="h-3 w-3" /></Button>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-600" onClick={() => setConfirmDelete(cat.id)}><Trash2 className="h-3 w-3" /></Button>
+        </div>
+        {isExpanded && hasChildren && children.map(child => renderCategory(child, level + 1))}
       </div>
     );
-  }
-
-  const filteredCategories = categories.filter(c => 
-    !searchTerm || c.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  };
 
   return (
     <AdminLayout>
-      <div className="mb-8 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Category Management</h1>
-          <p className="text-muted-foreground">Manage categories, subcategories, icons, and SEO</p>
+      <PageHeader title="Category Management" description={`${categories.length} categories`} actions={
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={handleExport}><Download className="h-3.5 w-3.5" /> Export</Button>
+          <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={handleAdd}><Plus className="h-3.5 w-3.5" /> Add Category</Button>
         </div>
-        <Button className="gap-2" onClick={() => openAddDialog()}>
-          <Plus className="h-4 w-4" />
-          Add Category
-        </Button>
-      </div>
+      } />
+      <StatCardGrid>
+        <StatCard title="Total Categories" value={categories.length} icon={FolderTree} color="blue" loading={loading} />
+        <StatCard title="Active" value={categories.filter(c => c.is_active).length} icon={FolderTree} color="green" loading={loading} />
+        <StatCard title="Inactive" value={categories.filter(c => !c.is_active).length} icon={FolderTree} color="red" loading={loading} />
+        <StatCard title="Root Categories" value={rootCategories.length} icon={FolderTree} color="purple" loading={loading} />
+      </StatCardGrid>
 
-      {/* Search */}
-      <div className="mb-4 relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search categories..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9"
-        />
-      </div>
-
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-20" />
-          ))}
-        </div>
-      ) : filteredCategories.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <FolderTree className="h-12 w-12 mx-auto mb-2 opacity-50" />
-          <p>No categories found</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredCategories.map((category) => (
-            <Card key={category.id}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                      <span className="text-xs">{category.icon?.slice(0, 2) || '📁'}</span>
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold truncate">{category.name}</h3>
-                        {category.is_active === false && (
-                          <Badge variant="secondary">Inactive</Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">/{category.slug}</p>
-                      {category.meta_title && (
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                          SEO: {category.meta_title}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => openAddDialog(true, category.id)}
-                      title="Add subcategory"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => openEditDialog(category)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive"
-                      onClick={() => handleDelete(category.id, false)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Subcategories */}
-                {category.subcategories.length > 0 && (
-                  <div className="mt-3 pl-13 space-y-1 border-l-2 border-border ml-5">
-                    {category.subcategories.map((sub) => (
-                      <div key={sub.id} className="flex items-center justify-between gap-2 py-1.5 pl-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <span className="text-sm truncate">{sub.name}</span>
-                          <span className="text-xs text-muted-foreground">/{sub.slug}</span>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => openEditDialog(sub as unknown as Category, true)}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive"
-                            onClick={() => handleDelete(sub.id, true)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {showForm && (
+        <form onSubmit={handleSubmit} className="mt-4 rounded-md border border-border bg-card p-4">
+          <h3 className="mb-3 text-sm font-semibold">{editing ? 'Edit Category' : 'New Category'}</h3>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div><Label className="text-xs">Name *</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required className="h-8 text-xs" /></div>
+            <div><Label className="text-xs">Slug</Label><Input value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} placeholder="auto-generated" className="h-8 text-xs" /></div>
+            <div><Label className="text-xs">Parent Category</Label>
+              <Select value={formData.parent_id} onValueChange={(v) => setFormData({ ...formData, parent_id: v })}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /><SelectContent><SelectItem value="none">None (Root)</SelectItem>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></SelectTrigger>
+              </Select>
+            </div>
+            <div><Label className="text-xs">Icon (emoji or URL)</Label><Input value={formData.icon} onChange={(e) => setFormData({ ...formData, icon: e.target.value })} className="h-8 text-xs" /></div>
+            <div><Label className="text-xs">Sort Order</Label><Input type="number" value={formData.sort_order} onChange={(e) => setFormData({ ...formData, sort_order: e.target.value })} className="h-8 text-xs" /></div>
+            <div className="flex items-center gap-2 pt-5"><Switch checked={formData.is_active} onCheckedChange={(v) => setFormData({ ...formData, is_active: v })} /><Label className="text-xs">Active</Label></div>
+            <div><Label className="text-xs">SEO Title</Label><Input value={formData.seo_title} onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })} className="h-8 text-xs" maxLength={60} /></div>
+            <div><Label className="text-xs">SEO Description</Label><Input value={formData.seo_description} onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })} className="h-8 text-xs" maxLength={160} /></div>
+          </div>
+          <div className="mt-3 flex justify-end gap-2"><Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={() => setShowForm(false)}>Cancel</Button><Button type="submit" size="sm" className="h-8 text-xs">{editing ? 'Update' : 'Create'}</Button></div>
+        </form>
       )}
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {editingCategory ? 'Edit' : 'Add'} {isSubcategory ? 'Subcategory' : 'Category'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  if (!editingCategory) setSlug(generateSlug(e.target.value));
-                }}
-                placeholder="Category name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                placeholder="auto-generated"
-              />
-            </div>
-            {!isSubcategory && (
-              <>
-                <div className="space-y-2">
-                  <Label>Icon</Label>
-                  <Select value={icon} onValueChange={setIcon}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORY_ICONS.map((ic) => (
-                        <SelectItem key={ic} value={ic}>{ic}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sortOrder">Sort Order</Label>
-                    <Input
-                      id="sortOrder"
-                      type="number"
-                      value={sortOrder}
-                      onChange={(e) => setSortOrder(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Active</Label>
-                    <Select value={isActive ? 'true' : 'false'} onValueChange={(v) => setIsActive(v === 'true')}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Active</SelectItem>
-                        <SelectItem value="false">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="metaTitle">SEO Meta Title</Label>
-                  <Input
-                    id="metaTitle"
-                    value={metaTitle}
-                    onChange={(e) => setMetaTitle(e.target.value)}
-                    placeholder="SEO title for search engines"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="metaDesc">SEO Meta Description</Label>
-                  <Input
-                    id="metaDesc"
-                    value={metaDescription}
-                    onChange={(e) => setMetaDescription(e.target.value)}
-                    placeholder="SEO description for search engines"
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
-            <Button onClick={handleSave}>Save</Button>
-          </DialogFooter>
+      <div className="mt-4 overflow-hidden rounded-md border border-border bg-card">
+        {loading ? <div className="space-y-2 p-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div> :
+         rootCategories.length === 0 ? <p className="py-12 text-center text-xs text-muted-foreground">No categories found</p> :
+         rootCategories.map(cat => renderCategory(cat))}
+      </div>
+
+      <Dialog open={!!confirmDelete} onOpenChange={(open) => { if (!open) setConfirmDelete(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle className="text-base">Delete Category</DialogTitle></DialogHeader>
+          <p className="text-xs text-muted-foreground">This will permanently delete this category. Listings in this category will be uncategorized.</p>
+          <DialogFooter><Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setConfirmDelete(null)}>Cancel</Button><Button variant="destructive" size="sm" className="h-8 text-xs" onClick={() => confirmDelete && handleDelete(confirmDelete)}>Delete</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </AdminLayout>
