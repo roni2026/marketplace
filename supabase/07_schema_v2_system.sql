@@ -255,22 +255,22 @@ alter table public.custom_reports enable row level security;
 
 -- RLS Policies: admin-only access for admin tables
 DO $$ BEGIN
-    create policy "Admins can manage bookmarks" on public.admin_bookmarks for all using (
+  create policy "Admins can manage bookmarks" on public.admin_bookmarks for all using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Admins can manage notes" on public.admin_notes for all using (
+  create policy "Admins can manage notes" on public.admin_notes for all using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Admins can manage reminders" on public.admin_reminders for all using (
+  create policy "Admins can manage reminders" on public.admin_reminders for all using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Admins can manage impersonation logs" on public.admin_impersonation_logs for all using (
+  create policy "Admins can manage impersonation logs" on public.admin_impersonation_logs for all using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -292,31 +292,31 @@ create policy "Admins can manage error logs" on public.error_logs for all using 
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Admins can manage system health" on public.system_health for all using (
+  create policy "Admins can manage system health" on public.system_health for all using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Admins can manage email queue" on public.email_queue for all using (
+  create policy "Admins can manage email queue" on public.email_queue for all using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Admins can manage failed jobs" on public.failed_jobs for all using (
+  create policy "Admins can manage failed jobs" on public.failed_jobs for all using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- RLS Policies: admin-only for backup
 DO $$ BEGIN
-    create policy "Admins can manage backups" on public.backup_history for all using (
+  create policy "Admins can manage backups" on public.backup_history for all using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- RLS Policies: admin-only for feature flags
 DO $$ BEGIN
-    create policy "Admins can manage feature flags" on public.feature_flags for all using (
+  create policy "Admins can manage feature flags" on public.feature_flags for all using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -328,7 +328,7 @@ DO $$ BEGIN
 create policy "Users can manage own consent" on public.consent_logs for all using (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Admins can read all consent" on public.consent_logs for select using (
+  create policy "Admins can read all consent" on public.consent_logs for select using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -340,7 +340,7 @@ DO $$ BEGIN
 create policy "Anyone can read translation keys" on public.translation_keys for select using (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Admins can manage translation keys" on public.translation_keys for all using (
+  create policy "Admins can manage translation keys" on public.translation_keys for all using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -364,7 +364,7 @@ create policy "Admins can manage scheduled reports" on public.scheduled_reports 
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Admins can manage custom reports" on public.custom_reports for all using (
+  create policy "Admins can manage custom reports" on public.custom_reports for all using (
   exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin','super_admin'))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
