@@ -11,27 +11,21 @@
 -- =========================================================================
 
 do $$ begin
-DO $$ BEGIN
-    create type public.widget_type as enum ('stat', 'chart', 'table', 'alert', 'custom');
+  create type public.widget_type as enum ('stat', 'chart', 'table', 'alert', 'custom');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
-DO $$ BEGIN
-    create type public.bulk_operation_type as enum (
+  create type public.bulk_operation_type as enum (
     'approve_listings', 'reject_listings', 'delete_listings', 'feature_listings',
     'boost_listings', 'suspend_users', 'verify_users', 'delete_users',
     'assign_role', 'update_settings', 'export_data', 'import_data',
     'send_notification', 'cleanup_expired'
   );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-DO $$ BEGIN
-    create type public.system_health_status as enum ('healthy', 'warning', 'critical', 'down');
+  create type public.system_health_status as enum ('healthy', 'warning', 'critical', 'down');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================
 -- Admin Dashboard Widgets (customizable per admin)
@@ -336,21 +330,25 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   create policy "System inserts activity log" on public.admin_activity_log for insert with check (true);
-
--- System health: admins view, system inserts
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  -- System health: admins view, system inserts
 create policy "Admins view health metrics" on public.system_health_metrics for select
   using (public.is_admin(auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   create policy "System inserts health metrics" on public.system_health_metrics for insert with check (true);
-
--- Admin notifications: admin manages own
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  -- Admin notifications: admin manages own
 create policy "Admins view own notifications" on public.admin_notifications for select
   using (admin_id = auth.uid() or admin_id is null);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   create policy "System inserts admin notifications" on public.admin_notifications for insert with check (true);
-create policy "Admins update own notifications" on public.admin_notifications for update
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Admins update own notifications" on public.admin_notifications for update
   using (admin_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
