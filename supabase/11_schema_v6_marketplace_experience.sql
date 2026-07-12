@@ -13,13 +13,10 @@
 -- =========================================================================
 
 do $$ begin
-DO $$ BEGIN
     create type public.favorite_entity_type as enum ('listing', 'seller', 'store', 'brand', 'category');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
-DO $$ BEGIN
     create type public.activity_type as enum (
     'view', 'favorite', 'unfavorite', 'share', 'compare', 'follow_seller',
     'unfollow_seller', 'follow_store', 'unfollow_store', 'follow_category',
@@ -27,20 +24,15 @@ DO $$ BEGIN
     'unblock_seller', 'report_listing', 'report_seller', 'wishlist_add',
     'wishlist_remove', 'qr_scan', 'contact_seller', 'visit_store', 'save_search'
   );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-DO $$ BEGIN
     create type public.report_target_type as enum ('listing', 'seller');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
-DO $$ BEGIN
     create type public.sponsored_placement as enum ('search_results', 'category_page', 'homepage', 'discovery');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================
 -- Extended Favorites (listings, sellers, stores, brands, categories)
@@ -373,124 +365,130 @@ alter table public.recently_viewed enable row level security;
 
 -- User favorites: owner manages
 DO $$ BEGIN
-  create policy "Users view own favorites" on public.user_favorites for select
+    create policy "Users view own favorites" on public.user_favorites for select
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users create own favorites" on public.user_favorites for insert
+    create policy "Users create own favorites" on public.user_favorites for insert
   with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users delete own favorites" on public.user_favorites for delete
+    create policy "Users delete own favorites" on public.user_favorites for delete
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Blocked users: owner manages
 DO $$ BEGIN
-  create policy "Users view own blocks" on public.blocked_users for select
+    create policy "Users view own blocks" on public.blocked_users for select
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users create own blocks" on public.blocked_users for insert
+    create policy "Users create own blocks" on public.blocked_users for insert
   with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users delete own blocks" on public.blocked_users for delete
+    create policy "Users delete own blocks" on public.blocked_users for delete
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Hidden listings: owner manages
 DO $$ BEGIN
-  create policy "Users view own hidden" on public.hidden_listings for select
+    create policy "Users view own hidden" on public.hidden_listings for select
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users create own hidden" on public.hidden_listings for insert
+    create policy "Users create own hidden" on public.hidden_listings for insert
   with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users delete own hidden" on public.hidden_listings for delete
+    create policy "Users delete own hidden" on public.hidden_listings for delete
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Category followers: owner manages, public can see counts
 DO $$ BEGIN
-  create policy "Users view own category follows" on public.category_followers for select
+    create policy "Users view own category follows" on public.category_followers for select
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users create own category follows" on public.category_followers for insert
+    create policy "Users create own category follows" on public.category_followers for insert
   with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users delete own category follows" on public.category_followers for delete
+    create policy "Users delete own category follows" on public.category_followers for delete
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Seller reports: reporter creates, admins view
 DO $$ BEGIN
-  create policy "Users create seller reports" on public.seller_reports for insert
+    create policy "Users create seller reports" on public.seller_reports for insert
   with check (reporter_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users view own seller reports" on public.seller_reports for select
+    create policy "Users view own seller reports" on public.seller_reports for select
   using (reporter_id = auth.uid() or public.is_admin(auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins update seller reports" on public.seller_reports for update
+    create policy "Admins update seller reports" on public.seller_reports for update
   using (public.is_admin(auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Sponsored listings: admins manage, public views active
 DO $$ BEGIN
-  create policy "Public views active sponsored" on public.sponsored_listings for select
+    create policy "Public views active sponsored" on public.sponsored_listings for select
   using (is_active = true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins manage sponsored" on public.sponsored_listings for all
+    create policy "Admins manage sponsored" on public.sponsored_listings for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- User activity: owner views, system inserts
 DO $$ BEGIN
-  create policy "Users view own activity" on public.user_activity for select
+    create policy "Users view own activity" on public.user_activity for select
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   create policy "System inserts activity" on public.user_activity for insert with check (true);
-create policy "Users delete own activity" on public.user_activity for delete
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Users delete own activity" on public.user_activity for delete
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- QR code scans: system inserts, admins view
 DO $$ BEGIN
   create policy "System inserts qr scans" on public.qr_code_scans for insert with check (true);
-create policy "Admins view qr scans" on public.qr_code_scans for select
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Admins view qr scans" on public.qr_code_scans for select
   using (public.is_admin(auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- User preferences: owner manages
 DO $$ BEGIN
-  create policy "Users view own preferences" on public.user_preferences for select
+    create policy "Users view own preferences" on public.user_preferences for select
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users create own preferences" on public.user_preferences for insert
+    create policy "Users create own preferences" on public.user_preferences for insert
   with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users update own preferences" on public.user_preferences for update
+    create policy "Users update own preferences" on public.user_preferences for update
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Recently viewed: owner manages, system inserts
 DO $$ BEGIN
-  create policy "Users view own recently viewed" on public.recently_viewed for select
+    create policy "Users view own recently viewed" on public.recently_viewed for select
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   create policy "System inserts recently viewed" on public.recently_viewed for insert with check (true);
-create policy "Users delete own recently viewed" on public.recently_viewed for delete
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  create policy "Users delete own recently viewed" on public.recently_viewed for delete
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
