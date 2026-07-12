@@ -1,6 +1,6 @@
 -- BazarBD — Phase 2: User Profiles & Reputation
 -- schema_v2_profiles.sql
--- Run after schema.sql and schema_v2_social.sql and schema_v2_trust.sql
+-- Run after 01_schema.sql and 02_schema_v2_social.sql
 -- Adds public profiles, seller/buyer profiles, verification badges,
 -- follows, buyer reviews, profile views, and reputation metrics.
 -- -------------------------------------------------------------------------
