@@ -15,7 +15,7 @@ DO $$ BEGIN
 -- Notification Center
 -- -------------------------------------------------------------------------
 
-create table public.notification_preferences (
+CREATE TABLE IF NOT EXISTS public.notification_preferences (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   browser_enabled boolean default true,
