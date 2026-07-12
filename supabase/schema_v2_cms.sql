@@ -7,10 +7,7 @@
 -- -------------------------------------------------------------------------
 
 -- Enums
-do $$ begin
-  create type public.blog_status as enum ('draft', 'published', 'archived');
-exception when duplicate_object then null;
-end $$;
+create type public.blog_status as enum ('draft', 'published', 'archived');
 
 -- -------------------------------------------------------------------------
 -- Notification Center
