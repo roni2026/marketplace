@@ -777,8 +777,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   create policy "Delete own shop" on public.shops for delete using (owner_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- Helper: is_active_or_owner checks if shop is not in vacation or user is owner/staff
+-- Helper: is_active_or_owner checks if shop is not in vacation or user is owner/staff
 create or replace function public.is_active_or_owner()
 returns boolean as $$
   exists(
@@ -790,7 +789,6 @@ returns boolean as $$
     )
   ) or not exists(select 1 from public.shops s where s.id = shops.id)
 $$ language sql stable;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- shop_memberships: owner can view/manage
 DO $$ BEGIN
