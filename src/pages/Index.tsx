@@ -165,7 +165,7 @@ const Index = () => {
                 </div>
               </div>
             ) : (
-              <CategoryGrid categories={categories} />
+              <CategoryGrid categories={displayCategories} />
             )}
           </div>
 

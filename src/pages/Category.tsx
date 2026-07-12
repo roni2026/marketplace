@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -14,8 +14,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { DIVISIONS, DISTRICTS } from '@/lib/constants';
-import { Filter, X } from 'lucide-react';
+import { Filter, X, LayoutGrid } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  CATEGORY_DATA,
+  getCategoryIcon,
+  getSubcategoryIcon,
+} from '@/lib/categoryData';
 
 interface Ad {
   id: string;
@@ -45,11 +50,17 @@ interface Subcategory {
   category_id: string;
 }
 
+// Sentinel used by the Select components. Radix <SelectItem /> forbids an empty
+// string value, so we map the "no filter" option to this token and convert it
+// back to '' in state.
+const ALL = '__all__';
+
 export default function CategoryPage() {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [category, setCategory] = useState<Category | null>(null);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [ads, setAds] = useState<Ad[]>([]);
@@ -90,24 +101,24 @@ export default function CategoryPage() {
       .select('*')
       .eq('slug', slug)
       .single();
-    
+
     if (data) {
       setCategory(data);
-      
+
       const { data: subs } = await supabase
         .from('subcategories')
         .select('*')
         .eq('category_id', data.id);
-      
+
       setSubcategories(subs || []);
     }
   };
 
   const fetchAds = async () => {
     if (!category) return;
-    
+
     setIsLoading(true);
-    
+
     let query = supabase
       .from('ads')
       .select('*, ad_images(image_url), categories(name, slug)', { count: 'exact' })
@@ -132,7 +143,7 @@ export default function CategoryPage() {
     query = query.range((page - 1) * perPage, page * perPage - 1);
 
     const { data, count } = await query;
-    
+
     setAds(data as Ad[] || []);
     setTotalCount(count || 0);
     setIsLoading(false);
@@ -147,6 +158,22 @@ export default function CategoryPage() {
     if (data) {
       setFavorites(data.map(f => f.ad_id));
     }
+  };
+
+  // Persist the current subcategory selection to the URL (keeps other params).
+  const syncSubcategoryParam = (id: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (id) params.set('subcategory', id);
+    else params.delete('subcategory');
+    setSearchParams(params);
+  };
+
+  // Select / toggle a subcategory (used by both the chips and the dropdown).
+  const selectSubcategory = (id: string) => {
+    const next = id === subcategoryId ? '' : id;
+    setSubcategoryId(next);
+    setPage(1);
+    syncSubcategoryParam(next);
   };
 
   const applyFilters = () => {
@@ -173,21 +200,97 @@ export default function CategoryPage() {
   };
 
   const totalPages = Math.ceil(totalCount / perPage);
+  const activeSlug = category?.slug ?? slug;
+
+  // Selectable subcategory chips shown right under the category header, so
+  // subcategories become clickable as soon as a category is opened.
+  const SubcategoryChips = () => {
+    if (subcategories.length === 0) return null;
+    return (
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => selectSubcategory('')}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+            subcategoryId === ''
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-border bg-card hover:bg-accent hover:text-accent-foreground'
+          }`}
+        >
+          <LayoutGrid className="h-4 w-4" />
+          All
+        </button>
+        {subcategories.map((sub) => {
+          const SubIcon = getSubcategoryIcon(activeSlug, sub.slug);
+          const isActive = subcategoryId === sub.id;
+          return (
+            <button
+              key={sub.id}
+              type="button"
+              onClick={() => selectSubcategory(sub.id)}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-card hover:bg-accent hover:text-accent-foreground'
+              }`}
+            >
+              <SubIcon className="h-4 w-4" />
+              {sub.name}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
 
   const FilterPanel = () => (
     <div className="space-y-4">
+      {/* Category selector — lets users jump to another category from filters */}
+      <div className="space-y-2">
+        <Label>Category</Label>
+        <Select value={activeSlug} onValueChange={(v) => navigate(`/category/${v}`)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            {CATEGORY_DATA.map((c) => {
+              const CatIcon = getCategoryIcon(c.slug);
+              return (
+                <SelectItem key={c.slug} value={c.slug}>
+                  <span className="flex items-center gap-2">
+                    <CatIcon className="h-4 w-4" />
+                    {c.name}
+                  </span>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+
       {subcategories.length > 0 && (
         <div className="space-y-2">
           <Label>Subcategory</Label>
-          <Select value={subcategoryId} onValueChange={setSubcategoryId}>
+          <Select
+            value={subcategoryId || ALL}
+            onValueChange={(v) => selectSubcategory(v === ALL ? '' : v)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="All subcategories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
-              {subcategories.map((sub) => (
-                <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>
-              ))}
+              <SelectItem value={ALL}>All subcategories</SelectItem>
+              {subcategories.map((sub) => {
+                const SubIcon = getSubcategoryIcon(activeSlug, sub.slug);
+                return (
+                  <SelectItem key={sub.id} value={sub.id}>
+                    <span className="flex items-center gap-2">
+                      <SubIcon className="h-4 w-4" />
+                      {sub.name}
+                    </span>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -195,12 +298,12 @@ export default function CategoryPage() {
 
       <div className="space-y-2">
         <Label>Condition</Label>
-        <Select value={condition || "all"} onValueChange={(v) => setCondition(v === "all" ? "" : v)}>
+        <Select value={condition || ALL} onValueChange={(v) => setCondition(v === ALL ? '' : v)}>
           <SelectTrigger>
             <SelectValue placeholder="Any condition" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Any</SelectItem>
+            <SelectItem value={ALL}>Any</SelectItem>
             <SelectItem value="new">New</SelectItem>
             <SelectItem value="used">Used</SelectItem>
           </SelectContent>
@@ -227,12 +330,18 @@ export default function CategoryPage() {
 
       <div className="space-y-2">
         <Label>Division</Label>
-        <Select value={division} onValueChange={(v) => { setDivision(v); setDistrict(''); }}>
+        <Select
+          value={division || ALL}
+          onValueChange={(v) => {
+            setDivision(v === ALL ? '' : v);
+            setDistrict('');
+          }}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Any division" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Any</SelectItem>
+            <SelectItem value={ALL}>Any</SelectItem>
             {DIVISIONS.map((div) => (
               <SelectItem key={div} value={div}>{div}</SelectItem>
             ))}
@@ -243,12 +352,12 @@ export default function CategoryPage() {
       {division && (
         <div className="space-y-2">
           <Label>District</Label>
-          <Select value={district} onValueChange={setDistrict}>
+          <Select value={district || ALL} onValueChange={(v) => setDistrict(v === ALL ? '' : v)}>
             <SelectTrigger>
               <SelectValue placeholder="Any district" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Any</SelectItem>
+              <SelectItem value={ALL}>Any</SelectItem>
               {(DISTRICTS[division] || []).map((dist) => (
                 <SelectItem key={dist} value={dist}>{dist}</SelectItem>
               ))}
@@ -266,6 +375,8 @@ export default function CategoryPage() {
     </div>
   );
 
+  const CategoryIcon = getCategoryIcon(activeSlug);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Helmet>
@@ -274,33 +385,45 @@ export default function CategoryPage() {
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">{category?.name || 'Category'}</h1>
-            <p className="text-muted-foreground">{totalCount} ads found</p>
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <CategoryIcon className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">{category?.name || 'Category'}</h1>
+              <p className="text-muted-foreground">{totalCount} ads found</p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
             <SortSelect value={sort} onChange={(v) => { setSort(v); setPage(1); }} />
 
-          {/* Mobile Filter Button */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="lg:hidden gap-2">
-                <Filter className="h-4 w-4" />
-                Filters
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <SheetHeader>
-                <SheetTitle>Filters</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6">
-                <FilterPanel />
-              </div>
-            </SheetContent>
-          </Sheet>
+            {/* Mobile Filter Button */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="lg:hidden gap-2">
+                  <Filter className="h-4 w-4" />
+                  Filters
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Filters</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6">
+                  <FilterPanel />
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
+
+        {/* Selectable subcategory chips */}
+        {subcategories.length > 0 && (
+          <div className="mb-6">
+            <SubcategoryChips />
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Desktop Filters */}

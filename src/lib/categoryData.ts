@@ -15,7 +15,7 @@ import {
   Pill, Stethoscope, Glasses, Dog, Cat, Bird, Bug, PaintBucket,
   Pencil, Palette, Newspaper, FileText, Calculator, Calendar,
   Gift, PartyPopper, Luggage, Hotel, Ticket, Compass, Mountain,
-  Tent, Bike, Trophy, Volleyball, ShoppingBasket,
+  Tent, Trophy, Volleyball,
   Guitar, Piano, Drum, Mic, Radio, Plug, Battery, Cpu, HardDrive,
   Monitor, Printer, Wifi, Phone, BatteryCharging,
   Accessibility, Bed, Box, Building, Bus, Circle, Cookie, Hammer,
@@ -490,6 +490,66 @@ export const CATEGORY_DATA: CategoryDef[] = [
     ],
   },
 ];
+
+// ============================================================================
+// Fast lookup maps + icon resolution helpers
+// ----------------------------------------------------------------------------
+// These let any part of the app resolve a rich lucide-react icon from a plain
+// category/subcategory slug or name (e.g. data coming from the database, which
+// only stores a nullable string icon). This guarantees EVERY category and
+// subcategory renders a proper icon, with sensible fallbacks.
+// ============================================================================
+
+const CATEGORY_BY_SLUG = new Map(CATEGORY_DATA.map((c) => [c.slug, c]));
+const CATEGORY_BY_NAME = new Map(CATEGORY_DATA.map((c) => [c.name.toLowerCase(), c]));
+
+/** Resolve a full category definition by slug or (case-insensitive) name. */
+export function getCategoryBySlug(slugOrName?: string | null): CategoryDef | undefined {
+  if (!slugOrName) return undefined;
+  return (
+    CATEGORY_BY_SLUG.get(slugOrName) ?? CATEGORY_BY_NAME.get(slugOrName.toLowerCase())
+  );
+}
+
+/** Resolve a lucide icon for a category. Falls back to a generic Package icon. */
+export function getCategoryIcon(slugOrName?: string | null): LucideIcon {
+  return getCategoryBySlug(slugOrName)?.icon ?? Package;
+}
+
+/** Get the subcategory list for a category (empty array if unknown). */
+export function getSubcategoriesFor(categorySlugOrName?: string | null): SubcategoryDef[] {
+  return getCategoryBySlug(categorySlugOrName)?.subcategories ?? [];
+}
+
+/**
+ * Resolve a lucide icon for a subcategory. Tries the subcategory within its
+ * parent category first, then any matching subcategory across all categories,
+ * and finally a generic Layers fallback.
+ */
+export function getSubcategoryIcon(
+  categorySlugOrName?: string | null,
+  subSlugOrName?: string | null,
+): LucideIcon {
+  if (!subSlugOrName) return Layers;
+  const target = subSlugOrName.toLowerCase();
+
+  const parent = getCategoryBySlug(categorySlugOrName);
+  if (parent) {
+    const sub = parent.subcategories.find(
+      (s) => s.slug === subSlugOrName || s.name.toLowerCase() === target,
+    );
+    if (sub?.icon) return sub.icon;
+  }
+
+  for (const cat of CATEGORY_DATA) {
+    const sub = cat.subcategories.find(
+      (s) => s.slug === subSlugOrName || s.name.toLowerCase() === target,
+    );
+    if (sub?.icon) return sub.icon;
+  }
+
+  return Layers;
+}
 
 /**
  * Get all categories as a flat list with subcategory counts.

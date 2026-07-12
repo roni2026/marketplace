@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FolderTree } from 'lucide-react';
+import { getCategoryBySlug, getCategoryIcon } from '@/lib/categoryData';
 
 interface Category {
   id: string;
@@ -32,26 +32,29 @@ export function CategoryGrid({ categories, isLoading = false }: CategoryGridProp
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-      {categories.map((category) => (
-        <Link key={category.id} to={`/category/${category.slug}`}>
-          <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group h-full">
-            <CardContent className="p-4 flex flex-col items-center text-center gap-2">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                {category.icon ? (
-                  <span className="text-xl">{category.icon}</span>
-                ) : (
-                  <span className="text-lg font-bold text-primary">
-                    {category.name.charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
-              <h3 className="font-semibold text-xs sm:text-sm group-hover:text-primary transition-colors line-clamp-2">
-                {category.name}
-              </h3>
-            </CardContent>
-          </Card>
-        </Link>
-      ))}
+      {categories.map((category) => {
+        // Always resolve a rich lucide icon from the category slug/name.
+        const Icon = getCategoryIcon(category.slug || category.name);
+        const color = getCategoryBySlug(category.slug || category.name)?.color;
+        return (
+          <Link key={category.id} to={`/category/${category.slug}`}>
+            <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group h-full">
+              <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${
+                    color || 'bg-primary/10 text-primary'
+                  }`}
+                >
+                  <Icon className="h-6 w-6" />
+                </div>
+                <h3 className="font-semibold text-xs sm:text-sm group-hover:text-primary transition-colors line-clamp-2">
+                  {category.name}
+                </h3>
+              </CardContent>
+            </Card>
+          </Link>
+        );
+      })}
     </div>
   );
 }
