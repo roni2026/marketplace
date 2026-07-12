@@ -11,29 +11,19 @@
 -- Enum additions
 -- =========================================================================
 
-do $$ begin
-  create type public.notification_category as enum (
+create type public.notification_category as enum (
     'account', 'listings', 'offers', 'messages', 'saved_searches',
     'wishlist', 'reviews', 'orders', 'payments', 'delivery',
     'system', 'security', 'promotions', 'admin'
   );
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create type public.notification_priority as enum ('low', 'normal', 'high', 'urgent');
-exception when duplicate_object then null; end $$;
+create type public.notification_priority as enum ('low', 'normal', 'high', 'urgent');
 
-do $$ begin
-  create type public.notification_channel as enum ('in_app', 'push', 'email', 'sms');
-exception when duplicate_object then null; end $$;
+create type public.notification_channel as enum ('in_app', 'push', 'email', 'sms');
 
-do $$ begin
-  create type public.notification_frequency as enum ('instant', 'daily', 'weekly', 'disabled');
-exception when duplicate_object then null; end $$;
+create type public.notification_frequency as enum ('instant', 'daily', 'weekly', 'disabled');
 
-do $$ begin
-  create type public.delivery_status as enum ('pending', 'sent', 'delivered', 'read', 'failed', 'bounced');
-exception when duplicate_object then null; end $$;
+create type public.delivery_status as enum ('pending', 'sent', 'delivered', 'read', 'failed', 'bounced');
 
 -- =========================================================================
 -- Notifications table (unified notification center)
@@ -748,128 +738,102 @@ alter table public.admin_notifications_v13 enable row level security;
 alter table public.notification_summary_queue enable row level security;
 
 -- Notifications: user manages own
-DO $$ BEGIN
-  create policy "Users view own notifications" on public.notifications for select
+drop policy if exists "Users view own notifications" on public.notifications;
+create policy "Users view own notifications" on public.notifications for select
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users update own notifications" on public.notifications for update
+drop policy if exists "Users update own notifications" on public.notifications;
+create policy "Users update own notifications" on public.notifications for update
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System inserts notifications" on public.notifications for insert
+drop policy if exists "System inserts notifications" on public.notifications;
+create policy "System inserts notifications" on public.notifications for insert
   with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Push subscriptions: user manages own
-DO $$ BEGIN
-  create policy "Users view own push subs" on public.push_subscriptions for select
+drop policy if exists "Users view own push subs" on public.push_subscriptions;
+create policy "Users view own push subs" on public.push_subscriptions for select
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users insert own push subs" on public.push_subscriptions for insert
+drop policy if exists "Users insert own push subs" on public.push_subscriptions;
+create policy "Users insert own push subs" on public.push_subscriptions for insert
   with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users update own push subs" on public.push_subscriptions for update
+drop policy if exists "Users update own push subs" on public.push_subscriptions;
+create policy "Users update own push subs" on public.push_subscriptions for update
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users delete own push subs" on public.push_subscriptions for delete
+drop policy if exists "Users delete own push subs" on public.push_subscriptions;
+create policy "Users delete own push subs" on public.push_subscriptions for delete
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Email logs: user views own
-DO $$ BEGIN
-  create policy "Users view own email logs" on public.email_logs for select
+drop policy if exists "Users view own email logs" on public.email_logs;
+create policy "Users view own email logs" on public.email_logs for select
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System inserts email logs" on public.email_logs for insert
+drop policy if exists "System inserts email logs" on public.email_logs;
+create policy "System inserts email logs" on public.email_logs for insert
   with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- SMS logs: user views own
-DO $$ BEGIN
-  create policy "Users view own sms logs" on public.sms_logs for select
+drop policy if exists "Users view own sms logs" on public.sms_logs;
+create policy "Users view own sms logs" on public.sms_logs for select
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System inserts sms logs" on public.sms_logs for insert
+drop policy if exists "System inserts sms logs" on public.sms_logs;
+create policy "System inserts sms logs" on public.sms_logs for insert
   with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Delivery logs: system manages
-DO $$ BEGIN
-  create policy "System manages delivery logs" on public.notification_delivery_logs for all
+drop policy if exists "System manages delivery logs" on public.notification_delivery_logs;
+create policy "System manages delivery logs" on public.notification_delivery_logs for all
   using (true) with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Notification preferences: user manages own
-DO $$ BEGIN
-  create policy "Users view own notif prefs" on public.notification_preferences for select
+drop policy if exists "Users view own notif prefs" on public.notification_preferences;
+create policy "Users view own notif prefs" on public.notification_preferences for select
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users insert own notif prefs" on public.notification_preferences for insert
+drop policy if exists "Users insert own notif prefs" on public.notification_preferences;
+create policy "Users insert own notif prefs" on public.notification_preferences for insert
   with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users update own notif prefs" on public.notification_preferences for update
+drop policy if exists "Users update own notif prefs" on public.notification_preferences;
+create policy "Users update own notif prefs" on public.notification_preferences for update
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users delete own notif prefs" on public.notification_preferences for delete
+drop policy if exists "Users delete own notif prefs" on public.notification_preferences;
+create policy "Users delete own notif prefs" on public.notification_preferences for delete
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Quiet hours: user manages own
-DO $$ BEGIN
-  create policy "Users view own quiet hours" on public.quiet_hours for select
+drop policy if exists "Users view own quiet hours" on public.quiet_hours;
+create policy "Users view own quiet hours" on public.quiet_hours for select
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users insert own quiet hours" on public.quiet_hours for insert
+drop policy if exists "Users insert own quiet hours" on public.quiet_hours;
+create policy "Users insert own quiet hours" on public.quiet_hours for insert
   with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users update own quiet hours" on public.quiet_hours for update
+drop policy if exists "Users update own quiet hours" on public.quiet_hours;
+create policy "Users update own quiet hours" on public.quiet_hours for update
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users delete own quiet hours" on public.quiet_hours for delete
+drop policy if exists "Users delete own quiet hours" on public.quiet_hours;
+create policy "Users delete own quiet hours" on public.quiet_hours for delete
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Templates: public read, admin write
-DO $$ BEGIN
-  create policy "Anyone can view templates" on public.notification_templates for select
+drop policy if exists "Anyone can view templates" on public.notification_templates;
+create policy "Anyone can view templates" on public.notification_templates for select
   using (is_active = true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins manage templates" on public.notification_templates for all
+drop policy if exists "Admins manage templates" on public.notification_templates;
+create policy "Admins manage templates" on public.notification_templates for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Admin notifications: admin manages
-DO $$ BEGIN
-  create policy "Admins view admin notifs" on public.admin_notifications_v13 for select
+drop policy if exists "Admins view admin notifs" on public.admin_notifications_v13;
+create policy "Admins view admin notifs" on public.admin_notifications_v13 for select
   using (admin_id = auth.uid() or admin_id is null or public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System inserts admin notifs" on public.admin_notifications_v13 for insert
+drop policy if exists "System inserts admin notifs" on public.admin_notifications_v13;
+create policy "System inserts admin notifs" on public.admin_notifications_v13 for insert
   with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins update admin notifs" on public.admin_notifications_v13 for update
+drop policy if exists "Admins update admin notifs" on public.admin_notifications_v13;
+create policy "Admins update admin notifs" on public.admin_notifications_v13 for update
   using (admin_id = auth.uid() or admin_id is null);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Summary queue: system manages
-DO $$ BEGIN
-  create policy "System manages summary queue" on public.notification_summary_queue for all
+drop policy if exists "System manages summary queue" on public.notification_summary_queue;
+create policy "System manages summary queue" on public.notification_summary_queue for all
   using (true) with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================
 -- GRANT permissions

@@ -10,22 +10,16 @@
 -- Enum additions
 -- =========================================================================
 
-do $$ begin
-  create type public.widget_type as enum ('stat', 'chart', 'table', 'alert', 'custom');
-exception when duplicate_object then null; end $$;
+create type public.widget_type as enum ('stat', 'chart', 'table', 'alert', 'custom');
 
-do $$ begin
-  create type public.bulk_operation_type as enum (
+create type public.bulk_operation_type as enum (
     'approve_listings', 'reject_listings', 'delete_listings', 'feature_listings',
     'boost_listings', 'suspend_users', 'verify_users', 'delete_users',
     'assign_role', 'update_settings', 'export_data', 'import_data',
     'send_notification', 'cleanup_expired'
   );
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create type public.system_health_status as enum ('healthy', 'warning', 'critical', 'down');
-exception when duplicate_object then null; end $$;
+create type public.system_health_status as enum ('healthy', 'warning', 'critical', 'down');
 
 -- =========================================================================
 -- Admin Dashboard Widgets (customizable per admin)
@@ -308,79 +302,62 @@ alter table public.admin_bulk_operations enable row level security;
 alter table public.admin_preferences enable row level security;
 
 -- Dashboard widgets: admin manages own
-DO $$ BEGIN
-  create policy "Admins view own widgets" on public.admin_dashboard_widgets for select
+drop policy if exists "Admins view own widgets" on public.admin_dashboard_widgets;
+create policy "Admins view own widgets" on public.admin_dashboard_widgets for select
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins create own widgets" on public.admin_dashboard_widgets for insert
+drop policy if exists "Admins create own widgets" on public.admin_dashboard_widgets;
+create policy "Admins create own widgets" on public.admin_dashboard_widgets for insert
   with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins update own widgets" on public.admin_dashboard_widgets for update
+drop policy if exists "Admins update own widgets" on public.admin_dashboard_widgets;
+create policy "Admins update own widgets" on public.admin_dashboard_widgets for update
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins delete own widgets" on public.admin_dashboard_widgets for delete
+drop policy if exists "Admins delete own widgets" on public.admin_dashboard_widgets;
+create policy "Admins delete own widgets" on public.admin_dashboard_widgets for delete
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Admin activity log: admins view all, system inserts
-DO $$ BEGIN
-  create policy "Admins view activity log" on public.admin_activity_log for select
+drop policy if exists "Admins view activity log" on public.admin_activity_log;
+create policy "Admins view activity log" on public.admin_activity_log for select
   using (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System inserts activity log" on public.admin_activity_log for insert with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- System health: admins view, system inserts
+drop policy if exists "System inserts activity log" on public.admin_activity_log;
+create policy "System inserts activity log" on public.admin_activity_log for insert with check (true);
+-- System health: admins view, system inserts
+drop policy if exists "Admins view health metrics" on public.system_health_metrics;
 create policy "Admins view health metrics" on public.system_health_metrics for select
   using (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System inserts health metrics" on public.system_health_metrics for insert with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- Admin notifications: admin manages own
+drop policy if exists "System inserts health metrics" on public.system_health_metrics;
+create policy "System inserts health metrics" on public.system_health_metrics for insert with check (true);
+-- Admin notifications: admin manages own
+drop policy if exists "Admins view own notifications" on public.admin_notifications;
 create policy "Admins view own notifications" on public.admin_notifications for select
   using (admin_id = auth.uid() or admin_id is null);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System inserts admin notifications" on public.admin_notifications for insert with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins update own notifications" on public.admin_notifications for update
+drop policy if exists "System inserts admin notifications" on public.admin_notifications;
+create policy "System inserts admin notifications" on public.admin_notifications for insert with check (true);
+drop policy if exists "Admins update own notifications" on public.admin_notifications;
+create policy "Admins update own notifications" on public.admin_notifications for update
   using (admin_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Bulk operations: admin manages own
-DO $$ BEGIN
-  create policy "Admins view own bulk ops" on public.admin_bulk_operations for select
+drop policy if exists "Admins view own bulk ops" on public.admin_bulk_operations;
+create policy "Admins view own bulk ops" on public.admin_bulk_operations for select
   using (admin_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins create own bulk ops" on public.admin_bulk_operations for insert
+drop policy if exists "Admins create own bulk ops" on public.admin_bulk_operations;
+create policy "Admins create own bulk ops" on public.admin_bulk_operations for insert
   with check (admin_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins update own bulk ops" on public.admin_bulk_operations for update
+drop policy if exists "Admins update own bulk ops" on public.admin_bulk_operations;
+create policy "Admins update own bulk ops" on public.admin_bulk_operations for update
   using (admin_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Admin preferences: admin manages own
-DO $$ BEGIN
-  create policy "Admins view own preferences" on public.admin_preferences for select
+drop policy if exists "Admins view own preferences" on public.admin_preferences;
+create policy "Admins view own preferences" on public.admin_preferences for select
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins create own preferences" on public.admin_preferences for insert
+drop policy if exists "Admins create own preferences" on public.admin_preferences;
+create policy "Admins create own preferences" on public.admin_preferences for insert
   with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins update own preferences" on public.admin_preferences for update
+drop policy if exists "Admins update own preferences" on public.admin_preferences;
+create policy "Admins update own preferences" on public.admin_preferences for update
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================
 -- GRANT permissions
