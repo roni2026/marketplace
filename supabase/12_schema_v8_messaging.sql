@@ -12,17 +12,11 @@
 -- Enum additions
 -- =========================================================================
 
-DO $$ BEGIN
-    create type public.message_status as enum ('sent', 'delivered', 'read');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+create type public.message_status as enum ('sent', 'delivered', 'read');
 
-DO $$ BEGIN
-    create type public.message_type as enum ('text', 'image', 'file', 'product_card', 'listing_link', 'store_link', 'location', 'contact_card');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+create type public.message_type as enum ('text', 'image', 'file', 'product_card', 'listing_link', 'store_link', 'location', 'contact_card');
 
-DO $$ BEGIN
-    create type public.conversation_report_reason as enum ('spam', 'scam', 'harassment', 'abuse', 'threats', 'offensive_language', 'fraud', 'fake_products', 'other');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+create type public.conversation_report_reason as enum ('spam', 'scam', 'harassment', 'abuse', 'threats', 'offensive_language', 'fraud', 'fake_products', 'other');
 
 -- =========================================================================
 -- Extend messages table with Phase 8 columns
@@ -179,20 +173,20 @@ begin
 end;
 $$;
 
-create trigger if not exists trg_conversations_updated_at
-  before update on public.conversations
+drop trigger if exists trg_conversations_updated_at on public.conversations;
+create trigger trg_conversations_updated_at before update on public.conversations
   for each row execute procedure public.update_updated_at_v8();
 
-create trigger if not exists trg_typing_indicators_updated_at
-  before update on public.typing_indicators
+drop trigger if exists trg_typing_indicators_updated_at on public.typing_indicators;
+create trigger trg_typing_indicators_updated_at before update on public.typing_indicators
   for each row execute procedure public.update_updated_at_v8();
 
-create trigger if not exists trg_user_presence_updated_at
-  before update on public.user_presence
+drop trigger if exists trg_user_presence_updated_at on public.user_presence;
+create trigger trg_user_presence_updated_at before update on public.user_presence
   for each row execute procedure public.update_updated_at_v8();
 
-create trigger if not exists trg_message_reports_updated_at
-  before update on public.message_reports
+drop trigger if exists trg_message_reports_updated_at on public.message_reports;
+create trigger trg_message_reports_updated_at before update on public.message_reports
   for each row execute procedure public.update_updated_at_v8();
 
 -- =========================================================================
@@ -313,94 +307,76 @@ alter table public.message_edit_history enable row level security;
 alter table public.conversation_mute_settings enable row level security;
 
 -- Conversations: participants can view and manage their own
-DO $$ BEGIN
-  create policy "Users view own conversations" on public.conversations for select
+drop policy if exists "Users view own conversations" on public.conversations;
+create policy "Users view own conversations" on public.conversations for select
   using (participant_1 = auth.uid() or participant_2 = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users create own conversations" on public.conversations for insert
+drop policy if exists "Users create own conversations" on public.conversations;
+create policy "Users create own conversations" on public.conversations for insert
   with check (participant_1 = auth.uid() or participant_2 = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users update own conversations" on public.conversations for update
+drop policy if exists "Users update own conversations" on public.conversations;
+create policy "Users update own conversations" on public.conversations for update
   using (participant_1 = auth.uid() or participant_2 = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Typing indicators: participants can view and manage
-DO $$ BEGIN
-  create policy "Users view typing in own conversations" on public.typing_indicators for select
+drop policy if exists "Users view typing in own conversations" on public.typing_indicators;
+create policy "Users view typing in own conversations" on public.typing_indicators for select
   using (exists (
     select 1 from public.conversations c
     where c.id = typing_indicators.conversation_id
     and (c.participant_1 = auth.uid() or c.participant_2 = auth.uid())
   ));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users set own typing" on public.typing_indicators for insert
+drop policy if exists "Users set own typing" on public.typing_indicators;
+create policy "Users set own typing" on public.typing_indicators for insert
   with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users update own typing" on public.typing_indicators for update
+drop policy if exists "Users update own typing" on public.typing_indicators;
+create policy "Users update own typing" on public.typing_indicators for update
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users delete own typing" on public.typing_indicators for delete
+drop policy if exists "Users delete own typing" on public.typing_indicators;
+create policy "Users delete own typing" on public.typing_indicators for delete
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- User presence: public read (for online status), owner update
-DO $$ BEGIN
-  create policy "Public can view presence" on public.user_presence for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users manage own presence" on public.user_presence for all
+drop policy if exists "Public can view presence" on public.user_presence;
+create policy "Public can view presence" on public.user_presence for select using (true);
+drop policy if exists "Users manage own presence" on public.user_presence;
+create policy "Users manage own presence" on public.user_presence for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Message reports: reporter creates, admins view
-DO $$ BEGIN
-  create policy "Users create message reports" on public.message_reports for insert
+drop policy if exists "Users create message reports" on public.message_reports;
+create policy "Users create message reports" on public.message_reports for insert
   with check (reporter_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users view own message reports" on public.message_reports for select
+drop policy if exists "Users view own message reports" on public.message_reports;
+create policy "Users view own message reports" on public.message_reports for select
   using (reporter_id = auth.uid() or public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins update message reports" on public.message_reports for update
+drop policy if exists "Admins update message reports" on public.message_reports;
+create policy "Admins update message reports" on public.message_reports for update
   using (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Message edit history: message sender and admins
-DO $$ BEGIN
-  create policy "Users view own message edits" on public.message_edit_history for select
+drop policy if exists "Users view own message edits" on public.message_edit_history;
+create policy "Users view own message edits" on public.message_edit_history for select
   using (
     exists (select 1 from public.messages m where m.id = message_edit_history.message_id and (m.sender_id = auth.uid() or m.receiver_id = auth.uid()))
     or public.is_admin(auth.uid())
   );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users insert own message edits" on public.message_edit_history for insert
+drop policy if exists "Users insert own message edits" on public.message_edit_history;
+create policy "Users insert own message edits" on public.message_edit_history for insert
   with check (edited_by = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Conversation mute settings: owner manages
-DO $$ BEGIN
-  create policy "Users view own mute settings" on public.conversation_mute_settings for select
+drop policy if exists "Users view own mute settings" on public.conversation_mute_settings;
+create policy "Users view own mute settings" on public.conversation_mute_settings for select
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users create own mute settings" on public.conversation_mute_settings for insert
+drop policy if exists "Users create own mute settings" on public.conversation_mute_settings;
+create policy "Users create own mute settings" on public.conversation_mute_settings for insert
   with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users update own mute settings" on public.conversation_mute_settings for update
+drop policy if exists "Users update own mute settings" on public.conversation_mute_settings;
+create policy "Users update own mute settings" on public.conversation_mute_settings for update
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users delete own mute settings" on public.conversation_mute_settings for delete
+drop policy if exists "Users delete own mute settings" on public.conversation_mute_settings;
+create policy "Users delete own mute settings" on public.conversation_mute_settings for delete
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================
 -- GRANT permissions

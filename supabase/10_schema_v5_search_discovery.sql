@@ -11,23 +11,17 @@
 -- Enum additions
 -- =========================================================================
 
-DO $$ BEGIN
-    create type public.collection_visibility as enum ('private', 'public');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+create type public.collection_visibility as enum ('private', 'public');
 
-DO $$ BEGIN
-    create type public.discovery_section_type as enum (
+create type public.discovery_section_type as enum (
     'featured', 'trending', 'new_arrivals', 'recently_viewed', 'most_viewed',
     'most_favorited', 'popular_near_you', 'staff_picks', 'editors_picks',
     'seasonal_collections', 'flash_deals', 'limited_time_offers',
     'recommended_stores', 'featured_brands', 'discounted', 'ending_soon',
     'recently_updated', 'sponsored'
   );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-    create type public.search_entity_type as enum ('listing', 'category', 'brand', 'model', 'seller', 'store', 'tag', 'location');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+create type public.search_entity_type as enum ('listing', 'category', 'brand', 'model', 'seller', 'store', 'tag', 'location');
 
 -- =========================================================================
 -- Search History (per-user search history)
@@ -187,8 +181,7 @@ alter table public.price_drop_alerts
 
 -- Create a generated tsvector column for full-text search
 -- This enables fast text search across title, description, brand, model, tags
-do $$ begin
-  alter table public.ads
+alter table public.ads
     add column if not exists search_vector tsvector
     generated always as (
       setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
@@ -197,7 +190,6 @@ do $$ begin
       setweight(to_tsvector('english', coalesce(model, '')), 'C') ||
       setweight(to_tsvector('english', coalesce(array_to_string(tags, ' '), '')), 'D')
     ) stored;
-exception when duplicate_column then null; end $$;
 
 create index if not exists idx_ads_search_vector on public.ads using gin (search_vector);
 
@@ -223,16 +215,16 @@ begin
 end;
 $$;
 
-create trigger if not exists trg_search_suggestions_updated_at
-  before update on public.search_suggestions
+drop trigger if exists trg_search_suggestions_updated_at on public.search_suggestions;
+create trigger trg_search_suggestions_updated_at before update on public.search_suggestions
   for each row execute procedure public.update_updated_at_v5();
 
-create trigger if not exists trg_user_collections_updated_at
-  before update on public.user_collections
+drop trigger if exists trg_user_collections_updated_at on public.user_collections;
+create trigger trg_user_collections_updated_at before update on public.user_collections
   for each row execute procedure public.update_updated_at_v5();
 
-create trigger if not exists trg_discovery_sections_updated_at
-  before update on public.discovery_sections
+drop trigger if exists trg_discovery_sections_updated_at on public.discovery_sections;
+create trigger trg_discovery_sections_updated_at before update on public.discovery_sections
   for each row execute procedure public.update_updated_at_v5();
 
 -- =========================================================================
@@ -497,57 +489,46 @@ alter table public.discovery_sections enable row level security;
 alter table public.recommendation_cache enable row level security;
 
 -- Search history: only owner
-DO $$ BEGIN
-  create policy "Users view own search history" on public.search_history for select
+drop policy if exists "Users view own search history" on public.search_history;
+create policy "Users view own search history" on public.search_history for select
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users insert own search history" on public.search_history for insert
+drop policy if exists "Users insert own search history" on public.search_history;
+create policy "Users insert own search history" on public.search_history for insert
   with check (user_id = auth.uid() or user_id is null);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users delete own search history" on public.search_history for delete
+drop policy if exists "Users delete own search history" on public.search_history;
+create policy "Users delete own search history" on public.search_history for delete
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Search suggestions: public read, admin write
-DO $$ BEGIN
-  create policy "Public can view search suggestions" on public.search_suggestions for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins manage search suggestions" on public.search_suggestions for all
+drop policy if exists "Public can view search suggestions" on public.search_suggestions;
+create policy "Public can view search suggestions" on public.search_suggestions for select using (true);
+drop policy if exists "Admins manage search suggestions" on public.search_suggestions;
+create policy "Admins manage search suggestions" on public.search_suggestions for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Search analytics: admin read, system insert
-DO $$ BEGIN
-  create policy "Admins view search analytics" on public.search_analytics for select
+drop policy if exists "Admins view search analytics" on public.search_analytics;
+create policy "Admins view search analytics" on public.search_analytics for select
   using (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System inserts search analytics" on public.search_analytics for insert with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- User collections: owner manages, public can view public collections
+drop policy if exists "System inserts search analytics" on public.search_analytics;
+create policy "System inserts search analytics" on public.search_analytics for insert with check (true);
+-- User collections: owner manages, public can view public collections
+drop policy if exists "Users view own collections" on public.user_collections;
 create policy "Users view own collections" on public.user_collections for select
   using (user_id = auth.uid() or visibility = 'public');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users create own collections" on public.user_collections for insert
+drop policy if exists "Users create own collections" on public.user_collections;
+create policy "Users create own collections" on public.user_collections for insert
   with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users update own collections" on public.user_collections for update
+drop policy if exists "Users update own collections" on public.user_collections;
+create policy "Users update own collections" on public.user_collections for update
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users delete own collections" on public.user_collections for delete
+drop policy if exists "Users delete own collections" on public.user_collections;
+create policy "Users delete own collections" on public.user_collections for delete
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Collection items: owner manages, public can view items in public collections
-DO $$ BEGIN
-  create policy "Users view own collection items" on public.collection_items for select
+drop policy if exists "Users view own collection items" on public.collection_items;
+create policy "Users view own collection items" on public.collection_items for select
   using (
     user_id = auth.uid() or
     exists (
@@ -555,36 +536,28 @@ DO $$ BEGIN
       where uc.id = collection_items.collection_id and uc.visibility = 'public'
     )
   );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users create own collection items" on public.collection_items for insert
+drop policy if exists "Users create own collection items" on public.collection_items;
+create policy "Users create own collection items" on public.collection_items for insert
   with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users delete own collection items" on public.collection_items for delete
+drop policy if exists "Users delete own collection items" on public.collection_items;
+create policy "Users delete own collection items" on public.collection_items for delete
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Discovery sections: public read, admin write
-DO $$ BEGIN
-  create policy "Public can view discovery sections" on public.discovery_sections for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins manage discovery sections" on public.discovery_sections for all
+drop policy if exists "Public can view discovery sections" on public.discovery_sections;
+create policy "Public can view discovery sections" on public.discovery_sections for select using (true);
+drop policy if exists "Admins manage discovery sections" on public.discovery_sections;
+create policy "Admins manage discovery sections" on public.discovery_sections for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Recommendation cache: only owner
-DO $$ BEGIN
-  create policy "Users view own recommendations" on public.recommendation_cache for select
+drop policy if exists "Users view own recommendations" on public.recommendation_cache;
+create policy "Users view own recommendations" on public.recommendation_cache for select
   using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System inserts recommendations" on public.recommendation_cache for insert with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System deletes recommendations" on public.recommendation_cache for delete using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "System inserts recommendations" on public.recommendation_cache;
+create policy "System inserts recommendations" on public.recommendation_cache for insert with check (true);
+drop policy if exists "System deletes recommendations" on public.recommendation_cache;
+create policy "System deletes recommendations" on public.recommendation_cache for delete using (true);
 
 -- =========================================================================
 -- GRANT permissions
