@@ -13,16 +13,22 @@
 -- =========================================================================
 
 do $$ begin
+DO $$ BEGIN
     create type public.message_status as enum ('sent', 'delivered', 'read');
 exception when duplicate_object then null; end $$;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
+DO $$ BEGIN
     create type public.message_type as enum ('text', 'image', 'file', 'product_card', 'listing_link', 'store_link', 'location', 'contact_card');
 exception when duplicate_object then null; end $$;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 do $$ begin
+DO $$ BEGIN
     create type public.conversation_report_reason as enum ('spam', 'scam', 'harassment', 'abuse', 'threats', 'offensive_language', 'fraud', 'fake_products', 'other');
 exception when duplicate_object then null; end $$;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================
 -- Extend messages table with Phase 8 columns
@@ -314,21 +320,21 @@ alter table public.conversation_mute_settings enable row level security;
 
 -- Conversations: participants can view and manage their own
 DO $$ BEGIN
-    create policy "Users view own conversations" on public.conversations for select
+  create policy "Users view own conversations" on public.conversations for select
   using (participant_1 = auth.uid() or participant_2 = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Users create own conversations" on public.conversations for insert
+  create policy "Users create own conversations" on public.conversations for insert
   with check (participant_1 = auth.uid() or participant_2 = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Users update own conversations" on public.conversations for update
+  create policy "Users update own conversations" on public.conversations for update
   using (participant_1 = auth.uid() or participant_2 = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Typing indicators: participants can view and manage
 DO $$ BEGIN
-    create policy "Users view typing in own conversations" on public.typing_indicators for select
+  create policy "Users view typing in own conversations" on public.typing_indicators for select
   using (exists (
     select 1 from public.conversations c
     where c.id = typing_indicators.conversation_id
@@ -336,15 +342,15 @@ DO $$ BEGIN
   ));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Users set own typing" on public.typing_indicators for insert
+  create policy "Users set own typing" on public.typing_indicators for insert
   with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Users update own typing" on public.typing_indicators for update
+  create policy "Users update own typing" on public.typing_indicators for update
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Users delete own typing" on public.typing_indicators for delete
+  create policy "Users delete own typing" on public.typing_indicators for delete
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -359,46 +365,46 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Message reports: reporter creates, admins view
 DO $$ BEGIN
-    create policy "Users create message reports" on public.message_reports for insert
+  create policy "Users create message reports" on public.message_reports for insert
   with check (reporter_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Users view own message reports" on public.message_reports for select
+  create policy "Users view own message reports" on public.message_reports for select
   using (reporter_id = auth.uid() or public.is_admin(auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Admins update message reports" on public.message_reports for update
+  create policy "Admins update message reports" on public.message_reports for update
   using (public.is_admin(auth.uid()));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Message edit history: message sender and admins
 DO $$ BEGIN
-    create policy "Users view own message edits" on public.message_edit_history for select
+  create policy "Users view own message edits" on public.message_edit_history for select
   using (
     exists (select 1 from public.messages m where m.id = message_edit_history.message_id and (m.sender_id = auth.uid() or m.receiver_id = auth.uid()))
     or public.is_admin(auth.uid())
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Users insert own message edits" on public.message_edit_history for insert
+  create policy "Users insert own message edits" on public.message_edit_history for insert
   with check (edited_by = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Conversation mute settings: owner manages
 DO $$ BEGIN
-    create policy "Users view own mute settings" on public.conversation_mute_settings for select
+  create policy "Users view own mute settings" on public.conversation_mute_settings for select
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Users create own mute settings" on public.conversation_mute_settings for insert
+  create policy "Users create own mute settings" on public.conversation_mute_settings for insert
   with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Users update own mute settings" on public.conversation_mute_settings for update
+  create policy "Users update own mute settings" on public.conversation_mute_settings for update
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Users delete own mute settings" on public.conversation_mute_settings for delete
+  create policy "Users delete own mute settings" on public.conversation_mute_settings for delete
   using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
