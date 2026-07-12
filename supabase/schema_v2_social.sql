@@ -5,7 +5,7 @@
 -- -------------------------------------------------------------------------
 
 -- Enums
-do $$ begin create type public.review_status as enum ('pending', 'approved', 'rejected', 'appealed'); exception when duplicate_object then null; end $$;
+create type public.review_status as enum ('pending', 'approved', 'rejected', 'appealed');
 
 -- -------------------------------------------------------------------------
 -- Enhanced Messaging tables
