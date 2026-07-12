@@ -7,17 +7,13 @@
 -- -------------------------------------------------------------------------
 
 -- Enums
-do $$ begin
 DO $$ BEGIN
     create type public.media_type as enum ('image', 'video', '360');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-do $$ begin
 DO $$ BEGIN
     create type public.condition_grade as enum ('new', 'like_new', 'good', 'fair', 'poor');
 exception when duplicate_object then null; end $$;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- -------------------------------------------------------------------------
 -- Listing Variants (size, color, etc.)
