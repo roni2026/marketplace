@@ -29,36 +29,28 @@ create type public.delivery_status as enum ('pending', 'sent', 'delivered', 'rea
 -- Notifications table (unified notification center)
 -- =========================================================================
 
-create table if not exists public.notifications (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  category public.notification_category not null default 'system',
-  notification_type text not null,
-  title text not null,
-  body text,
-  data jsonb default '{}'::jsonb,
-  priority public.notification_priority default 'normal',
-  is_read boolean default false,
-  is_archived boolean default false,
-  is_deleted boolean default false,
-  is_pinned boolean default false,
-  is_important boolean default false,
-  action_url text,
-  action_label text,
-  icon text,
-  image_url text,
-  related_listing_id uuid,
-  related_chat_id uuid,
-  related_order_id uuid,
-  related_offer_id uuid,
-  related_review_id uuid,
-  click_count int default 0,
-  read_at timestamptz,
-  archived_at timestamptz,
-  deleted_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+-- Notifications table enhancements (base table created in 01_schema.sql)
+alter table public.notifications add column if not exists category public.notification_category not null default 'system';
+alter table public.notifications add column if not exists notification_type text not null;
+alter table public.notifications add column if not exists body text;
+alter table public.notifications add column if not exists priority public.notification_priority default 'normal';
+alter table public.notifications add column if not exists is_archived boolean default false;
+alter table public.notifications add column if not exists is_deleted boolean default false;
+alter table public.notifications add column if not exists is_pinned boolean default false;
+alter table public.notifications add column if not exists is_important boolean default false;
+alter table public.notifications add column if not exists action_url text;
+alter table public.notifications add column if not exists action_label text;
+alter table public.notifications add column if not exists icon text;
+alter table public.notifications add column if not exists image_url text;
+alter table public.notifications add column if not exists related_listing_id uuid;
+alter table public.notifications add column if not exists related_chat_id uuid;
+alter table public.notifications add column if not exists related_order_id uuid;
+alter table public.notifications add column if not exists related_offer_id uuid;
+alter table public.notifications add column if not exists related_review_id uuid;
+alter table public.notifications add column if not exists click_count int default 0;
+alter table public.notifications add column if not exists archived_at timestamptz;
+alter table public.notifications add column if not exists deleted_at timestamptz;
+alter table public.notifications add column if not exists updated_at timestamptz not null default now();
 
 create index if not exists idx_notifications_user on public.notifications(user_id, is_deleted, created_at desc);
 create index if not exists idx_notifications_user_unread on public.notifications(user_id, is_read, is_deleted);
@@ -166,19 +158,13 @@ create index if not exists idx_delivery_logs_channel on public.notification_deli
 -- Notification preferences (per user, per category, per channel)
 -- =========================================================================
 
-create table if not exists public.notification_preferences (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  category public.notification_category not null,
-  in_app_enabled boolean default true,
-  push_enabled boolean default true,
-  email_enabled boolean default true,
-  sms_enabled boolean default false,
-  frequency public.notification_frequency default 'instant',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (user_id, category)
-);
+-- Notification preferences enhancements (base table created in 06_schema_v2_cms.sql)
+alter table public.notification_preferences add column if not exists category public.notification_category not null default 'system';
+alter table public.notification_preferences add column if not exists in_app_enabled boolean default true;
+alter table public.notification_preferences add column if not exists push_enabled boolean default true;
+alter table public.notification_preferences add column if not exists email_enabled boolean default true;
+alter table public.notification_preferences add column if not exists sms_enabled boolean default false;
+alter table public.notification_preferences add column if not exists frequency public.notification_frequency default 'instant';
 
 create index if not exists idx_notif_prefs_user on public.notification_preferences(user_id);
 
