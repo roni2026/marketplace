@@ -5,54 +5,54 @@
 -- -------------------------------------------------------------------------
 
 -- Enums
-create type public.review_status as enum ('pending', 'approved', 'rejected', 'appealed');
+do $$ begin create type public.review_status as enum ('pending', 'approved', 'rejected', 'appealed'); exception when duplicate_object then null; end $$;
 
 -- -------------------------------------------------------------------------
 -- Enhanced Messaging tables
 -- -------------------------------------------------------------------------
 
 create table public.message_reactions (
-  id uuid primary key default gen_random_uuid(),
-  message_id uuid not null references public.messages(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  emoji text not null,
-  created_at timestamptz not null default now(),
-  unique(message_id, user_id, emoji)
+ id uuid primary key default gen_random_uuid(),
+ message_id uuid not null references public.messages(id) on delete cascade,
+ user_id uuid not null references auth.users(id) on delete cascade,
+ emoji text not null,
+ created_at timestamptz not null default now(),
+ unique(message_id, user_id, emoji)
 );
 
 create table public.message_attachments (
-  id uuid primary key default gen_random_uuid(),
-  message_id uuid not null references public.messages(id) on delete cascade,
-  file_url text not null,
-  file_type text not null,
-  file_name text not null,
-  file_size bigint not null default 0,
-  created_at timestamptz not null default now()
+ id uuid primary key default gen_random_uuid(),
+ message_id uuid not null references public.messages(id) on delete cascade,
+ file_url text not null,
+ file_type text not null,
+ file_name text not null,
+ file_size bigint not null default 0,
+ created_at timestamptz not null default now()
 );
 
 create table public.quick_replies (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  title text not null,
-  body text not null,
-  created_at timestamptz not null default now()
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references auth.users(id) on delete cascade,
+ title text not null,
+ body text not null,
+ created_at timestamptz not null default now()
 );
 
 create table public.auto_responses (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  keyword text not null,
-  response text not null,
-  is_active boolean not null default true,
-  created_at timestamptz not null default now()
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references auth.users(id) on delete cascade,
+ keyword text not null,
+ response text not null,
+ is_active boolean not null default true,
+ created_at timestamptz not null default now()
 );
 
 create table public.conversation_archive (
-  id uuid primary key default gen_random_uuid(),
-  conversation_id text not null,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  archived_at timestamptz not null default now(),
-  unique(conversation_id, user_id)
+ id uuid primary key default gen_random_uuid(),
+ conversation_id text not null,
+ user_id uuid not null references auth.users(id) on delete cascade,
+ archived_at timestamptz not null default now(),
+ unique(conversation_id, user_id)
 );
 
 -- -------------------------------------------------------------------------
@@ -60,38 +60,38 @@ create table public.conversation_archive (
 -- -------------------------------------------------------------------------
 
 create table public.reviews (
-  id uuid primary key default gen_random_uuid(),
-  ad_id uuid references public.ads(id) on delete cascade,
-  reviewer_id uuid not null references auth.users(id) on delete cascade,
-  seller_id uuid not null references auth.users(id) on delete cascade,
-  rating int not null check (rating >= 1 and rating <= 5),
-  title text,
-  body text,
-  images text[] default '{}',
-  videos text[] default '{}',
-  is_verified_purchase boolean not null default false,
-  helpful_count int not null default 0,
-  status public.review_status not null default 'pending',
-  appeal_reason text,
-  moderated_by uuid references auth.users(id) on delete set null,
-  moderated_at timestamptz,
-  created_at timestamptz not null default now()
+ id uuid primary key default gen_random_uuid(),
+ ad_id uuid references public.ads(id) on delete cascade,
+ reviewer_id uuid not null references auth.users(id) on delete cascade,
+ seller_id uuid not null references auth.users(id) on delete cascade,
+ rating int not null check (rating >= 1 and rating <= 5),
+ title text,
+ body text,
+ images text[] default '{}',
+ videos text[] default '{}',
+ is_verified_purchase boolean not null default false,
+ helpful_count int not null default 0,
+ status public.review_status not null default 'pending',
+ appeal_reason text,
+ moderated_by uuid references auth.users(id) on delete set null,
+ moderated_at timestamptz,
+ created_at timestamptz not null default now()
 );
 
 create table public.review_replies (
-  id uuid primary key default gen_random_uuid(),
-  review_id uuid not null references public.reviews(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  body text not null,
-  created_at timestamptz not null default now()
+ id uuid primary key default gen_random_uuid(),
+ review_id uuid not null references public.reviews(id) on delete cascade,
+ user_id uuid not null references auth.users(id) on delete cascade,
+ body text not null,
+ created_at timestamptz not null default now()
 );
 
 create table public.review_helpful (
-  id uuid primary key default gen_random_uuid(),
-  review_id uuid not null references public.reviews(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  unique(review_id, user_id)
+ id uuid primary key default gen_random_uuid(),
+ review_id uuid not null references public.reviews(id) on delete cascade,
+ user_id uuid not null references auth.users(id) on delete cascade,
+ created_at timestamptz not null default now(),
+ unique(review_id, user_id)
 );
 
 -- -------------------------------------------------------------------------
@@ -99,24 +99,24 @@ create table public.review_helpful (
 -- -------------------------------------------------------------------------
 
 create table public.seller_analytics (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  date date not null default current_date,
-  views int not null default 0,
-  inquiries int not null default 0,
-  offers int not null default 0,
-  conversions int not null default 0,
-  revenue numeric(12,2) not null default 0,
-  created_at timestamptz not null default now(),
-  unique(user_id, date)
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references auth.users(id) on delete cascade,
+ date date not null default current_date,
+ views int not null default 0,
+ inquiries int not null default 0,
+ offers int not null default 0,
+ conversions int not null default 0,
+ revenue numeric(12,2) not null default 0,
+ created_at timestamptz not null default now(),
+ unique(user_id, date)
 );
 
 create table public.seller_followers (
-  id uuid primary key default gen_random_uuid(),
-  seller_id uuid not null references auth.users(id) on delete cascade,
-  follower_id uuid not null references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  unique(seller_id, follower_id)
+ id uuid primary key default gen_random_uuid(),
+ seller_id uuid not null references auth.users(id) on delete cascade,
+ follower_id uuid not null references auth.users(id) on delete cascade,
+ created_at timestamptz not null default now(),
+ unique(seller_id, follower_id)
 );
 
 -- -------------------------------------------------------------------------
@@ -124,51 +124,51 @@ create table public.seller_followers (
 -- -------------------------------------------------------------------------
 
 create table public.product_comparisons (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  ad_ids text[] not null default '{}',
-  created_at timestamptz not null default now()
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references auth.users(id) on delete cascade,
+ ad_ids text[] not null default '{}',
+ created_at timestamptz not null default now()
 );
 
 create table public.recently_sold (
-  id uuid primary key default gen_random_uuid(),
-  ad_id uuid references public.ads(id) on delete cascade,
-  sold_at timestamptz not null default now(),
-  sold_price numeric(12,2)
+ id uuid primary key default gen_random_uuid(),
+ ad_id uuid references public.ads(id) on delete cascade,
+ sold_at timestamptz not null default now(),
+ sold_price numeric(12,2)
 );
 
 create table public.price_drops (
-  id uuid primary key default gen_random_uuid(),
-  ad_id uuid not null references public.ads(id) on delete cascade,
-  old_price numeric(12,2) not null,
-  new_price numeric(12,2) not null,
-  dropped_at timestamptz not null default now()
+ id uuid primary key default gen_random_uuid(),
+ ad_id uuid not null references public.ads(id) on delete cascade,
+ old_price numeric(12,2) not null,
+ new_price numeric(12,2) not null,
+ dropped_at timestamptz not null default now()
 );
 
 create table public.recommendations (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  ad_id uuid not null references public.ads(id) on delete cascade,
-  score numeric(5,2) not null default 0,
-  reason text,
-  created_at timestamptz not null default now()
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references auth.users(id) on delete cascade,
+ ad_id uuid not null references public.ads(id) on delete cascade,
+ score numeric(5,2) not null default 0,
+ reason text,
+ created_at timestamptz not null default now()
 );
 
 create table public.saved_carts (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  ad_ids jsonb not null default '[]'::jsonb,
-  created_at timestamptz not null default now(),
-  unique(user_id)
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references auth.users(id) on delete cascade,
+ ad_ids jsonb not null default '[]'::jsonb,
+ created_at timestamptz not null default now(),
+ unique(user_id)
 );
 
 create table public.buying_reminders (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  ad_id uuid not null references public.ads(id) on delete cascade,
-  reminder_date date not null,
-  notified boolean not null default false,
-  created_at timestamptz not null default now()
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references auth.users(id) on delete cascade,
+ ad_id uuid not null references public.ads(id) on delete cascade,
+ reminder_date date not null,
+ notified boolean not null default false,
+ created_at timestamptz not null default now()
 );
 
 -- -------------------------------------------------------------------------
@@ -228,10 +228,10 @@ create policy "Delete own reactions" on public.message_reactions for delete usin
 
 -- message_attachments: owner can view/insert
 create policy "Select own attachments" on public.message_attachments for select using (
-  exists(select 1 from public.messages m where m.id = message_id and (m.sender_id = auth.uid() or m.receiver_id = auth.uid()))
+ exists(select 1 from public.messages m where m.id = message_id and (m.sender_id = auth.uid() or m.receiver_id = auth.uid()))
 );
 create policy "Insert own attachments" on public.message_attachments for insert with check (
-  exists(select 1 from public.messages m where m.id = message_id and m.sender_id = auth.uid())
+ exists(select 1 from public.messages m where m.id = message_id and m.sender_id = auth.uid())
 );
 
 -- quick_replies: owner only
@@ -253,14 +253,14 @@ create policy "Delete own archives" on public.conversation_archive for delete us
 
 -- reviews: anyone can view approved; reviewer creates; seller can reply; admin moderates
 create policy "Select approved reviews" on public.reviews for select using (
-  status = 'approved' or reviewer_id = auth.uid() or seller_id = auth.uid()
+ status = 'approved' or reviewer_id = auth.uid() or seller_id = auth.uid()
 );
 create policy "Insert own reviews" on public.reviews for insert with check (reviewer_id = auth.uid());
 create policy "Update own reviews" on public.reviews for update using (reviewer_id = auth.uid());
 
 -- review_replies: review author or seller can view; authenticated can insert
 create policy "Select review replies" on public.review_replies for select using (
-  exists(select 1 from public.reviews r where r.id = review_id and (r.status = 'approved' or r.reviewer_id = auth.uid() or r.seller_id = auth.uid()))
+ exists(select 1 from public.reviews r where r.id = review_id and (r.status = 'approved' or r.reviewer_id = auth.uid() or r.seller_id = auth.uid()))
 );
 create policy "Insert review replies" on public.review_replies for insert with check (user_id = auth.uid());
 
