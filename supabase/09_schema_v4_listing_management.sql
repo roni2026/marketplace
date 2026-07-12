@@ -14,42 +14,26 @@
 -- Enum additions
 -- =========================================================================
 
-do $$ begin
-  alter type public.ad_status add value if not exists 'paused';
-exception when duplicate_object then null; end $$;
+alter type public.ad_status add value if not exists 'paused';
 
-do $$ begin
-  alter type public.ad_status add value if not exists 'hidden';
-exception when duplicate_object then null; end $$;
+alter type public.ad_status add value if not exists 'hidden';
 
-do $$ begin
-  alter type public.ad_status add value if not exists 'archived';
-exception when duplicate_object then null; end $$;
+alter type public.ad_status add value if not exists 'archived';
 
-DO $$ BEGIN
-    create type public.warranty_type as enum ('none', 'manufacturer', 'seller');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+create type public.warranty_type as enum ('none', 'manufacturer', 'seller');
 
-DO $$ BEGIN
-    create type public.shipping_method as enum ('local_pickup', 'nationwide', 'international');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+create type public.shipping_method as enum ('local_pickup', 'nationwide', 'international');
 
-DO $$ BEGIN
-    create type public.shipping_fee_type as enum ('free', 'flat_rate', 'calculated');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+create type public.shipping_fee_type as enum ('free', 'flat_rate', 'calculated');
 
-DO $$ BEGIN
-    create type public.history_action as enum (
+create type public.history_action as enum (
     'created', 'edited', 'price_changed', 'photo_changed', 'status_changed',
     'renewed', 'relisted', 'marked_sold', 'archived', 'restored',
     'deleted', 'duplicated', 'published', 'scheduled', 'paused', 'resumed',
     'hidden', 'bulk_updated'
   );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-    create type public.attribute_data_type as enum ('text', 'number', 'select', 'multiselect', 'boolean', 'date');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+create type public.attribute_data_type as enum ('text', 'number', 'select', 'multiselect', 'boolean', 'date');
 
 -- =========================================================================
 -- Extend ads table with Phase 4 columns
@@ -250,16 +234,16 @@ begin
 end;
 $$;
 
-create trigger if not exists trg_listing_types_updated_at
-  before update on public.listing_types
+drop trigger if exists trg_listing_types_updated_at on public.listing_types;
+create trigger trg_listing_types_updated_at before update on public.listing_types
   for each row execute procedure public.update_updated_at_v4();
 
-create trigger if not exists trg_item_conditions_updated_at
-  before update on public.item_conditions
+drop trigger if exists trg_item_conditions_updated_at on public.item_conditions;
+create trigger trg_item_conditions_updated_at before update on public.item_conditions
   for each row execute procedure public.update_updated_at_v4();
 
-create trigger if not exists trg_category_attributes_updated_at
-  before update on public.category_attributes
+drop trigger if exists trg_category_attributes_updated_at on public.category_attributes;
+create trigger trg_category_attributes_updated_at before update on public.category_attributes
   for each row execute procedure public.update_updated_at_v4();
 
 -- =========================================================================
@@ -327,60 +311,48 @@ alter table public.listing_analytics enable row level security;
 alter table public.bulk_listing_operations enable row level security;
 
 -- Listing types: public read, admin write
-DO $$ BEGIN
-  create policy "Public can view listing types" on public.listing_types for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins manage listing types" on public.listing_types for all
+drop policy if exists "Public can view listing types" on public.listing_types;
+create policy "Public can view listing types" on public.listing_types for select using (true);
+drop policy if exists "Admins manage listing types" on public.listing_types;
+create policy "Admins manage listing types" on public.listing_types for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Item conditions: public read, admin write
-DO $$ BEGIN
-  create policy "Public can view item conditions" on public.item_conditions for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins manage item conditions" on public.item_conditions for all
+drop policy if exists "Public can view item conditions" on public.item_conditions;
+create policy "Public can view item conditions" on public.item_conditions for select using (true);
+drop policy if exists "Admins manage item conditions" on public.item_conditions;
+create policy "Admins manage item conditions" on public.item_conditions for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Category attributes: public read, admin write
-DO $$ BEGIN
-  create policy "Public can view category attributes" on public.category_attributes for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins manage category attributes" on public.category_attributes for all
+drop policy if exists "Public can view category attributes" on public.category_attributes;
+create policy "Public can view category attributes" on public.category_attributes for select using (true);
+drop policy if exists "Admins manage category attributes" on public.category_attributes;
+create policy "Admins manage category attributes" on public.category_attributes for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Listing history: ad owner and admins can view, ad owner can insert
-DO $$ BEGIN
-  create policy "Ad owner views listing history" on public.listing_history for select
+drop policy if exists "Ad owner views listing history" on public.listing_history;
+create policy "Ad owner views listing history" on public.listing_history for select
   using (exists (select 1 from public.ads where ads.id = listing_history.ad_id and (ads.user_id = auth.uid() or public.is_admin(auth.uid()))));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Ad owner inserts listing history" on public.listing_history for insert
+drop policy if exists "Ad owner inserts listing history" on public.listing_history;
+create policy "Ad owner inserts listing history" on public.listing_history for insert
   with check (exists (select 1 from public.ads where ads.id = listing_history.ad_id and ads.user_id = auth.uid()) or public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Listing analytics: ad owner and admins can view, system inserts
-DO $$ BEGIN
-  create policy "Ad owner views listing analytics" on public.listing_analytics for select
+drop policy if exists "Ad owner views listing analytics" on public.listing_analytics;
+create policy "Ad owner views listing analytics" on public.listing_analytics for select
   using (exists (select 1 from public.ads where ads.id = listing_analytics.ad_id and (ads.user_id = auth.uid() or public.is_admin(auth.uid()))));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System inserts listing analytics" on public.listing_analytics for insert with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Ad owner updates listing analytics" on public.listing_analytics for update
+drop policy if exists "System inserts listing analytics" on public.listing_analytics;
+create policy "System inserts listing analytics" on public.listing_analytics for insert with check (true);
+drop policy if exists "Ad owner updates listing analytics" on public.listing_analytics;
+create policy "Ad owner updates listing analytics" on public.listing_analytics for update
   using (exists (select 1 from public.ads where ads.id = listing_analytics.ad_id and ads.user_id = auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Bulk listing operations: only owner
-DO $$ BEGIN
-  create policy "Users manage own bulk operations" on public.bulk_listing_operations for all
+drop policy if exists "Users manage own bulk operations" on public.bulk_listing_operations;
+create policy "Users manage own bulk operations" on public.bulk_listing_operations for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================
 -- GRANT permissions

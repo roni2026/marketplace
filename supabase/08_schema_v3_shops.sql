@@ -14,57 +14,31 @@
 -- Enums
 -- =========================================================================
 
-do $$ begin
-    create type public.shop_membership_tier as enum ('basic', 'professional', 'business', 'enterprise');
-exception when duplicate_object then null; end $$;
+create type public.shop_membership_tier as enum ('basic', 'professional', 'business', 'enterprise');
 
-do $$ begin
-    create type public.shop_verification_status as enum ('pending', 'under_review', 'approved', 'rejected', 'expired');
-exception when duplicate_object then null; end $$;
+create type public.shop_verification_status as enum ('pending', 'under_review', 'approved', 'rejected', 'expired');
 
-do $$ begin
-    create type public.verification_type as enum ('business', 'identity_kyc', 'business_license');
-exception when duplicate_object then null; end $$;
+create type public.verification_type as enum ('business', 'identity_kyc', 'business_license');
 
-do $$ begin
-    create type public.shop_coupon_type as enum ('percentage', 'fixed_amount', 'free_shipping');
-exception when duplicate_object then null; end $$;
+create type public.shop_coupon_type as enum ('percentage', 'fixed_amount', 'free_shipping');
 
-do $$ begin
-    create type public.payout_method_type as enum ('bank_transfer', 'mobile_banking', 'cash_pickup', 'paypal', 'stripe');
-exception when duplicate_object then null; end $$;
+create type public.payout_method_type as enum ('bank_transfer', 'mobile_banking', 'cash_pickup', 'paypal', 'stripe');
 
-do $$ begin
-    create type public.payout_status as enum ('pending', 'processing', 'completed', 'failed', 'cancelled');
-exception when duplicate_object then null; end $$;
+create type public.payout_status as enum ('pending', 'processing', 'completed', 'failed', 'cancelled');
 
-do $$ begin
-    create type public.transaction_type as enum ('sale', 'refund', 'payout', 'fee', 'subscription', 'adjustment');
-exception when duplicate_object then null; end $$;
+create type public.transaction_type as enum ('sale', 'refund', 'payout', 'fee', 'subscription', 'adjustment');
 
-do $$ begin
-    create type public.transaction_status as enum ('pending', 'completed', 'failed', 'refunded', 'disputed');
-exception when duplicate_object then null; end $$;
+create type public.transaction_status as enum ('pending', 'completed', 'failed', 'refunded', 'disputed');
 
-do $$ begin
-    create type public.listing_draft_status as enum ('draft', 'scheduled', 'published', 'archived');
-exception when duplicate_object then null; end $$;
+create type public.listing_draft_status as enum ('draft', 'scheduled', 'published', 'archived');
 
-do $$ begin
-    create type public.bulk_job_type as enum ('import', 'export');
-exception when duplicate_object then null; end $$;
+create type public.bulk_job_type as enum ('import', 'export');
 
-do $$ begin
-    create type public.bulk_job_status as enum ('queued', 'processing', 'completed', 'failed', 'partial');
-exception when duplicate_object then null; end $$;
+create type public.bulk_job_status as enum ('queued', 'processing', 'completed', 'failed', 'partial');
 
-do $$ begin
-    create type public.staff_role as enum ('owner', 'manager', 'staff', 'viewer');
-exception when duplicate_object then null; end $$;
+create type public.staff_role as enum ('owner', 'manager', 'staff', 'viewer');
 
-do $$ begin
-    create type public.shop_report_period as enum ('daily', 'weekly', 'monthly', 'quarterly', 'yearly');
-exception when duplicate_object then null; end $$;
+create type public.shop_report_period as enum ('daily', 'weekly', 'monthly', 'quarterly', 'yearly');
 
 -- =========================================================================
 -- 1. Shops
@@ -618,80 +592,65 @@ begin
 end;
 $$ language plpgsql;
 
-do $$ begin
-  create trigger trg_shops_updated before update on public.shops
+drop trigger if exists trg_shops_updated on public.shops;
+create trigger trg_shops_updated before update on public.shops
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_shop_memberships_updated before update on public.shop_memberships
+drop trigger if exists trg_shop_memberships_updated on public.shop_memberships;
+create trigger trg_shop_memberships_updated before update on public.shop_memberships
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_shop_verifications_updated before update on public.shop_verifications
+drop trigger if exists trg_shop_verifications_updated on public.shop_verifications;
+create trigger trg_shop_verifications_updated before update on public.shop_verifications
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_shop_coupons_updated before update on public.shop_coupons
+drop trigger if exists trg_shop_coupons_updated on public.shop_coupons;
+create trigger trg_shop_coupons_updated before update on public.shop_coupons
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_shop_staff_updated before update on public.shop_staff
+drop trigger if exists trg_shop_staff_updated on public.shop_staff;
+create trigger trg_shop_staff_updated before update on public.shop_staff
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_listing_drafts_updated before update on public.listing_drafts
+drop trigger if exists trg_listing_drafts_updated on public.listing_drafts;
+create trigger trg_listing_drafts_updated before update on public.listing_drafts
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_seller_vacation_updated before update on public.seller_vacation_modes
+drop trigger if exists trg_seller_vacation_updated on public.seller_vacation_modes;
+create trigger trg_seller_vacation_updated before update on public.seller_vacation_modes
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_payout_methods_updated before update on public.payout_methods
+drop trigger if exists trg_payout_methods_updated on public.payout_methods;
+create trigger trg_payout_methods_updated before update on public.payout_methods
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_transactions_updated before update on public.transactions
+drop trigger if exists trg_transactions_updated on public.transactions;
+create trigger trg_transactions_updated before update on public.transactions
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_payouts_updated before update on public.payouts
+drop trigger if exists trg_payouts_updated on public.payouts;
+create trigger trg_payouts_updated before update on public.payouts
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_product_templates_updated before update on public.product_templates
+drop trigger if exists trg_product_templates_updated on public.product_templates;
+create trigger trg_product_templates_updated before update on public.product_templates
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_shop_announcements_updated before update on public.shop_announcements
+drop trigger if exists trg_shop_announcements_updated on public.shop_announcements;
+create trigger trg_shop_announcements_updated before update on public.shop_announcements
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_seller_shipping_updated before update on public.seller_shipping_preferences
+drop trigger if exists trg_seller_shipping_updated on public.seller_shipping_preferences;
+create trigger trg_seller_shipping_updated before update on public.seller_shipping_preferences
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_shop_reviews_updated before update on public.shop_reviews
+drop trigger if exists trg_shop_reviews_updated on public.shop_reviews;
+create trigger trg_shop_reviews_updated before update on public.shop_reviews
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create trigger trg_shop_collections_updated before update on public.shop_collections
+drop trigger if exists trg_shop_collections_updated on public.shop_collections;
+create trigger trg_shop_collections_updated before update on public.shop_collections
     for each row execute function public.update_updated_at_v3();
-exception when duplicate_object then null; end $$;
 
 -- =========================================================================
 -- Functions: shop follower count, shop product count, shop rating
@@ -774,384 +733,303 @@ returns boolean as $$
 $$ language sql stable;
 
 -- shops: public can view active shops; owner/staff can manage
-DO $$ BEGIN
-    create policy "Select active shops" on public.shops for select using (
+drop policy if exists "Select active shops" on public.shops;
+create policy "Select active shops" on public.shops for select using (
   is_active_or_owner()
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own shop" on public.shops for insert with check (owner_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own shop" on public.shops for update using (
+drop policy if exists "Insert own shop" on public.shops;
+create policy "Insert own shop" on public.shops for insert with check (owner_id = auth.uid());
+drop policy if exists "Update own shop" on public.shops;
+create policy "Update own shop" on public.shops for update using (
   owner_id = auth.uid() or exists(select 1 from public.shop_staff where shop_id = shops.id and user_id = auth.uid() and role in ('owner', 'manager'))
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own shop" on public.shops for delete using (owner_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Delete own shop" on public.shops;
+create policy "Delete own shop" on public.shops for delete using (owner_id = auth.uid());
 
 -- shop_memberships: owner can view/manage
-DO $$ BEGIN
-    create policy "Select own membership" on public.shop_memberships for select using (
+drop policy if exists "Select own membership" on public.shop_memberships;
+create policy "Select own membership" on public.shop_memberships for select using (
   user_id = auth.uid() or exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own membership" on public.shop_memberships for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own membership" on public.shop_memberships for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Insert own membership" on public.shop_memberships;
+create policy "Insert own membership" on public.shop_memberships for insert with check (user_id = auth.uid());
+drop policy if exists "Update own membership" on public.shop_memberships;
+create policy "Update own membership" on public.shop_memberships for update using (user_id = auth.uid());
 
 -- shop_verifications: owner can view/submit; admin can view all
-DO $$ BEGIN
-    create policy "Select own verifications" on public.shop_verifications for select using (
+drop policy if exists "Select own verifications" on public.shop_verifications;
+create policy "Select own verifications" on public.shop_verifications for select using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid()) or
   exists(select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin', 'super_admin', 'moderator'))
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Insert own verifications" on public.shop_verifications for insert with check (
+drop policy if exists "Insert own verifications" on public.shop_verifications;
+create policy "Insert own verifications" on public.shop_verifications for insert with check (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Update verifications admin" on public.shop_verifications for update using (
+drop policy if exists "Update verifications admin" on public.shop_verifications;
+create policy "Update verifications admin" on public.shop_verifications for update using (
   exists(select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin', 'super_admin', 'moderator'))
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- shop_followers: public view; users manage own follows
-DO $$ BEGIN
-  create policy "Select shop followers" on public.shop_followers for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own shop follow" on public.shop_followers for insert with check (follower_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own shop follow" on public.shop_followers for delete using (follower_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- shop_collections: public view active; shop owner/staff manage
+drop policy if exists "Select shop followers" on public.shop_followers;
+create policy "Select shop followers" on public.shop_followers for select using (true);
+drop policy if exists "Insert own shop follow" on public.shop_followers;
+create policy "Insert own shop follow" on public.shop_followers for insert with check (follower_id = auth.uid());
+drop policy if exists "Delete own shop follow" on public.shop_followers;
+create policy "Delete own shop follow" on public.shop_followers for delete using (follower_id = auth.uid());
+-- shop_collections: public view active; shop owner/staff manage
+drop policy if exists "Select shop collections" on public.shop_collections;
 create policy "Select shop collections" on public.shop_collections for select using (
   exists(select 1 from public.shops s where s.id = shop_id and (s.owner_id = auth.uid() or exists(select 1 from public.shop_staff ss where ss.shop_id = s.id and ss.user_id = auth.uid())))
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Insert own collections" on public.shop_collections for insert with check (
+drop policy if exists "Insert own collections" on public.shop_collections;
+create policy "Insert own collections" on public.shop_collections for insert with check (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Update own collections" on public.shop_collections for update using (
+drop policy if exists "Update own collections" on public.shop_collections;
+create policy "Update own collections" on public.shop_collections for update using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Delete own collections" on public.shop_collections for delete using (
+drop policy if exists "Delete own collections" on public.shop_collections;
+create policy "Delete own collections" on public.shop_collections for delete using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- shop_collection_items: same as collections
-DO $$ BEGIN
-    create policy "Select collection items" on public.shop_collection_items for select using (
+drop policy if exists "Select collection items" on public.shop_collection_items;
+create policy "Select collection items" on public.shop_collection_items for select using (
   exists(select 1 from public.shop_collections sc where sc.id = collection_id and
     exists(select 1 from public.shops s where s.id = sc.shop_id and (s.owner_id = auth.uid() or exists(select 1 from public.shop_staff ss where ss.shop_id = s.id and ss.user_id = auth.uid())))
   )
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Insert own collection items" on public.shop_collection_items for insert with check (
+drop policy if exists "Insert own collection items" on public.shop_collection_items;
+create policy "Insert own collection items" on public.shop_collection_items for insert with check (
   exists(select 1 from public.shop_collections sc where sc.id = collection_id and
     exists(select 1 from public.shops s where s.id = sc.shop_id and s.owner_id = auth.uid())
   )
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Delete own collection items" on public.shop_collection_items for delete using (
+drop policy if exists "Delete own collection items" on public.shop_collection_items;
+create policy "Delete own collection items" on public.shop_collection_items for delete using (
   exists(select 1 from public.shop_collections sc where sc.id = collection_id and
     exists(select 1 from public.shops s where s.id = sc.shop_id and s.owner_id = auth.uid())
   )
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- shop_categories: owner/staff manage; public view
-DO $$ BEGIN
-  create policy "Select shop categories" on public.shop_categories for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own shop categories" on public.shop_categories for insert with check (
+drop policy if exists "Select shop categories" on public.shop_categories;
+create policy "Select shop categories" on public.shop_categories for select using (true);
+drop policy if exists "Insert own shop categories" on public.shop_categories;
+create policy "Insert own shop categories" on public.shop_categories for insert with check (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Update own shop categories" on public.shop_categories for update using (
+drop policy if exists "Update own shop categories" on public.shop_categories;
+create policy "Update own shop categories" on public.shop_categories for update using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Delete own shop categories" on public.shop_categories for delete using (
+drop policy if exists "Delete own shop categories" on public.shop_categories;
+create policy "Delete own shop categories" on public.shop_categories for delete using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- shop_coupons: owner/staff manage; public can view active coupons for shop
-DO $$ BEGIN
-    create policy "Select shop coupons" on public.shop_coupons for select using (
+drop policy if exists "Select shop coupons" on public.shop_coupons;
+create policy "Select shop coupons" on public.shop_coupons for select using (
   is_active = true or exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Insert own coupons" on public.shop_coupons for insert with check (
+drop policy if exists "Insert own coupons" on public.shop_coupons;
+create policy "Insert own coupons" on public.shop_coupons for insert with check (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Update own coupons" on public.shop_coupons for update using (
+drop policy if exists "Update own coupons" on public.shop_coupons;
+create policy "Update own coupons" on public.shop_coupons for update using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Delete own coupons" on public.shop_coupons for delete using (
+drop policy if exists "Delete own coupons" on public.shop_coupons;
+create policy "Delete own coupons" on public.shop_coupons for delete using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- shop_staff: owner can manage; staff can view
-DO $$ BEGIN
-    create policy "Select shop staff" on public.shop_staff for select using (
+drop policy if exists "Select shop staff" on public.shop_staff;
+create policy "Select shop staff" on public.shop_staff for select using (
   user_id = auth.uid() or exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Insert shop staff" on public.shop_staff for insert with check (
+drop policy if exists "Insert shop staff" on public.shop_staff;
+create policy "Insert shop staff" on public.shop_staff for insert with check (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Update shop staff" on public.shop_staff for update using (
+drop policy if exists "Update shop staff" on public.shop_staff;
+create policy "Update shop staff" on public.shop_staff for update using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Delete shop staff" on public.shop_staff for delete using (
+drop policy if exists "Delete shop staff" on public.shop_staff;
+create policy "Delete shop staff" on public.shop_staff for delete using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- shop_analytics: owner/staff only
-DO $$ BEGIN
-    create policy "Select own shop analytics" on public.shop_analytics for select using (
+drop policy if exists "Select own shop analytics" on public.shop_analytics;
+create policy "Select own shop analytics" on public.shop_analytics for select using (
   exists(select 1 from public.shops s where s.id = shop_id and (s.owner_id = auth.uid() or exists(select 1 from public.shop_staff ss where ss.shop_id = s.id and ss.user_id = auth.uid())))
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Insert own shop analytics" on public.shop_analytics for insert with check (
+drop policy if exists "Insert own shop analytics" on public.shop_analytics;
+create policy "Insert own shop analytics" on public.shop_analytics for insert with check (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Update own shop analytics" on public.shop_analytics for update using (
+drop policy if exists "Update own shop analytics" on public.shop_analytics;
+create policy "Update own shop analytics" on public.shop_analytics for update using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- shop_reviews: public view approved; reviewer creates; shop owner can reply
-DO $$ BEGIN
-    create policy "Select shop reviews" on public.shop_reviews for select using (
+drop policy if exists "Select shop reviews" on public.shop_reviews;
+create policy "Select shop reviews" on public.shop_reviews for select using (
   status = 'approved' or reviewer_id = auth.uid() or
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own shop review" on public.shop_reviews for insert with check (reviewer_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own shop review" on public.shop_reviews for update using (
+drop policy if exists "Insert own shop review" on public.shop_reviews;
+create policy "Insert own shop review" on public.shop_reviews for insert with check (reviewer_id = auth.uid());
+drop policy if exists "Update own shop review" on public.shop_reviews;
+create policy "Update own shop review" on public.shop_reviews for update using (
   reviewer_id = auth.uid() or
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- listing_drafts: owner only
-DO $$ BEGIN
-  create policy "Select own drafts" on public.listing_drafts for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own drafts" on public.listing_drafts for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own drafts" on public.listing_drafts for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own drafts" on public.listing_drafts for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Select own drafts" on public.listing_drafts;
+create policy "Select own drafts" on public.listing_drafts for select using (user_id = auth.uid());
+drop policy if exists "Insert own drafts" on public.listing_drafts;
+create policy "Insert own drafts" on public.listing_drafts for insert with check (user_id = auth.uid());
+drop policy if exists "Update own drafts" on public.listing_drafts;
+create policy "Update own drafts" on public.listing_drafts for update using (user_id = auth.uid());
+drop policy if exists "Delete own drafts" on public.listing_drafts;
+create policy "Delete own drafts" on public.listing_drafts for delete using (user_id = auth.uid());
 
 -- listing_schedules: owner only
-DO $$ BEGIN
-  create policy "Select own schedules" on public.listing_schedules for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own schedules" on public.listing_schedules for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own schedules" on public.listing_schedules for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own schedules" on public.listing_schedules for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Select own schedules" on public.listing_schedules;
+create policy "Select own schedules" on public.listing_schedules for select using (user_id = auth.uid());
+drop policy if exists "Insert own schedules" on public.listing_schedules;
+create policy "Insert own schedules" on public.listing_schedules for insert with check (user_id = auth.uid());
+drop policy if exists "Update own schedules" on public.listing_schedules;
+create policy "Update own schedules" on public.listing_schedules for update using (user_id = auth.uid());
+drop policy if exists "Delete own schedules" on public.listing_schedules;
+create policy "Delete own schedules" on public.listing_schedules for delete using (user_id = auth.uid());
 
 -- seller_vacation_modes: owner only
-DO $$ BEGIN
-  create policy "Select own vacation" on public.seller_vacation_modes for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own vacation" on public.seller_vacation_modes for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own vacation" on public.seller_vacation_modes for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own vacation" on public.seller_vacation_modes for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Select own vacation" on public.seller_vacation_modes;
+create policy "Select own vacation" on public.seller_vacation_modes for select using (user_id = auth.uid());
+drop policy if exists "Insert own vacation" on public.seller_vacation_modes;
+create policy "Insert own vacation" on public.seller_vacation_modes for insert with check (user_id = auth.uid());
+drop policy if exists "Update own vacation" on public.seller_vacation_modes;
+create policy "Update own vacation" on public.seller_vacation_modes for update using (user_id = auth.uid());
+drop policy if exists "Delete own vacation" on public.seller_vacation_modes;
+create policy "Delete own vacation" on public.seller_vacation_modes for delete using (user_id = auth.uid());
 
 -- payout_methods: owner only
-DO $$ BEGIN
-  create policy "Select own payout methods" on public.payout_methods for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own payout methods" on public.payout_methods for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own payout methods" on public.payout_methods for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own payout methods" on public.payout_methods for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Select own payout methods" on public.payout_methods;
+create policy "Select own payout methods" on public.payout_methods for select using (user_id = auth.uid());
+drop policy if exists "Insert own payout methods" on public.payout_methods;
+create policy "Insert own payout methods" on public.payout_methods for insert with check (user_id = auth.uid());
+drop policy if exists "Update own payout methods" on public.payout_methods;
+create policy "Update own payout methods" on public.payout_methods for update using (user_id = auth.uid());
+drop policy if exists "Delete own payout methods" on public.payout_methods;
+create policy "Delete own payout methods" on public.payout_methods for delete using (user_id = auth.uid());
 
 -- transactions: owner or admin
-DO $$ BEGIN
-    create policy "Select own transactions" on public.transactions for select using (
+drop policy if exists "Select own transactions" on public.transactions;
+create policy "Select own transactions" on public.transactions for select using (
   user_id = auth.uid() or
   exists(select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin', 'super_admin')) or
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own transactions" on public.transactions for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own transactions" on public.transactions for update using (
+drop policy if exists "Insert own transactions" on public.transactions;
+create policy "Insert own transactions" on public.transactions for insert with check (user_id = auth.uid());
+drop policy if exists "Update own transactions" on public.transactions;
+create policy "Update own transactions" on public.transactions for update using (
   user_id = auth.uid() or
   exists(select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin', 'super_admin'))
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- payouts: owner or admin
-DO $$ BEGIN
-    create policy "Select own payouts" on public.payouts for select using (
+drop policy if exists "Select own payouts" on public.payouts;
+create policy "Select own payouts" on public.payouts for select using (
   user_id = auth.uid() or
   exists(select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin', 'super_admin'))
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own payouts" on public.payouts for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own payouts" on public.payouts for update using (
+drop policy if exists "Insert own payouts" on public.payouts;
+create policy "Insert own payouts" on public.payouts for insert with check (user_id = auth.uid());
+drop policy if exists "Update own payouts" on public.payouts;
+create policy "Update own payouts" on public.payouts for update using (
   user_id = auth.uid() or
   exists(select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in ('admin', 'super_admin'))
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- product_templates: owner only
-DO $$ BEGIN
-  create policy "Select own product templates" on public.product_templates for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own product templates" on public.product_templates for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own product templates" on public.product_templates for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own product templates" on public.product_templates for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Select own product templates" on public.product_templates;
+create policy "Select own product templates" on public.product_templates for select using (user_id = auth.uid());
+drop policy if exists "Insert own product templates" on public.product_templates;
+create policy "Insert own product templates" on public.product_templates for insert with check (user_id = auth.uid());
+drop policy if exists "Update own product templates" on public.product_templates;
+create policy "Update own product templates" on public.product_templates for update using (user_id = auth.uid());
+drop policy if exists "Delete own product templates" on public.product_templates;
+create policy "Delete own product templates" on public.product_templates for delete using (user_id = auth.uid());
 
 -- bulk_jobs: owner only
-DO $$ BEGIN
-  create policy "Select own bulk jobs" on public.bulk_jobs for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own bulk jobs" on public.bulk_jobs for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own bulk jobs" on public.bulk_jobs for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- shop_announcements: public view active; owner manages
+drop policy if exists "Select own bulk jobs" on public.bulk_jobs;
+create policy "Select own bulk jobs" on public.bulk_jobs for select using (user_id = auth.uid());
+drop policy if exists "Insert own bulk jobs" on public.bulk_jobs;
+create policy "Insert own bulk jobs" on public.bulk_jobs for insert with check (user_id = auth.uid());
+drop policy if exists "Update own bulk jobs" on public.bulk_jobs;
+create policy "Update own bulk jobs" on public.bulk_jobs for update using (user_id = auth.uid());
+-- shop_announcements: public view active; owner manages
+drop policy if exists "Select shop announcements" on public.shop_announcements;
 create policy "Select shop announcements" on public.shop_announcements for select using (
   is_active = true or exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Insert own announcements" on public.shop_announcements for insert with check (
+drop policy if exists "Insert own announcements" on public.shop_announcements;
+create policy "Insert own announcements" on public.shop_announcements for insert with check (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Update own announcements" on public.shop_announcements for update using (
+drop policy if exists "Update own announcements" on public.shop_announcements;
+create policy "Update own announcements" on public.shop_announcements for update using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Delete own announcements" on public.shop_announcements for delete using (
+drop policy if exists "Delete own announcements" on public.shop_announcements;
+create policy "Delete own announcements" on public.shop_announcements for delete using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- seller_shipping_preferences: owner only
-DO $$ BEGIN
-  create policy "Select own shipping prefs" on public.seller_shipping_preferences for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own shipping prefs" on public.seller_shipping_preferences for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own shipping prefs" on public.seller_shipping_preferences for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own shipping prefs" on public.seller_shipping_preferences for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Select own shipping prefs" on public.seller_shipping_preferences;
+create policy "Select own shipping prefs" on public.seller_shipping_preferences for select using (user_id = auth.uid());
+drop policy if exists "Insert own shipping prefs" on public.seller_shipping_preferences;
+create policy "Insert own shipping prefs" on public.seller_shipping_preferences for insert with check (user_id = auth.uid());
+drop policy if exists "Update own shipping prefs" on public.seller_shipping_preferences;
+create policy "Update own shipping prefs" on public.seller_shipping_preferences for update using (user_id = auth.uid());
+drop policy if exists "Delete own shipping prefs" on public.seller_shipping_preferences;
+create policy "Delete own shipping prefs" on public.seller_shipping_preferences for delete using (user_id = auth.uid());
 
 -- listing_performance_insights: owner only
-DO $$ BEGIN
-  create policy "Select own performance" on public.listing_performance_insights for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own performance" on public.listing_performance_insights for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own performance" on public.listing_performance_insights for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- shop_orders: shop owner and buyer
+drop policy if exists "Select own performance" on public.listing_performance_insights;
+create policy "Select own performance" on public.listing_performance_insights for select using (user_id = auth.uid());
+drop policy if exists "Insert own performance" on public.listing_performance_insights;
+create policy "Insert own performance" on public.listing_performance_insights for insert with check (user_id = auth.uid());
+drop policy if exists "Update own performance" on public.listing_performance_insights;
+create policy "Update own performance" on public.listing_performance_insights for update using (user_id = auth.uid());
+-- shop_orders: shop owner and buyer
+drop policy if exists "Select own shop orders" on public.shop_orders;
 create policy "Select own shop orders" on public.shop_orders for select using (
   buyer_id = auth.uid() or
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid()) or
   exists(select 1 from public.shop_staff ss where ss.shop_id = shop_id and ss.user_id = auth.uid() and ss.is_active = true)
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert shop orders" on public.shop_orders for insert with check (buyer_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update shop orders" on public.shop_orders for update using (
+drop policy if exists "Insert shop orders" on public.shop_orders;
+create policy "Insert shop orders" on public.shop_orders for insert with check (buyer_id = auth.uid());
+drop policy if exists "Update shop orders" on public.shop_orders;
+create policy "Update shop orders" on public.shop_orders for update using (
   exists(select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================
 -- Grants
