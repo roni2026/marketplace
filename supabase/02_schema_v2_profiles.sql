@@ -8,9 +8,7 @@
 -- =========================================================================
 -- 0. Ensure review_status enum exists (defined in schema_v2_social.sql)
 -- =========================================================================
-DO $$ BEGIN
-  create type public.review_status as enum ('pending', 'approved', 'rejected', 'appealed');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+create type public.review_status as enum ('pending', 'approved', 'rejected', 'appealed');
 
 -- =========================================================================
 -- 1. ALTER profiles table — add new columns
@@ -38,8 +36,7 @@ alter table public.profiles add column if not exists is_public boolean default t
 -- 2. Verification Badges
 -- =========================================================================
 
-DO $$ BEGIN
-  create type public.badge_type as enum (
+create type public.badge_type as enum (
   'email_verified',
   'phone_verified',
   'id_verified',
@@ -49,7 +46,6 @@ DO $$ BEGIN
   'top_rated',
   'trusted_buyer'
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 create table if not exists public.verification_badges (
   id uuid primary key default gen_random_uuid(),
@@ -499,91 +495,77 @@ create trigger trg_refresh_stats_ad_sold
 -- Verification badges
 alter table public.verification_badges enable row level security;
 
-DO $$ BEGIN
-  create policy "Select active badges" on public.verification_badges
+drop policy if exists "Select active badges" on public.verification_badges;
+create policy "Select active badges" on public.verification_badges
   for select using (is_active = true or user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-  create policy "Insert own badge request" on public.verification_badges
+drop policy if exists "Insert own badge request" on public.verification_badges;
+create policy "Insert own badge request" on public.verification_badges
   for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-  create policy "Update own badge" on public.verification_badges
+drop policy if exists "Update own badge" on public.verification_badges;
+create policy "Update own badge" on public.verification_badges
   for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-  create policy "Admins manage badges" on public.verification_badges
+drop policy if exists "Admins manage badges" on public.verification_badges;
+create policy "Admins manage badges" on public.verification_badges
   for all using (
     exists (select 1 from public.user_roles where user_id = auth.uid() and role in ('super_admin', 'admin'))
   );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- User follows
 alter table public.user_follows enable row level security;
 
-DO $$ BEGIN
-  create policy "Select follows" on public.user_follows
+drop policy if exists "Select follows" on public.user_follows;
+create policy "Select follows" on public.user_follows
   for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-  create policy "Insert own follow" on public.user_follows
+drop policy if exists "Insert own follow" on public.user_follows;
+create policy "Insert own follow" on public.user_follows
   for insert with check (follower_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-  create policy "Delete own follow" on public.user_follows
+drop policy if exists "Delete own follow" on public.user_follows;
+create policy "Delete own follow" on public.user_follows
   for delete using (follower_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Buyer reviews
 alter table public.buyer_reviews enable row level security;
 
-DO $$ BEGIN
-  create policy "Select approved buyer reviews" on public.buyer_reviews
+drop policy if exists "Select approved buyer reviews" on public.buyer_reviews;
+create policy "Select approved buyer reviews" on public.buyer_reviews
   for select using (
     status = 'approved' or buyer_id = auth.uid() or seller_id = auth.uid()
   );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-  create policy "Insert own buyer review" on public.buyer_reviews
+drop policy if exists "Insert own buyer review" on public.buyer_reviews;
+create policy "Insert own buyer review" on public.buyer_reviews
   for insert with check (seller_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-  create policy "Update own buyer review" on public.buyer_reviews
+drop policy if exists "Update own buyer review" on public.buyer_reviews;
+create policy "Update own buyer review" on public.buyer_reviews
   for update using (seller_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Profile views
 alter table public.profile_views enable row level security;
 
-DO $$ BEGIN
-  create policy "Insert profile view" on public.profile_views
+drop policy if exists "Insert profile view" on public.profile_views;
+create policy "Insert profile view" on public.profile_views
   for insert with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-  create policy "Select own profile views" on public.profile_views
+drop policy if exists "Select own profile views" on public.profile_views;
+create policy "Select own profile views" on public.profile_views
   for select using (profile_user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-  create policy "Delete own profile views" on public.profile_views
+drop policy if exists "Delete own profile views" on public.profile_views;
+create policy "Delete own profile views" on public.profile_views
   for delete using (profile_user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Profile stats
 alter table public.profile_stats enable row level security;
 
-DO $$ BEGIN
-  create policy "Select profile stats" on public.profile_stats
+drop policy if exists "Select profile stats" on public.profile_stats;
+create policy "Select profile stats" on public.profile_stats
   for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- No insert/update/delete policies — stats are managed by security definer functions
 
@@ -591,12 +573,11 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 -- 9. Updated profiles policies (public can view non-deleted profiles)
 -- =========================================================================
 
-DO $$ BEGIN
-  create policy "Public can view profiles" on public.profiles
+drop policy if exists "Public can view profiles" on public.profiles;
+create policy "Public can view profiles" on public.profiles
   for select using (
     deleted_at is null and is_public = true or user_id = auth.uid()
   );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================
 -- 10. Grants

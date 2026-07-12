@@ -6,36 +6,16 @@
 -- -------------------------------------------------------------------------
 
 -- Enums
-DO $$ BEGIN
-  create type public.ad_status as enum ('pending', 'approved', 'rejected', 'sold', 'expired', 'draft', 'boosted', 'premium');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create type public.app_role as enum ('super_admin', 'admin', 'moderator', 'customer_support', 'seller', 'buyer');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create type public.item_condition as enum ('new', 'used');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create type public.price_type as enum ('fixed', 'negotiable', 'free');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create type public.report_status as enum ('pending', 'reviewing', 'resolved', 'dismissed');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create type public.ticket_status as enum ('open', 'in_progress', 'waiting_on_user', 'resolved', 'closed');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create type public.ticket_priority as enum ('low', 'medium', 'high', 'urgent');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create type public.notification_type as enum ('ad_approved', 'ad_rejected', 'new_message', 'new_offer', 'offer_accepted', 'offer_rejected', 'ad_expiring', 'report_update', 'system', 'ticket_update');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create type public.offer_status as enum ('pending', 'accepted', 'rejected', 'expired');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create type public.audit_action as enum ('create', 'update', 'delete', 'login', 'logout', 'login_failed', 'approve', 'reject', 'suspend', 'unsuspend', 'verify', 'export', 'bulk_action', 'settings_change');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+create type public.ad_status as enum ('pending', 'approved', 'rejected', 'sold', 'expired', 'draft', 'boosted', 'premium');
+create type public.app_role as enum ('super_admin', 'admin', 'moderator', 'customer_support', 'seller', 'buyer');
+create type public.item_condition as enum ('new', 'used');
+create type public.price_type as enum ('fixed', 'negotiable', 'free');
+create type public.report_status as enum ('pending', 'reviewing', 'resolved', 'dismissed');
+create type public.ticket_status as enum ('open', 'in_progress', 'waiting_on_user', 'resolved', 'closed');
+create type public.ticket_priority as enum ('low', 'medium', 'high', 'urgent');
+create type public.notification_type as enum ('ad_approved', 'ad_rejected', 'new_message', 'new_offer', 'offer_accepted', 'offer_rejected', 'ad_expiring', 'report_update', 'system', 'ticket_update');
+create type public.offer_status as enum ('pending', 'accepted', 'rejected', 'expired');
+create type public.audit_action as enum ('create', 'update', 'delete', 'login', 'logout', 'login_failed', 'approve', 'reject', 'suspend', 'unsuspend', 'verify', 'export', 'bulk_action', 'settings_change');
 
 -- Categories
 CREATE TABLE IF NOT EXISTS public.categories (
@@ -417,203 +397,157 @@ alter table public.login_attempts enable row level security;
 alter table public.ad_stats enable row level security;
 
 -- Categories / subcategories: publicly readable, admin-writable
-DO $$ BEGIN
-  create policy "Categories are viewable by everyone" on public.categories for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins manage categories" on public.categories for all
+drop policy if exists "Categories are viewable by everyone" on public.categories;
+create policy "Categories are viewable by everyone" on public.categories for select using (true);
+drop policy if exists "Admins manage categories" on public.categories;
+create policy "Admins manage categories" on public.categories for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-  create policy "Subcategories are viewable by everyone" on public.subcategories for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins manage subcategories" on public.subcategories for all
+drop policy if exists "Subcategories are viewable by everyone" on public.subcategories;
+create policy "Subcategories are viewable by everyone" on public.subcategories for select using (true);
+drop policy if exists "Admins manage subcategories" on public.subcategories;
+create policy "Admins manage subcategories" on public.subcategories for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Profiles: viewable by everyone (needed to show seller info), editable by owner
-DO $$ BEGIN
-  create policy "Profiles are viewable by everyone" on public.profiles for select using (deleted_at is null);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users update own profile" on public.profiles for update using (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users insert own profile" on public.profiles for insert with check (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins manage profiles" on public.profiles for all
+drop policy if exists "Profiles are viewable by everyone" on public.profiles;
+create policy "Profiles are viewable by everyone" on public.profiles for select using (deleted_at is null);
+drop policy if exists "Users update own profile" on public.profiles;
+create policy "Users update own profile" on public.profiles for update using (auth.uid() = user_id);
+drop policy if exists "Users insert own profile" on public.profiles;
+create policy "Users insert own profile" on public.profiles for insert with check (auth.uid() = user_id);
+drop policy if exists "Admins manage profiles" on public.profiles;
+create policy "Admins manage profiles" on public.profiles for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Roles: only readable by the user themself / admins; only admins can grant roles
-DO $$ BEGIN
-    create policy "Users view own roles" on public.user_roles for select
+drop policy if exists "Users view own roles" on public.user_roles;
+create policy "Users view own roles" on public.user_roles for select
   using (auth.uid() = user_id or public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Admins manage roles" on public.user_roles for all
+drop policy if exists "Admins manage roles" on public.user_roles;
+create policy "Admins manage roles" on public.user_roles for all
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Ads: approved ads are public; owners see all their own ads; admins see everything
-DO $$ BEGIN
-  create policy "Approved ads are public" on public.ads for select using (status in ('approved', 'boosted', 'premium'));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Owners view their own ads" on public.ads for select using (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins view all ads" on public.ads for select using (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users create their own ads" on public.ads for insert with check (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Owners update their own ads" on public.ads for update using (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins update any ad" on public.ads for update using (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Owners delete their own ads" on public.ads for delete using (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins delete any ad" on public.ads for delete using (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Approved ads are public" on public.ads;
+create policy "Approved ads are public" on public.ads for select using (status in ('approved', 'boosted', 'premium'));
+drop policy if exists "Owners view their own ads" on public.ads;
+create policy "Owners view their own ads" on public.ads for select using (auth.uid() = user_id);
+drop policy if exists "Admins view all ads" on public.ads;
+create policy "Admins view all ads" on public.ads for select using (public.is_admin(auth.uid()));
+drop policy if exists "Users create their own ads" on public.ads;
+create policy "Users create their own ads" on public.ads for insert with check (auth.uid() = user_id);
+drop policy if exists "Owners update their own ads" on public.ads;
+create policy "Owners update their own ads" on public.ads for update using (auth.uid() = user_id);
+drop policy if exists "Admins update any ad" on public.ads;
+create policy "Admins update any ad" on public.ads for update using (public.is_admin(auth.uid()));
+drop policy if exists "Owners delete their own ads" on public.ads;
+create policy "Owners delete their own ads" on public.ads for delete using (auth.uid() = user_id);
+drop policy if exists "Admins delete any ad" on public.ads;
+create policy "Admins delete any ad" on public.ads for delete using (public.is_admin(auth.uid()));
 
 -- Ad images follow the parent ad's visibility
-DO $$ BEGIN
-    create policy "Ad images follow ad visibility" on public.ad_images for select
+drop policy if exists "Ad images follow ad visibility" on public.ad_images;
+create policy "Ad images follow ad visibility" on public.ad_images for select
   using (exists (
     select 1 from public.ads
     where ads.id = ad_images.ad_id
       and (ads.status in ('approved', 'boosted', 'premium') or ads.user_id = auth.uid() or public.is_admin(auth.uid()))
   ));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Owners manage their ad images" on public.ad_images for all
+drop policy if exists "Owners manage their ad images" on public.ad_images;
+create policy "Owners manage their ad images" on public.ad_images for all
   using (exists (select 1 from public.ads where ads.id = ad_images.ad_id and ads.user_id = auth.uid()))
   with check (exists (select 1 from public.ads where ads.id = ad_images.ad_id and ads.user_id = auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Favorites: private to the owner
-DO $$ BEGIN
-    create policy "Users manage their own favorites" on public.favorites for all
+drop policy if exists "Users manage their own favorites" on public.favorites;
+create policy "Users manage their own favorites" on public.favorites for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Reports: users create, admins review
-DO $$ BEGIN
-  create policy "Users create reports" on public.reports for insert with check (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users view their own reports" on public.reports for select using (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Admins manage reports" on public.reports for all
+drop policy if exists "Users create reports" on public.reports;
+create policy "Users create reports" on public.reports for insert with check (auth.uid() = user_id);
+drop policy if exists "Users view their own reports" on public.reports;
+create policy "Users view their own reports" on public.reports for select using (auth.uid() = user_id);
+drop policy if exists "Admins manage reports" on public.reports;
+create policy "Admins manage reports" on public.reports for all
   using (public.is_staff(auth.uid())) with check (public.is_staff(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Audit Logs: only admins can view; any authenticated user can insert their own
-DO $$ BEGIN
-  create policy "Users insert own audit logs" on public.audit_logs for insert with check (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Admins view audit logs" on public.audit_logs for select using (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Users insert own audit logs" on public.audit_logs;
+create policy "Users insert own audit logs" on public.audit_logs for insert with check (auth.uid() = user_id);
+drop policy if exists "Admins view audit logs" on public.audit_logs;
+create policy "Admins view audit logs" on public.audit_logs for select using (public.is_admin(auth.uid()));
 
 -- Notifications: private to the owner
-DO $$ BEGIN
-    create policy "Users manage their own notifications" on public.notifications for all
+drop policy if exists "Users manage their own notifications" on public.notifications;
+create policy "Users manage their own notifications" on public.notifications for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Messages: sender and receiver can see their messages
-DO $$ BEGIN
-    create policy "Users view their messages" on public.messages for select
+drop policy if exists "Users view their messages" on public.messages;
+create policy "Users view their messages" on public.messages for select
   using (auth.uid() = sender_id or auth.uid() = receiver_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users send messages" on public.messages for insert with check (auth.uid() = sender_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users update their messages" on public.messages for update using (auth.uid() = receiver_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Users send messages" on public.messages;
+create policy "Users send messages" on public.messages for insert with check (auth.uid() = sender_id);
+drop policy if exists "Users update their messages" on public.messages;
+create policy "Users update their messages" on public.messages for update using (auth.uid() = receiver_id);
 
 -- Saved Searches: private to the owner
-DO $$ BEGIN
-    create policy "Users manage their own saved searches" on public.saved_searches for all
+drop policy if exists "Users manage their own saved searches" on public.saved_searches;
+create policy "Users manage their own saved searches" on public.saved_searches for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Offers: buyer and seller can see; buyer creates
-DO $$ BEGIN
-    create policy "Buyer and seller view offers" on public.offers for select
+drop policy if exists "Buyer and seller view offers" on public.offers;
+create policy "Buyer and seller view offers" on public.offers for select
   using (auth.uid() = buyer_id or auth.uid() = seller_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Buyers create offers" on public.offers for insert with check (auth.uid() = buyer_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Buyer and seller update offers" on public.offers for update
+drop policy if exists "Buyers create offers" on public.offers;
+create policy "Buyers create offers" on public.offers for insert with check (auth.uid() = buyer_id);
+drop policy if exists "Buyer and seller update offers" on public.offers;
+create policy "Buyer and seller update offers" on public.offers for update
   using (auth.uid() = buyer_id or auth.uid() = seller_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Support Tickets: user owns their tickets, staff can see all
-DO $$ BEGIN
-    create policy "Users view own tickets" on public.support_tickets for select
+drop policy if exists "Users view own tickets" on public.support_tickets;
+create policy "Users view own tickets" on public.support_tickets for select
   using (auth.uid() = user_id or public.is_staff(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users create tickets" on public.support_tickets for insert with check (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Users update own tickets" on public.support_tickets for update using (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Staff manage tickets" on public.support_tickets for update using (public.is_staff(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- Support Ticket Messages: ticket owner and staff
+drop policy if exists "Users create tickets" on public.support_tickets;
+create policy "Users create tickets" on public.support_tickets for insert with check (auth.uid() = user_id);
+drop policy if exists "Users update own tickets" on public.support_tickets;
+create policy "Users update own tickets" on public.support_tickets for update using (auth.uid() = user_id);
+drop policy if exists "Staff manage tickets" on public.support_tickets;
+create policy "Staff manage tickets" on public.support_tickets for update using (public.is_staff(auth.uid()));
+-- Support Ticket Messages: ticket owner and staff
+drop policy if exists "Ticket participants view messages" on public.support_ticket_messages;
 create policy "Ticket participants view messages" on public.support_ticket_messages for select
   using (
     exists (select 1 from public.support_tickets t where t.id = support_ticket_messages.ticket_id
       and (t.user_id = auth.uid() or public.is_staff(auth.uid())))
   );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-    create policy "Users create ticket messages" on public.support_ticket_messages for insert
+drop policy if exists "Users create ticket messages" on public.support_ticket_messages;
+create policy "Users create ticket messages" on public.support_ticket_messages for insert
   with check (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- User Sessions: private to the owner
-DO $$ BEGIN
-    create policy "Users manage their own sessions" on public.user_sessions for all
+drop policy if exists "Users manage their own sessions" on public.user_sessions;
+create policy "Users manage their own sessions" on public.user_sessions for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Login Attempts: only admins can view
-DO $$ BEGIN
-  create policy "Admins view login attempts" on public.login_attempts for select using (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System inserts login attempts" on public.login_attempts for insert with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Admins view login attempts" on public.login_attempts;
+create policy "Admins view login attempts" on public.login_attempts for select using (public.is_admin(auth.uid()));
+drop policy if exists "System inserts login attempts" on public.login_attempts;
+create policy "System inserts login attempts" on public.login_attempts for insert with check (true);
 
 -- Ad Stats: admins view, ad owner views
-DO $$ BEGIN
-  create policy "Admins view ad stats" on public.ad_stats for select using (public.is_admin(auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Owners view own ad stats" on public.ad_stats for select
+drop policy if exists "Admins view ad stats" on public.ad_stats;
+create policy "Admins view ad stats" on public.ad_stats for select using (public.is_admin(auth.uid()));
+drop policy if exists "Owners view own ad stats" on public.ad_stats;
+create policy "Owners view own ad stats" on public.ad_stats for select
   using (exists (select 1 from public.ads where ads.id = ad_stats.ad_id and ads.user_id = auth.uid()));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "System inserts ad stats" on public.ad_stats for insert with check (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "System inserts ad stats" on public.ad_stats;
+create policy "System inserts ad stats" on public.ad_stats for insert with check (true);
 -- -------------------------------------------------------------------------
 -- Auto-create a profile row whenever a new auth user signs up
 -- -------------------------------------------------------------------------

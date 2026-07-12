@@ -5,9 +5,7 @@
 -- -------------------------------------------------------------------------
 
 -- Enums
-DO $$ BEGIN
-  create type public.review_status as enum ('pending', 'approved', 'rejected', 'appealed');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+create type public.review_status as enum ('pending', 'approved', 'rejected', 'appealed');
 -- -------------------------------------------------------------------------
 -- Enhanced Messaging tables
 -- -------------------------------------------------------------------------
@@ -223,170 +221,124 @@ alter table public.saved_carts enable row level security;
 alter table public.buying_reminders enable row level security;
 
 -- message_reactions: users manage their own; participants can view
-DO $$ BEGIN
-  create policy "Select own reactions" on public.message_reactions for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own reactions" on public.message_reactions for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own reactions" on public.message_reactions for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- message_attachments: owner can view/insert
+drop policy if exists "Select own reactions" on public.message_reactions;
+create policy "Select own reactions" on public.message_reactions for select using (user_id = auth.uid());
+drop policy if exists "Insert own reactions" on public.message_reactions;
+create policy "Insert own reactions" on public.message_reactions for insert with check (user_id = auth.uid());
+drop policy if exists "Delete own reactions" on public.message_reactions;
+create policy "Delete own reactions" on public.message_reactions for delete using (user_id = auth.uid());
+-- message_attachments: owner can view/insert
+drop policy if exists "Select own attachments" on public.message_attachments;
 create policy "Select own attachments" on public.message_attachments for select using (
   exists(select 1 from public.messages m where m.id = message_id and (m.sender_id = auth.uid() or m.receiver_id = auth.uid()))
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own attachments" on public.message_attachments for insert with check (
+drop policy if exists "Insert own attachments" on public.message_attachments;
+create policy "Insert own attachments" on public.message_attachments for insert with check (
   exists(select 1 from public.messages m where m.id = message_id and m.sender_id = auth.uid())
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- quick_replies: owner only
-DO $$ BEGIN
-  create policy "Select own quick replies" on public.quick_replies for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own quick replies" on public.quick_replies for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own quick replies" on public.quick_replies for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own quick replies" on public.quick_replies for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Select own quick replies" on public.quick_replies;
+create policy "Select own quick replies" on public.quick_replies for select using (user_id = auth.uid());
+drop policy if exists "Insert own quick replies" on public.quick_replies;
+create policy "Insert own quick replies" on public.quick_replies for insert with check (user_id = auth.uid());
+drop policy if exists "Update own quick replies" on public.quick_replies;
+create policy "Update own quick replies" on public.quick_replies for update using (user_id = auth.uid());
+drop policy if exists "Delete own quick replies" on public.quick_replies;
+create policy "Delete own quick replies" on public.quick_replies for delete using (user_id = auth.uid());
 
 -- auto_responses: owner only
-DO $$ BEGIN
-  create policy "Select own auto responses" on public.auto_responses for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own auto responses" on public.auto_responses for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own auto responses" on public.auto_responses for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own auto responses" on public.auto_responses for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Select own auto responses" on public.auto_responses;
+create policy "Select own auto responses" on public.auto_responses for select using (user_id = auth.uid());
+drop policy if exists "Insert own auto responses" on public.auto_responses;
+create policy "Insert own auto responses" on public.auto_responses for insert with check (user_id = auth.uid());
+drop policy if exists "Update own auto responses" on public.auto_responses;
+create policy "Update own auto responses" on public.auto_responses for update using (user_id = auth.uid());
+drop policy if exists "Delete own auto responses" on public.auto_responses;
+create policy "Delete own auto responses" on public.auto_responses for delete using (user_id = auth.uid());
 
 -- conversation_archive: owner only
-DO $$ BEGIN
-  create policy "Select own archives" on public.conversation_archive for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own archives" on public.conversation_archive for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own archives" on public.conversation_archive for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- reviews: anyone can view approved; reviewer creates; seller can reply; admin moderates
+drop policy if exists "Select own archives" on public.conversation_archive;
+create policy "Select own archives" on public.conversation_archive for select using (user_id = auth.uid());
+drop policy if exists "Insert own archives" on public.conversation_archive;
+create policy "Insert own archives" on public.conversation_archive for insert with check (user_id = auth.uid());
+drop policy if exists "Delete own archives" on public.conversation_archive;
+create policy "Delete own archives" on public.conversation_archive for delete using (user_id = auth.uid());
+-- reviews: anyone can view approved; reviewer creates; seller can reply; admin moderates
+drop policy if exists "Select approved reviews" on public.reviews;
 create policy "Select approved reviews" on public.reviews for select using (
   status = 'approved' or reviewer_id = auth.uid() or seller_id = auth.uid()
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own reviews" on public.reviews for insert with check (reviewer_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own reviews" on public.reviews for update using (reviewer_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Insert own reviews" on public.reviews;
+create policy "Insert own reviews" on public.reviews for insert with check (reviewer_id = auth.uid());
+drop policy if exists "Update own reviews" on public.reviews;
+create policy "Update own reviews" on public.reviews for update using (reviewer_id = auth.uid());
 
 -- review_replies: review author or seller can view; authenticated can insert
-DO $$ BEGIN
-  create policy "Select review replies" on public.review_replies for select using (
+drop policy if exists "Select review replies" on public.review_replies;
+create policy "Select review replies" on public.review_replies for select using (
   exists(select 1 from public.reviews r where r.id = review_id and (r.status = 'approved' or r.reviewer_id = auth.uid() or r.seller_id = auth.uid()))
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert review replies" on public.review_replies for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- review_helpful: authenticated can view and insert own
+drop policy if exists "Insert review replies" on public.review_replies;
+create policy "Insert review replies" on public.review_replies for insert with check (user_id = auth.uid());
+-- review_helpful: authenticated can view and insert own
+drop policy if exists "Select review helpful" on public.review_helpful;
 create policy "Select review helpful" on public.review_helpful for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own helpful" on public.review_helpful for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own helpful" on public.review_helpful for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Insert own helpful" on public.review_helpful;
+create policy "Insert own helpful" on public.review_helpful for insert with check (user_id = auth.uid());
+drop policy if exists "Delete own helpful" on public.review_helpful;
+create policy "Delete own helpful" on public.review_helpful for delete using (user_id = auth.uid());
 
 -- seller_analytics: owner only
-DO $$ BEGIN
-  create policy "Select own analytics" on public.seller_analytics for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own analytics" on public.seller_analytics for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own analytics" on public.seller_analytics for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- seller_followers: public can view; users manage own follows
+drop policy if exists "Select own analytics" on public.seller_analytics;
+create policy "Select own analytics" on public.seller_analytics for select using (user_id = auth.uid());
+drop policy if exists "Insert own analytics" on public.seller_analytics;
+create policy "Insert own analytics" on public.seller_analytics for insert with check (user_id = auth.uid());
+drop policy if exists "Update own analytics" on public.seller_analytics;
+create policy "Update own analytics" on public.seller_analytics for update using (user_id = auth.uid());
+-- seller_followers: public can view; users manage own follows
+drop policy if exists "Select followers" on public.seller_followers;
 create policy "Select followers" on public.seller_followers for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own follow" on public.seller_followers for insert with check (follower_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own follow" on public.seller_followers for delete using (follower_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Insert own follow" on public.seller_followers;
+create policy "Insert own follow" on public.seller_followers for insert with check (follower_id = auth.uid());
+drop policy if exists "Delete own follow" on public.seller_followers;
+create policy "Delete own follow" on public.seller_followers for delete using (follower_id = auth.uid());
 
 -- product_comparisons: owner only
-DO $$ BEGIN
-  create policy "Select own comparisons" on public.product_comparisons for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own comparisons" on public.product_comparisons for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own comparisons" on public.product_comparisons for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own comparisons" on public.product_comparisons for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Select own comparisons" on public.product_comparisons;
+create policy "Select own comparisons" on public.product_comparisons for select using (user_id = auth.uid());
+drop policy if exists "Insert own comparisons" on public.product_comparisons;
+create policy "Insert own comparisons" on public.product_comparisons for insert with check (user_id = auth.uid());
+drop policy if exists "Update own comparisons" on public.product_comparisons;
+create policy "Update own comparisons" on public.product_comparisons for update using (user_id = auth.uid());
+drop policy if exists "Delete own comparisons" on public.product_comparisons;
+create policy "Delete own comparisons" on public.product_comparisons for delete using (user_id = auth.uid());
 
 -- recently_sold: public view
-DO $$ BEGIN
-  create policy "Select recently sold" on public.recently_sold for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- price_drops: public view
+drop policy if exists "Select recently sold" on public.recently_sold;
+create policy "Select recently sold" on public.recently_sold for select using (true);
+-- price_drops: public view
+drop policy if exists "Select price drops" on public.price_drops;
 create policy "Select price drops" on public.price_drops for select using (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- recommendations: owner only
-DO $$ BEGIN
-  create policy "Select own recommendations" on public.recommendations for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- saved_carts: owner only
+drop policy if exists "Select own recommendations" on public.recommendations;
+create policy "Select own recommendations" on public.recommendations for select using (user_id = auth.uid());
+-- saved_carts: owner only
+drop policy if exists "Select own carts" on public.saved_carts;
 create policy "Select own carts" on public.saved_carts for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own carts" on public.saved_carts for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own carts" on public.saved_carts for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own carts" on public.saved_carts for delete using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- buying_reminders: owner only
+drop policy if exists "Insert own carts" on public.saved_carts;
+create policy "Insert own carts" on public.saved_carts for insert with check (user_id = auth.uid());
+drop policy if exists "Update own carts" on public.saved_carts;
+create policy "Update own carts" on public.saved_carts for update using (user_id = auth.uid());
+drop policy if exists "Delete own carts" on public.saved_carts;
+create policy "Delete own carts" on public.saved_carts for delete using (user_id = auth.uid());
+-- buying_reminders: owner only
+drop policy if exists "Select own reminders" on public.buying_reminders;
 create policy "Select own reminders" on public.buying_reminders for select using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Insert own reminders" on public.buying_reminders for insert with check (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Update own reminders" on public.buying_reminders for update using (user_id = auth.uid());
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  create policy "Delete own reminders" on public.buying_reminders for delete using (user_id = auth.uid());
-
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+drop policy if exists "Insert own reminders" on public.buying_reminders;
+create policy "Insert own reminders" on public.buying_reminders for insert with check (user_id = auth.uid());
+drop policy if exists "Update own reminders" on public.buying_reminders;
+create policy "Update own reminders" on public.buying_reminders for update using (user_id = auth.uid());
+drop policy if exists "Delete own reminders" on public.buying_reminders;
+create policy "Delete own reminders" on public.buying_reminders for delete using (user_id = auth.uid());
