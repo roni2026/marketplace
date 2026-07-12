@@ -614,8 +614,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   create policy "System inserts ad stats" on public.ad_stats for insert with check (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- -------------------------------------------------------------------------
+-- -------------------------------------------------------------------------
 -- Auto-create a profile row whenever a new auth user signs up
 -- -------------------------------------------------------------------------
 create or replace function public.handle_new_user()
@@ -627,7 +626,6 @@ as $$
 begin
   insert into public.profiles (user_id, full_name)
   values (new.id, new.raw_user_meta_data ->> 'full_name');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
   return new;
 end;
 $$;
