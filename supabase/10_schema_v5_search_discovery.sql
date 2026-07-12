@@ -208,12 +208,12 @@ create extension if not exists pg_trgm;
 create or replace function public.update_updated_at_v5()
 returns trigger
 language plpgsql
-as $$
+as $func$
 begin
   new.updated_at = now();
   return new;
 end;
-$$;
+$func$;
 
 drop trigger if exists trg_search_suggestions_updated_at on public.search_suggestions;
 create trigger trg_search_suggestions_updated_at before update on public.search_suggestions
@@ -242,7 +242,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   -- Insert into search analytics
   insert into public.search_analytics (search_term, user_id, results_count, has_results, response_time_ms, filters)
@@ -262,7 +262,7 @@ begin
     values (p_user_id, p_search_term, p_results_count, p_filters);
   end if;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: get_search_suggestions (autocomplete suggestions)
@@ -283,7 +283,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   return query
   select
@@ -302,7 +302,7 @@ begin
     ss.search_count desc
   limit p_limit;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: get_trending_searches
@@ -318,7 +318,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   return query
   select
@@ -331,7 +331,7 @@ begin
   order by search_count desc
   limit p_limit;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: get_personalized_recommendations
@@ -361,7 +361,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   return query
   with user_favorites as (
@@ -419,7 +419,7 @@ begin
   order by score desc, a.created_at desc
   limit p_limit;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: get_discovery_listings
@@ -450,7 +450,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   return query
   select
@@ -474,7 +474,7 @@ begin
     end
   limit p_limit;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Row Level Security

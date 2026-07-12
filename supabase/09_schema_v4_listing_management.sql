@@ -227,12 +227,12 @@ create index if not exists idx_ads_product_attributes on public.ads using gin (p
 create or replace function public.update_updated_at_v4()
 returns trigger
 language plpgsql
-as $$
+as $func$
 begin
   new.updated_at = now();
   return new;
 end;
-$$;
+$func$;
 
 drop trigger if exists trg_listing_types_updated_at on public.listing_types;
 create trigger trg_listing_types_updated_at before update on public.listing_types
@@ -263,12 +263,12 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   insert into public.listing_history (ad_id, user_id, action, previous_value, new_value, field_name, notes)
   values (p_ad_id, p_user_id, p_action, p_previous_value, p_new_value, p_field_name, p_notes);
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function to record listing analytics
@@ -283,7 +283,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   insert into public.listing_analytics (ad_id, stat_date, total_views, unique_visitors, favorites, shares, messages_received, contact_clicks, inquiries)
   values (p_ad_id, current_date, 0, 0, 0, 0, 0, 0, 0)
@@ -297,7 +297,7 @@ begin
     contact_clicks = case when p_metric = 'contact_click' then listing_analytics.contact_clicks + p_increment else listing_analytics.contact_clicks end,
     inquiries = case when p_metric = 'inquiry' then listing_analytics.inquiries + p_increment else listing_analytics.inquiries end;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Row Level Security

@@ -585,12 +585,12 @@ create index if not exists idx_shop_orders_status on public.shop_orders(status);
 
 -- Auto-update updated_at
 create or replace function public.update_updated_at_v3()
-returns trigger as $$
+returns trigger as $func$
 begin
   new.updated_at = now();
   return new;
 end;
-$$ language plpgsql;
+$func$ language plpgsql;
 
 drop trigger if exists trg_shops_updated on public.shops;
 create trigger trg_shops_updated before update on public.shops
@@ -657,12 +657,12 @@ create trigger trg_shop_collections_updated before update on public.shop_collect
 -- =========================================================================
 
 create or replace function public.count_shop_followers(shop_uuid uuid)
-returns int as $$
+returns int as $func$
   select count(*) from public.shop_followers where shop_id = shop_uuid;
-$$ language sql stable;
+$func$ language sql stable;
 
 create or replace function public.count_shop_products(shop_uuid uuid)
-returns int as $$
+returns int as $func$
   select count(*) from public.ads a
   join public.shop_staff ss on ss.user_id = a.user_id and ss.shop_id = shop_uuid
   where a.status in ('approved', 'boosted', 'premium')
@@ -670,17 +670,17 @@ returns int as $$
   select count(*) from public.ads a
   join public.shops s on s.owner_id = a.user_id and s.id = shop_uuid
   where a.status in ('approved', 'boosted', 'premium');
-$$ language sql stable;
+$func$ language sql stable;
 
 create or replace function public.calculate_shop_rating(shop_uuid uuid)
-returns numeric as $$
+returns numeric as $func$
   select coalesce(avg(rating), 0)::numeric(3,2)
   from public.shop_reviews
   where shop_id = shop_uuid and status = 'approved';
-$$ language sql stable;
+$func$ language sql stable;
 
 create or replace function public.refresh_shop_stats(shop_uuid uuid)
-returns void as $$
+returns void as $func$
 begin
   update public.shops set
     total_followers = public.count_shop_followers(shop_uuid),
@@ -688,7 +688,7 @@ begin
     total_reviews = (select count(*) from public.shop_reviews where shop_id = shop_uuid and status = 'approved')
   where id = shop_uuid;
 end;
-$$ language plpgsql;
+$func$ language plpgsql;
 
 -- =========================================================================
 -- RLS Policies
@@ -721,7 +721,7 @@ alter table public.shop_orders enable row level security;
 
 -- Helper: is_active_or_owner checks if shop is not in vacation or user is owner/staff
 create or replace function public.is_active_or_owner()
-returns boolean as $$
+returns boolean as $func$
   exists(
     select 1 from public.shops s
     where s.id = shops.id and (
@@ -730,7 +730,7 @@ returns boolean as $$
       s.is_vacation_mode = false
     )
   ) or not exists(select 1 from public.shops s where s.id = shops.id)
-$$ language sql stable;
+$func$ language sql stable;
 
 -- shops: public can view active shops; owner/staff can manage
 drop policy if exists "Select active shops" on public.shops;
