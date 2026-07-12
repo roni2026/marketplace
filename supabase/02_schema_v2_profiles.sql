@@ -32,7 +32,7 @@ alter table public.profiles add column if not exists is_public boolean default t
 -- =========================================================================
 
 DO $$ BEGIN
-  create type public.badge_type as enum (
+    create type public.badge_type as enum (
   'email_verified',
   'phone_verified',
   'id_verified',
@@ -493,22 +493,22 @@ create trigger trg_refresh_stats_ad_sold
 alter table public.verification_badges enable row level security;
 
 DO $$ BEGIN
-  create policy "Select active badges" on public.verification_badges
+    create policy "Select active badges" on public.verification_badges
   for select using (is_active = true or user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  create policy "Insert own badge request" on public.verification_badges
+    create policy "Insert own badge request" on public.verification_badges
   for insert with check (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  create policy "Update own badge" on public.verification_badges
+    create policy "Update own badge" on public.verification_badges
   for update using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  create policy "Admins manage badges" on public.verification_badges
+    create policy "Admins manage badges" on public.verification_badges
   for all using (
     exists (select 1 from public.user_roles where user_id = auth.uid() and role in ('super_admin', 'admin'))
   );
@@ -518,17 +518,17 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 alter table public.user_follows enable row level security;
 
 DO $$ BEGIN
-  create policy "Select follows" on public.user_follows
+    create policy "Select follows" on public.user_follows
   for select using (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  create policy "Insert own follow" on public.user_follows
+    create policy "Insert own follow" on public.user_follows
   for insert with check (follower_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  create policy "Delete own follow" on public.user_follows
+    create policy "Delete own follow" on public.user_follows
   for delete using (follower_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -536,19 +536,19 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 alter table public.buyer_reviews enable row level security;
 
 DO $$ BEGIN
-  create policy "Select approved buyer reviews" on public.buyer_reviews
+    create policy "Select approved buyer reviews" on public.buyer_reviews
   for select using (
     status = 'approved' or buyer_id = auth.uid() or seller_id = auth.uid()
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  create policy "Insert own buyer review" on public.buyer_reviews
+    create policy "Insert own buyer review" on public.buyer_reviews
   for insert with check (seller_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  create policy "Update own buyer review" on public.buyer_reviews
+    create policy "Update own buyer review" on public.buyer_reviews
   for update using (seller_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -556,17 +556,17 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 alter table public.profile_views enable row level security;
 
 DO $$ BEGIN
-  create policy "Insert profile view" on public.profile_views
+    create policy "Insert profile view" on public.profile_views
   for insert with check (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  create policy "Select own profile views" on public.profile_views
+    create policy "Select own profile views" on public.profile_views
   for select using (profile_user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  create policy "Delete own profile views" on public.profile_views
+    create policy "Delete own profile views" on public.profile_views
   for delete using (profile_user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -574,7 +574,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 alter table public.profile_stats enable row level security;
 
 DO $$ BEGIN
-  create policy "Select profile stats" on public.profile_stats
+    create policy "Select profile stats" on public.profile_stats
   for select using (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -585,7 +585,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 -- =========================================================================
 
 DO $$ BEGIN
-  create policy "Public can view profiles" on public.profiles
+    create policy "Public can view profiles" on public.profiles
   for select using (
     deleted_at is null and is_public = true or user_id = auth.uid()
   );
