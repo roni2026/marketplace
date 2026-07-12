@@ -11,19 +11,34 @@
 -- Enum additions
 -- =========================================================================
 
+do $ptype$ begin
 create type public.notification_category as enum (
     'account', 'listings', 'offers', 'messages', 'saved_searches',
     'wishlist', 'reviews', 'orders', 'payments', 'delivery',
     'system', 'security', 'promotions', 'admin'
   );
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.notification_priority as enum ('low', 'normal', 'high', 'urgent');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.notification_channel as enum ('in_app', 'push', 'email', 'sms');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.notification_frequency as enum ('instant', 'daily', 'weekly', 'disabled');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.delivery_status as enum ('pending', 'sent', 'delivered', 'read', 'failed', 'bounced');
+exception when duplicate_object then null;
+end $ptype$;
 
 -- =========================================================================
 -- Notifications table (unified notification center)
@@ -303,7 +318,7 @@ create or replace function public.create_notification(
   p_title text,
   p_body text default null,
   p_data jsonb default '{}'::jsonb,
-  p_priority public.notification_status default 'normal',
+  p_priority public.notification_priority default 'normal',
   p_action_url text default null,
   p_action_label text default null,
   p_icon text default null,
@@ -705,7 +720,7 @@ values
   ('system_maintenance', 'system', 'Scheduled Maintenance', 'The platform will undergo maintenance on {{maintenance_time}}.', 'Scheduled Maintenance', '<h1>Scheduled Maintenance</h1><p>BazarBD will undergo maintenance.</p>', 'BazarBD: Scheduled maintenance on {{maintenance_time}}.', 'Maintenance', 'Scheduled maintenance on {{maintenance_time}}', 'wrench', null, null),
   ('system_update', 'system', 'Platform Update', 'BazarBD has been updated with new features!', null, null, null, 'Update', 'New features available', 'zap', null, null),
   -- Promotions
-  ('promotion', 'promotions', 'Special Offer', '{{promotion_title}}', null, null, null, 'Special Offer', '{{promotion_title}}', 'gift', '/promotions', 'View'),
+  ('promotion', 'promotions', 'Special Offer', '{{promotion_title}}', null, null, null, 'Special Offer', '{{promotion_title}}', 'gift', '/promotions', 'View')
 on conflict (template_key) do nothing;
 
 -- =========================================================================
@@ -855,5 +870,19 @@ grant execute on function public.create_admin_notification_v13 to authenticated;
 -- Realtime publication
 -- =========================================================================
 
-alter publication supabase_realtime add table public.notifications;
-alter publication supabase_realtime add table public.admin_notifications_v13;
+-- Add tables to Supabase's realtime publication. Guarded so it is safe to
+-- re-run and does not fail if the publication is not present (e.g. local dev).
+do $realtime$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    begin
+      alter publication supabase_realtime add table public.notifications;
+    exception when duplicate_object then null;
+    end;
+    begin
+      alter publication supabase_realtime add table public.admin_notifications_v13;
+    exception when duplicate_object then null;
+    end;
+  end if;
+end
+$realtime$;

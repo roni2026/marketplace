@@ -14,7 +14,7 @@ The native Android app built on top of this project lives in a companion repo: *
 - "Recently viewed" ads tracked client-side (no extra backend calls)
 - Light/dark theme, installable PWA with an in-app "Add to Home Screen" prompt
 - Mobile bottom tab navigation for an app-like feel on phones (and inside the Android WebView shell)
-- Row Level Security-backed Supabase schema (see [`supabase/schema.sql`](./supabase/schema.sql))
+- Row Level Security-backed Supabase schema (see [`supabase/`](./supabase/README.md) — ordered, idempotent migrations `01…16`)
 
 ## 🧱 Tech Stack
 
@@ -32,7 +32,7 @@ npm install
 
 Create a project at [supabase.com](https://supabase.com), then:
 
-1. Run [`supabase/schema.sql`](./supabase/schema.sql) in the SQL editor to create tables, enums, RLS policies and a starter category list.
+1. Run the numbered SQL files in [`supabase/`](./supabase/README.md) **in order (`01_schema.sql` → `16_fix_permissions.sql`)** in the SQL editor to create tables, enums, RLS policies and a starter category list. The files are idempotent, so re-running them is safe.
 2. Create two **public** storage buckets: `ad-images` and `avatars`.
 3. Copy your project URL and anon/publishable key into a `.env` file:
 
@@ -83,7 +83,8 @@ src/
   lib/           Constants (divisions/districts, price formatting) and utils
   pages/         Route-level pages, including pages/admin/*
 supabase/
-  schema.sql     Reference DB schema, RLS policies and seed categories
+  01..16_*.sql   Ordered, idempotent DB migrations (schema, RLS, seed data)
+  README.md      Run order and notes for the migrations
 ```
 
 ## 📄 License

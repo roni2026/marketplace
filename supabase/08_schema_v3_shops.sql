@@ -14,31 +14,70 @@
 -- Enums
 -- =========================================================================
 
+do $ptype$ begin
 create type public.shop_membership_tier as enum ('basic', 'professional', 'business', 'enterprise');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.shop_verification_status as enum ('pending', 'under_review', 'approved', 'rejected', 'expired');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.verification_type as enum ('business', 'identity_kyc', 'business_license');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.shop_coupon_type as enum ('percentage', 'fixed_amount', 'free_shipping');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.payout_method_type as enum ('bank_transfer', 'mobile_banking', 'cash_pickup', 'paypal', 'stripe');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.payout_status as enum ('pending', 'processing', 'completed', 'failed', 'cancelled');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.transaction_type as enum ('sale', 'refund', 'payout', 'fee', 'subscription', 'adjustment');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.transaction_status as enum ('pending', 'completed', 'failed', 'refunded', 'disputed');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.listing_draft_status as enum ('draft', 'scheduled', 'published', 'archived');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.bulk_job_type as enum ('import', 'export');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.bulk_job_status as enum ('queued', 'processing', 'completed', 'failed', 'partial');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.staff_role as enum ('owner', 'manager', 'staff', 'viewer');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.shop_report_period as enum ('daily', 'weekly', 'monthly', 'quarterly', 'yearly');
+exception when duplicate_object then null;
+end $ptype$;
 
 -- =========================================================================
 -- 1. Shops
@@ -719,23 +758,18 @@ alter table public.seller_shipping_preferences enable row level security;
 alter table public.listing_performance_insights enable row level security;
 alter table public.shop_orders enable row level security;
 
--- Helper: is_active_or_owner checks if shop is not in vacation or user is owner/staff
-create or replace function public.is_active_or_owner()
-returns boolean as $func$
-  exists(
-    select 1 from public.shops s
-    where s.id = shops.id and (
-      s.owner_id = auth.uid() or
-      exists(select 1 from public.shop_staff ss where ss.shop_id = s.id and ss.user_id = auth.uid() and ss.is_active = true) or
-      s.is_vacation_mode = false
-    )
-  ) or not exists(select 1 from public.shops s where s.id = shops.id)
-$func$ language sql stable;
-
--- shops: public can view active shops; owner/staff can manage
+-- shops: public can view active shops; owner/staff can manage.
+-- A shop is visible when it is not in vacation mode, or the current user is
+-- the owner or an active staff member. (The condition is inlined into the
+-- policy so it can reference the target row's columns directly.)
 drop policy if exists "Select active shops" on public.shops;
 create policy "Select active shops" on public.shops for select using (
-  is_active_or_owner()
+  shops.is_vacation_mode = false
+  or shops.owner_id = auth.uid()
+  or exists (
+    select 1 from public.shop_staff ss
+    where ss.shop_id = shops.id and ss.user_id = auth.uid() and ss.is_active = true
+  )
 );
 drop policy if exists "Insert own shop" on public.shops;
 create policy "Insert own shop" on public.shops for insert with check (owner_id = auth.uid());

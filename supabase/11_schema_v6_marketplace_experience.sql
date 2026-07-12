@@ -12,8 +12,12 @@
 -- Enum additions
 -- =========================================================================
 
+do $ptype$ begin
 create type public.favorite_entity_type as enum ('listing', 'seller', 'store', 'brand', 'category');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.activity_type as enum (
     'view', 'favorite', 'unfavorite', 'share', 'compare', 'follow_seller',
     'unfollow_seller', 'follow_store', 'unfollow_store', 'follow_category',
@@ -21,10 +25,18 @@ create type public.activity_type as enum (
     'unblock_seller', 'report_listing', 'report_seller', 'wishlist_add',
     'wishlist_remove', 'qr_scan', 'contact_seller', 'visit_store', 'save_search'
   );
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.report_target_type as enum ('listing', 'seller');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.sponsored_placement as enum ('search_results', 'category_page', 'homepage', 'discovery');
+exception when duplicate_object then null;
+end $ptype$;
 
 -- =========================================================================
 -- Extended Favorites (listings, sellers, stores, brands, categories)

@@ -6,16 +6,46 @@
 -- -------------------------------------------------------------------------
 
 -- Enums
+do $ptype$ begin
 create type public.ad_status as enum ('pending', 'approved', 'rejected', 'sold', 'expired', 'draft', 'boosted', 'premium');
+exception when duplicate_object then null;
+end $ptype$;
+do $ptype$ begin
 create type public.app_role as enum ('super_admin', 'admin', 'moderator', 'customer_support', 'seller', 'buyer');
+exception when duplicate_object then null;
+end $ptype$;
+do $ptype$ begin
 create type public.item_condition as enum ('new', 'used');
+exception when duplicate_object then null;
+end $ptype$;
+do $ptype$ begin
 create type public.price_type as enum ('fixed', 'negotiable', 'free');
+exception when duplicate_object then null;
+end $ptype$;
+do $ptype$ begin
 create type public.report_status as enum ('pending', 'reviewing', 'resolved', 'dismissed');
+exception when duplicate_object then null;
+end $ptype$;
+do $ptype$ begin
 create type public.ticket_status as enum ('open', 'in_progress', 'waiting_on_user', 'resolved', 'closed');
+exception when duplicate_object then null;
+end $ptype$;
+do $ptype$ begin
 create type public.ticket_priority as enum ('low', 'medium', 'high', 'urgent');
+exception when duplicate_object then null;
+end $ptype$;
+do $ptype$ begin
 create type public.notification_type as enum ('ad_approved', 'ad_rejected', 'new_message', 'new_offer', 'offer_accepted', 'offer_rejected', 'ad_expiring', 'report_update', 'system', 'ticket_update');
+exception when duplicate_object then null;
+end $ptype$;
+do $ptype$ begin
 create type public.offer_status as enum ('pending', 'accepted', 'rejected', 'expired');
+exception when duplicate_object then null;
+end $ptype$;
+do $ptype$ begin
 create type public.audit_action as enum ('create', 'update', 'delete', 'login', 'logout', 'login_failed', 'approve', 'reject', 'suspend', 'unsuspend', 'verify', 'export', 'bulk_action', 'settings_change');
+exception when duplicate_object then null;
+end $ptype$;
 
 -- Categories
 CREATE TABLE IF NOT EXISTS public.categories (
@@ -564,6 +594,7 @@ begin
 end;
 $func$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();

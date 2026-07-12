@@ -10,16 +10,25 @@
 -- Enum additions
 -- =========================================================================
 
+do $ptype$ begin
 create type public.widget_type as enum ('stat', 'chart', 'table', 'alert', 'custom');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.bulk_operation_type as enum (
     'approve_listings', 'reject_listings', 'delete_listings', 'feature_listings',
     'boost_listings', 'suspend_users', 'verify_users', 'delete_users',
     'assign_role', 'update_settings', 'export_data', 'import_data',
     'send_notification', 'cleanup_expired'
   );
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.system_health_status as enum ('healthy', 'warning', 'critical', 'down');
+exception when duplicate_object then null;
+end $ptype$;
 
 -- =========================================================================
 -- Admin Dashboard Widgets (customizable per admin)

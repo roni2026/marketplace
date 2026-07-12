@@ -31,6 +31,7 @@ alter table public.profiles add column if not exists is_public boolean default t
 -- 2. Verification Badges
 -- =========================================================================
 
+do $ptype$ begin
 create type public.badge_type as enum (
   'email_verified',
   'phone_verified',
@@ -41,6 +42,8 @@ create type public.badge_type as enum (
   'top_rated',
   'trusted_buyer'
 );
+exception when duplicate_object then null;
+end $ptype$;
 
 create table if not exists public.verification_badges (
   id uuid primary key default gen_random_uuid(),

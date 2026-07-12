@@ -12,11 +12,20 @@
 -- Enum additions
 -- =========================================================================
 
+do $ptype$ begin
 create type public.message_status as enum ('sent', 'delivered', 'read');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.message_type as enum ('text', 'image', 'file', 'product_card', 'listing_link', 'store_link', 'location', 'contact_card');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.conversation_report_reason as enum ('spam', 'scam', 'harassment', 'abuse', 'threats', 'offensive_language', 'fraud', 'fake_products', 'other');
+exception when duplicate_object then null;
+end $ptype$;
 
 -- =========================================================================
 -- Extend messages table with Phase 8 columns

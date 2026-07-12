@@ -7,7 +7,10 @@
 -- -------------------------------------------------------------------------
 
 -- Enums
+do $ptype$ begin
 create type public.blog_status as enum ('draft', 'published', 'archived');
+exception when duplicate_object then null;
+end $ptype$;
 CREATE TABLE IF NOT EXISTS public.notification_preferences (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,

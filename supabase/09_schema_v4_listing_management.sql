@@ -20,20 +20,35 @@ alter type public.ad_status add value if not exists 'hidden';
 
 alter type public.ad_status add value if not exists 'archived';
 
+do $ptype$ begin
 create type public.warranty_type as enum ('none', 'manufacturer', 'seller');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.shipping_method as enum ('local_pickup', 'nationwide', 'international');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.shipping_fee_type as enum ('free', 'flat_rate', 'calculated');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.history_action as enum (
     'created', 'edited', 'price_changed', 'photo_changed', 'status_changed',
     'renewed', 'relisted', 'marked_sold', 'archived', 'restored',
     'deleted', 'duplicated', 'published', 'scheduled', 'paused', 'resumed',
     'hidden', 'bulk_updated'
   );
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.attribute_data_type as enum ('text', 'number', 'select', 'multiselect', 'boolean', 'date');
+exception when duplicate_object then null;
+end $ptype$;
 
 -- =========================================================================
 -- Extend ads table with Phase 4 columns

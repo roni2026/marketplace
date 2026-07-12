@@ -1,6 +1,5 @@
 import { NavLink } from "@/components/NavLink";
-import { Home, Grid3x3, PlusCircle, Heart, User, MessageCircle } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { Home, Grid3x3, PlusCircle, Heart, MessageCircle } from "lucide-react";
 import { useMessages } from "@/hooks/useMessages";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -10,7 +9,6 @@ import { cn } from "@/lib/utils";
  * Android build). Hidden on lg+ where the desktop header nav takes over.
  */
 export function MobileNav() {
-  const { user } = useAuth();
   const { unreadCount: unreadMessages } = useMessages();
   const { t } = useTranslation();
 
@@ -20,7 +18,7 @@ export function MobileNav() {
     { to: "/post-ad", label: t('nav.sell'), icon: PlusCircle, primary: true },
     { to: "/favorites", label: t('nav.saved'), icon: Heart },
     { to: "/messages", label: t('nav.messages'), icon: MessageCircle, badge: unreadMessages },
-    { to: user ? "/profile" : "/auth", label: user ? t('nav.profile') : t('nav.login'), icon: User },
+    // Profile intentionally omitted here — it lives in the top header (see Header.tsx)
   ];
 
   return (
@@ -28,7 +26,7 @@ export function MobileNav() {
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur border-t border-border pb-[env(safe-area-inset-bottom)]"
       aria-label="Primary"
     >
-      <div className="grid grid-cols-6">
+      <div className="grid grid-cols-5">
         {items.map((item) => (
           <NavLink
             key={item.label}

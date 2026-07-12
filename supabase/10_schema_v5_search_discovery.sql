@@ -11,8 +11,12 @@
 -- Enum additions
 -- =========================================================================
 
+do $ptype$ begin
 create type public.collection_visibility as enum ('private', 'public');
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.discovery_section_type as enum (
     'featured', 'trending', 'new_arrivals', 'recently_viewed', 'most_viewed',
     'most_favorited', 'popular_near_you', 'staff_picks', 'editors_picks',
@@ -20,8 +24,13 @@ create type public.discovery_section_type as enum (
     'recommended_stores', 'featured_brands', 'discounted', 'ending_soon',
     'recently_updated', 'sponsored'
   );
+exception when duplicate_object then null;
+end $ptype$;
 
+do $ptype$ begin
 create type public.search_entity_type as enum ('listing', 'category', 'brand', 'model', 'seller', 'store', 'tag', 'location');
+exception when duplicate_object then null;
+end $ptype$;
 
 -- =========================================================================
 -- Search History (per-user search history)
@@ -40,7 +49,7 @@ create table if not exists public.search_history (
 
 create index if not exists idx_search_history_user on public.search_history(user_id);
 create index if not exists idx_search_history_created on public.search_history(created_at desc);
-create index if not exists idx_search_history_query on public.search_history using gin (to_tsvector('english', query));
+create index if not exists idx_search_history_query on public.search_history using gin (to_tsvector('english'::regconfig, query));
 
 -- =========================================================================
 -- Search Suggestions (trending/popular searches, managed + auto-generated)
@@ -179,16 +188,24 @@ alter table public.price_drop_alerts
 -- Full-Text Search Indexes on ads table
 -- =========================================================================
 
+-- Immutable helper: array_to_string() is only STABLE, so it cannot be used
+-- directly inside a GENERATED ALWAYS column. This deterministic wrapper is
+-- safe to mark IMMUTABLE (plain text joined by a separator).
+create or replace function public.immutable_array_to_string(arr text[], sep text)
+returns text language sql immutable as $$
+  select array_to_string(coalesce(arr, '{}'::text[]), sep)
+$$;
+
 -- Create a generated tsvector column for full-text search
 -- This enables fast text search across title, description, brand, model, tags
 alter table public.ads
     add column if not exists search_vector tsvector
     generated always as (
-      setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
-      setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
-      setweight(to_tsvector('english', coalesce(brand, '')), 'C') ||
-      setweight(to_tsvector('english', coalesce(model, '')), 'C') ||
-      setweight(to_tsvector('english', coalesce(array_to_string(tags, ' '), '')), 'D')
+      setweight(to_tsvector('english'::regconfig, coalesce(title, '')), 'A') ||
+      setweight(to_tsvector('english'::regconfig, coalesce(description, '')), 'B') ||
+      setweight(to_tsvector('english'::regconfig, coalesce(brand, '')), 'C') ||
+      setweight(to_tsvector('english'::regconfig, coalesce(model, '')), 'C') ||
+      setweight(to_tsvector('english'::regconfig, coalesce(public.immutable_array_to_string(tags, ' '), '')), 'D')
     ) stored;
 
 create index if not exists idx_ads_search_vector on public.ads using gin (search_vector);
@@ -462,16 +479,24 @@ begin
   where a.status in ('approved', 'boosted', 'premium')
     and a.deleted_at is null
   order by
+    -- Featured section: featured rows first
+    case when p_section_type = 'featured' and a.is_featured then 0 else 1 end,
+    -- Numeric metrics (higher first) for the relevant section
     case p_section_type
-      when 'featured' then case when a.is_featured then 0 else 1 end
-      when 'trending' then coalesce(a.favorites_count, 0) desc
-      when 'new_arrivals' then a.created_at desc
-      when 'most_viewed' then coalesce(a.views_count, 0) desc
-      when 'most_favorited' then coalesce(a.favorites_count, 0) desc
-      when 'recently_updated' then a.updated_at desc
-      when 'discounted' then coalesce(a.discount_percentage, 0) desc
-      else a.created_at desc
-    end
+      when 'trending' then coalesce(a.favorites_count, 0)
+      when 'most_viewed' then coalesce(a.views_count, 0)
+      when 'most_favorited' then coalesce(a.favorites_count, 0)
+      when 'discounted' then coalesce(a.discount_percentage, 0)
+      else 0
+    end desc,
+    -- Timestamp metrics (newest first) for the relevant section
+    case p_section_type
+      when 'new_arrivals' then a.created_at
+      when 'recently_updated' then a.updated_at
+      else null
+    end desc nulls last,
+    -- Default / tiebreaker
+    a.created_at desc
   limit p_limit;
 end;
 $func$;
