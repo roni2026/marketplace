@@ -20,12 +20,12 @@ import { useNavigate } from 'react-router-dom';
 import {
   Eye, Heart, Share2, UserPlus, Store, FolderTree, EyeOff, Ban,
   Flag, Package, QrCode, MessageCircle, ExternalLink, Search,
-  Trash2, Activity, ChevronLeft, Compare,
+  Trash2, Activity, ChevronLeft, Scale,
 } from 'lucide-react';
 import type { ActivityType } from '@/integrations/supabase/types_v6_marketplace';
 
 const ACTIVITY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  view: Eye, favorite: Heart, unfavorite: Heart, share: Share2, compare: Compare,
+  view: Eye, favorite: Heart, unfavorite: Heart, share: Share2, compare: Scale,
   follow_seller: UserPlus, unfollow_seller: UserPlus, follow_store: Store,
   unfollow_store: Store, follow_category: FolderTree, unfollow_category: FolderTree,
   hide_listing: EyeOff, unhide_listing: EyeOff, block_seller: Ban, unblock_seller: Ban,
@@ -160,7 +160,7 @@ export default function UserActivity() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Clear all activity history?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete all your activity records. This action cannot be undone.</AlertDialogDescription>
+          <AlertDialogDescription>This will permanently delete all your activity records. This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
