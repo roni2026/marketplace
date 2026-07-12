@@ -8,8 +8,7 @@
 DO $$ BEGIN
   create type public.review_status as enum ('pending', 'approved', 'rejected', 'appealed');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  -- -------------------------------------------------------------------------
+-- -------------------------------------------------------------------------
 -- Enhanced Messaging tables
 -- -------------------------------------------------------------------------
 
@@ -21,7 +20,6 @@ CREATE TABLE IF NOT EXISTS public.message_reactions (
   created_at timestamptz not null default now(),
   unique(message_id, user_id, emoji)
 );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 CREATE TABLE IF NOT EXISTS public.message_attachments (
   id uuid primary key default gen_random_uuid(),

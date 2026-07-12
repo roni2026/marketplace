@@ -291,23 +291,28 @@ begin
 end;
 $$;
 
-create trigger if not exists trg_notifications_updated_at
+drop trigger if exists trg_notifications_updated_at on public.notifications;
+create trigger trg_notifications_updated_at
   before update on public.notifications
   for each row execute procedure public.update_updated_at_v13();
 
-create trigger if not exists trg_push_subs_updated_at
+drop trigger if exists trg_push_subs_updated_at on public.push_subscriptions;
+create trigger trg_push_subs_updated_at
   before update on public.push_subscriptions
   for each row execute procedure public.update_updated_at_v13();
 
-create trigger if not exists trg_notif_prefs_updated_at
+drop trigger if exists trg_notif_prefs_updated_at on public.notification_preferences;
+create trigger trg_notif_prefs_updated_at
   before update on public.notification_preferences
   for each row execute procedure public.update_updated_at_v13();
 
-create trigger if not exists trg_quiet_hours_updated_at
+drop trigger if exists trg_quiet_hours_updated_at on public.quiet_hours;
+create trigger trg_quiet_hours_updated_at
   before update on public.quiet_hours
   for each row execute procedure public.update_updated_at_v13();
 
-create trigger if not exists trg_notif_templates_updated_at
+drop trigger if exists trg_notif_templates_updated_at on public.notification_templates;
+create trigger trg_notif_templates_updated_at
   before update on public.notification_templates
   for each row execute procedure public.update_updated_at_v13();
 

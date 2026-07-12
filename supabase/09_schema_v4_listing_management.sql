@@ -26,25 +26,18 @@ do $$ begin
   alter type public.ad_status add value if not exists 'archived';
 exception when duplicate_object then null; end $$;
 
-do $$ begin
 DO $$ BEGIN
     create type public.warranty_type as enum ('none', 'manufacturer', 'seller');
-exception when duplicate_object then null; end $$;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-do $$ begin
 DO $$ BEGIN
     create type public.shipping_method as enum ('local_pickup', 'nationwide', 'international');
-exception when duplicate_object then null; end $$;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-do $$ begin
 DO $$ BEGIN
     create type public.shipping_fee_type as enum ('free', 'flat_rate', 'calculated');
-exception when duplicate_object then null; end $$;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-do $$ begin
 DO $$ BEGIN
     create type public.history_action as enum (
     'created', 'edited', 'price_changed', 'photo_changed', 'status_changed',
@@ -53,12 +46,9 @@ DO $$ BEGIN
     'hidden', 'bulk_updated'
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-exception when duplicate_object then null; end $$;
 
-do $$ begin
 DO $$ BEGIN
     create type public.attribute_data_type as enum ('text', 'number', 'select', 'multiselect', 'boolean', 'date');
-exception when duplicate_object then null; end $$;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================

@@ -6,6 +6,13 @@
 -- -------------------------------------------------------------------------
 
 -- =========================================================================
+-- 0. Ensure review_status enum exists (defined in schema_v2_social.sql)
+-- =========================================================================
+DO $$ BEGIN
+  create type public.review_status as enum ('pending', 'approved', 'rejected', 'appealed');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- =========================================================================
 -- 1. ALTER profiles table — add new columns
 -- =========================================================================
 

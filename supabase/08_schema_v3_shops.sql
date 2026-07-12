@@ -760,6 +760,19 @@ alter table public.seller_shipping_preferences enable row level security;
 alter table public.listing_performance_insights enable row level security;
 alter table public.shop_orders enable row level security;
 
+-- Helper: is_active_or_owner checks if shop is not in vacation or user is owner/staff
+create or replace function public.is_active_or_owner()
+returns boolean as $$
+  exists(
+    select 1 from public.shops s
+    where s.id = shops.id and (
+      s.owner_id = auth.uid() or
+      exists(select 1 from public.shop_staff ss where ss.shop_id = s.id and ss.user_id = auth.uid() and ss.is_active = true) or
+      s.is_vacation_mode = false
+    )
+  ) or not exists(select 1 from public.shops s where s.id = shops.id)
+$$ language sql stable;
+
 -- shops: public can view active shops; owner/staff can manage
 DO $$ BEGIN
     create policy "Select active shops" on public.shops for select using (
@@ -777,18 +790,6 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   create policy "Delete own shop" on public.shops for delete using (owner_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
--- Helper: is_active_or_owner checks if shop is not in vacation or user is owner/staff
-create or replace function public.is_active_or_owner()
-returns boolean as $$
-  exists(
-    select 1 from public.shops s
-    where s.id = shops.id and (
-      s.owner_id = auth.uid() or
-      exists(select 1 from public.shop_staff ss where ss.shop_id = s.id and ss.user_id = auth.uid() and ss.is_active = true) or
-      s.is_vacation_mode = false
-    )
-  ) or not exists(select 1 from public.shops s where s.id = shops.id)
-$$ language sql stable;
 
 -- shop_memberships: owner can view/manage
 DO $$ BEGIN

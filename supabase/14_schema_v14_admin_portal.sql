@@ -175,11 +175,13 @@ begin
 end;
 $$;
 
-create trigger if not exists trg_admin_widgets_updated_at
+drop trigger if exists trg_admin_widgets_updated_at on public.admin_dashboard_widgets;
+create trigger trg_admin_widgets_updated_at
   before update on public.admin_dashboard_widgets
   for each row execute procedure public.update_updated_at_v14();
 
-create trigger if not exists trg_admin_preferences_updated_at
+drop trigger if exists trg_admin_preferences_updated_at on public.admin_preferences;
+create trigger trg_admin_preferences_updated_at
   before update on public.admin_preferences
   for each row execute procedure public.update_updated_at_v14();
 

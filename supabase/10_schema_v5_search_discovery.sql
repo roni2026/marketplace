@@ -11,13 +11,10 @@
 -- Enum additions
 -- =========================================================================
 
-do $$ begin
 DO $$ BEGIN
     create type public.collection_visibility as enum ('private', 'public');
-exception when duplicate_object then null; end $$;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-do $$ begin
 DO $$ BEGIN
     create type public.discovery_section_type as enum (
     'featured', 'trending', 'new_arrivals', 'recently_viewed', 'most_viewed',
@@ -27,12 +24,9 @@ DO $$ BEGIN
     'recently_updated', 'sponsored'
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-exception when duplicate_object then null; end $$;
 
-do $$ begin
 DO $$ BEGIN
     create type public.search_entity_type as enum ('listing', 'category', 'brand', 'model', 'seller', 'store', 'tag', 'location');
-exception when duplicate_object then null; end $$;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================

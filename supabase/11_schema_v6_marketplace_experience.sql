@@ -12,13 +12,10 @@
 -- Enum additions
 -- =========================================================================
 
-do $$ begin
 DO $$ BEGIN
     create type public.favorite_entity_type as enum ('listing', 'seller', 'store', 'brand', 'category');
-exception when duplicate_object then null; end $$;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-do $$ begin
 DO $$ BEGIN
     create type public.activity_type as enum (
     'view', 'favorite', 'unfavorite', 'share', 'compare', 'follow_seller',
@@ -28,18 +25,13 @@ DO $$ BEGIN
     'wishlist_remove', 'qr_scan', 'contact_seller', 'visit_store', 'save_search'
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-exception when duplicate_object then null; end $$;
 
-do $$ begin
 DO $$ BEGIN
     create type public.report_target_type as enum ('listing', 'seller');
-exception when duplicate_object then null; end $$;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-do $$ begin
 DO $$ BEGIN
     create type public.sponsored_placement as enum ('search_results', 'category_page', 'homepage', 'discovery');
-exception when duplicate_object then null; end $$;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =========================================================================
