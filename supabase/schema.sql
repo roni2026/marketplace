@@ -6,46 +6,16 @@
 -- -------------------------------------------------------------------------
 
 -- Enums
-do $$ begin
-  create type public.ad_status as enum ('pending', 'approved', 'rejected', 'sold', 'expired', 'draft', 'boosted', 'premium');
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create type public.app_role as enum ('super_admin', 'admin', 'moderator', 'customer_support', 'seller', 'buyer');
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create type public.item_condition as enum ('new', 'used');
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create type public.price_type as enum ('fixed', 'negotiable', 'free');
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create type public.report_status as enum ('pending', 'reviewing', 'resolved', 'dismissed');
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create type public.ticket_status as enum ('open', 'in_progress', 'waiting_on_user', 'resolved', 'closed');
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create type public.ticket_priority as enum ('low', 'medium', 'high', 'urgent');
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create type public.notification_type as enum ('ad_approved', 'ad_rejected', 'new_message', 'new_offer', 'offer_accepted', 'offer_rejected', 'ad_expiring', 'report_update', 'system', 'ticket_update');
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create type public.offer_status as enum ('pending', 'accepted', 'rejected', 'expired');
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create type public.audit_action as enum ('create', 'update', 'delete', 'login', 'logout', 'login_failed', 'approve', 'reject', 'suspend', 'unsuspend', 'verify', 'export', 'bulk_action', 'settings_change');
-exception when duplicate_object then null;
-end $$;
+create type public.ad_status as enum ('pending', 'approved', 'rejected', 'sold', 'expired', 'draft', 'boosted', 'premium');
+create type public.app_role as enum ('super_admin', 'admin', 'moderator', 'customer_support', 'seller', 'buyer');
+create type public.item_condition as enum ('new', 'used');
+create type public.price_type as enum ('fixed', 'negotiable', 'free');
+create type public.report_status as enum ('pending', 'reviewing', 'resolved', 'dismissed');
+create type public.ticket_status as enum ('open', 'in_progress', 'waiting_on_user', 'resolved', 'closed');
+create type public.ticket_priority as enum ('low', 'medium', 'high', 'urgent');
+create type public.notification_type as enum ('ad_approved', 'ad_rejected', 'new_message', 'new_offer', 'offer_accepted', 'offer_rejected', 'ad_expiring', 'report_update', 'system', 'ticket_update');
+create type public.offer_status as enum ('pending', 'accepted', 'rejected', 'expired');
+create type public.audit_action as enum ('create', 'update', 'delete', 'login', 'logout', 'login_failed', 'approve', 'reject', 'suspend', 'unsuspend', 'verify', 'export', 'bulk_action', 'settings_change');
 
 -- Categories
 create table public.categories (
