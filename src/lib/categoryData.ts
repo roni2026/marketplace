@@ -9,7 +9,7 @@ import {
   Smartphone, Car, Home, Briefcase, Wrench, Shirt, Sofa, Dumbbell,
   BookOpen, Gamepad2, Music, Sprout, Factory, UtensilsCrossed,
   HeartPulse, PawPrint, Crown, Baby, Heart, Plane, Laptop, Camera,
-  Tv, Headphones, Tablet, Watch, Motorbike, Bike, Truck, Ship,
+  Tv, Headphones, Tablet, Watch, Bike, Truck, Ship,
   Building2, MapPin, GraduationCap, Scissors, Zap, ShoppingBag,
   Gem, Footprints, Backpack, Coffee, Pizza, Carrot, Fish, Beer,
   Pill, Stethoscope, Glasses, Dog, Cat, Bird, Bug, PaintBucket,
@@ -20,7 +20,7 @@ import {
   Monitor, Printer, Wifi, Phone, BatteryCharging,
   Accessibility, Bed, Box, Building, Bus, Circle, Cookie, Hammer,
   Layers, Lightbulb, Package, Puzzle, Shield, Sparkles, SprayCan,
-  Square, ToyBrick, Train, TrendingUp, Waves, Wind, ShoppingBasket, CardSim,
+  Square, ToyBrick, Train, TrendingUp, Waves, Wind, ShoppingBasket, CreditCard,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -76,7 +76,7 @@ export const CATEGORY_DATA: CategoryDef[] = [
     description: 'Cars, motorcycles, bicycles, and auto parts',
     subcategories: [
       { id: 'cars', name: 'Cars', slug: 'cars', icon: Car },
-      { id: 'motorcycles', name: 'Motorcycles', slug: 'motorcycles', icon: Motorbike },
+      { id: 'motorcycles', name: 'Motorcycles', slug: 'motorcycles', icon: Bike },
       { id: 'bicycles', name: 'Bicycles', slug: 'bicycles', icon: Bike },
       { id: 'trucks', name: 'Trucks & Vans', slug: 'trucks', icon: Truck },
       { id: 'auto-parts', name: 'Auto Parts & Accessories', slug: 'auto-parts', icon: Wrench },
