@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSavedSearches } from '@/hooks/useSavedSearches';
 import { supabase } from '@/integrations/supabase/client';
 import { DIVISIONS, DISTRICTS, formatPrice } from '@/lib/constants';
+import { getCategoryIcon, getSubcategoryIcon } from '@/lib/categoryData';
 import { highlightKeyword } from '@/lib/searchDiscovery';
 import {
   Card, CardContent,
@@ -251,7 +252,9 @@ export default function AdvancedSearch() {
     setSaveName('');
   };
 
-  const FilterPanel = () => (
+  const FilterPanel = () => {
+    const selectedCategory = categories.find(c => c.id === categoryId);
+    return (
     <div className="space-y-4">
       {/* Category */}
       <div>
@@ -260,7 +263,17 @@ export default function AdvancedSearch() {
           <SelectTrigger className="mt-1"><SelectValue placeholder="All categories" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            {categories.map(c => {
+              const CatIcon = getCategoryIcon(c.slug || c.name);
+              return (
+                <SelectItem key={c.id} value={c.id}>
+                  <span className="flex items-center gap-2">
+                    <CatIcon className="h-4 w-4" />
+                    {c.name}
+                  </span>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>
@@ -273,7 +286,17 @@ export default function AdvancedSearch() {
             <SelectTrigger className="mt-1"><SelectValue placeholder="All subcategories" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Subcategories</SelectItem>
-              {filteredSubcats.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+              {filteredSubcats.map(s => {
+                const SubIcon = getSubcategoryIcon(selectedCategory?.slug || selectedCategory?.name, s.name);
+                return (
+                  <SelectItem key={s.id} value={s.id}>
+                    <span className="flex items-center gap-2">
+                      <SubIcon className="h-4 w-4" />
+                      {s.name}
+                    </span>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -402,7 +425,8 @@ export default function AdvancedSearch() {
         </Button>
       )}
     </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
