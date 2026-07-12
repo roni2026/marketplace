@@ -9,8 +9,9 @@
 -- Enums
 DO $$ BEGIN
   create type public.blog_status as enum ('draft', 'published', 'archived');
-
--- -------------------------------------------------------------------------
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  -- -------------------------------------------------------------------------
 -- Notification Center
 -- -------------------------------------------------------------------------
 
@@ -35,17 +36,17 @@ CREATE INDEX IF NOT EXISTS idx_notification_preferences_user on public.notificat
 
 alter table public.notification_preferences enable row level security;
 DO $$ BEGIN
-  create policy "Users can view own notification preferences"
+    create policy "Users can view own notification preferences"
   on public.notification_preferences for select
   using (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users can update own notification preferences"
+    create policy "Users can update own notification preferences"
   on public.notification_preferences for update
   using (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Users can insert own notification preferences"
+    create policy "Users can insert own notification preferences"
   on public.notification_preferences for insert
   with check (auth.uid() = user_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -63,7 +64,7 @@ CREATE INDEX IF NOT EXISTS idx_notification_schedule_notification on public.noti
 
 alter table public.notification_schedule enable row level security;
 DO $$ BEGIN
-  create policy "Users can view own scheduled notifications"
+    create policy "Users can view own scheduled notifications"
   on public.notification_schedule for select
   using (
     exists (
@@ -93,7 +94,7 @@ CREATE INDEX IF NOT EXISTS idx_workflow_rules_trigger on public.workflow_rules(t
 
 alter table public.workflow_rules enable row level security;
 DO $$ BEGIN
-  create policy "Admins can manage workflow rules"
+    create policy "Admins can manage workflow rules"
   on public.workflow_rules for all
   using (
     exists (
@@ -118,7 +119,7 @@ CREATE INDEX IF NOT EXISTS idx_workflow_logs_created on public.workflow_logs(cre
 
 alter table public.workflow_logs enable row level security;
 DO $$ BEGIN
-  create policy "Admins can view workflow logs"
+    create policy "Admins can view workflow logs"
   on public.workflow_logs for select
   using (
     exists (
@@ -143,7 +144,7 @@ CREATE INDEX IF NOT EXISTS idx_cron_jobs_active on public.cron_jobs(is_active) w
 
 alter table public.cron_jobs enable row level security;
 DO $$ BEGIN
-  create policy "Admins can manage cron jobs"
+    create policy "Admins can manage cron jobs"
   on public.cron_jobs for all
   using (
     exists (
@@ -174,12 +175,12 @@ CREATE INDEX IF NOT EXISTS idx_banners_active on public.banners(is_active, sort_
 
 alter table public.banners enable row level security;
 DO $$ BEGIN
-  create policy "Anyone can view active banners"
+    create policy "Anyone can view active banners"
   on public.banners for select
   using (is_active = true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins can manage banners"
+    create policy "Admins can manage banners"
   on public.banners for all
   using (
     exists (
@@ -207,12 +208,12 @@ CREATE INDEX IF NOT EXISTS idx_homepage_sections_active on public.homepage_secti
 
 alter table public.homepage_sections enable row level security;
 DO $$ BEGIN
-  create policy "Anyone can view active homepage sections"
+    create policy "Anyone can view active homepage sections"
   on public.homepage_sections for select
   using (is_active = true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins can manage homepage sections"
+    create policy "Admins can manage homepage sections"
   on public.homepage_sections for all
   using (
     exists (
@@ -242,12 +243,12 @@ CREATE INDEX IF NOT EXISTS idx_landing_pages_published on public.landing_pages(i
 
 alter table public.landing_pages enable row level security;
 DO $$ BEGIN
-  create policy "Anyone can view published landing pages"
+    create policy "Anyone can view published landing pages"
   on public.landing_pages for select
   using (is_published = true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins can manage landing pages"
+    create policy "Admins can manage landing pages"
   on public.landing_pages for all
   using (
     exists (
@@ -275,12 +276,12 @@ CREATE INDEX IF NOT EXISTS idx_faq_entries_active on public.faq_entries(is_activ
 
 alter table public.faq_entries enable row level security;
 DO $$ BEGIN
-  create policy "Anyone can view active FAQ entries"
+    create policy "Anyone can view active FAQ entries"
   on public.faq_entries for select
   using (is_active = true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins can manage FAQ entries"
+    create policy "Admins can manage FAQ entries"
   on public.faq_entries for all
   using (
     exists (
@@ -312,12 +313,12 @@ CREATE INDEX IF NOT EXISTS idx_blog_posts_published on public.blog_posts(publish
 
 alter table public.blog_posts enable row level security;
 DO $$ BEGIN
-  create policy "Anyone can view published blog posts"
+    create policy "Anyone can view published blog posts"
   on public.blog_posts for select
   using (status = 'published');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins can manage blog posts"
+    create policy "Admins can manage blog posts"
   on public.blog_posts for all
   using (
     exists (
@@ -345,12 +346,12 @@ CREATE INDEX IF NOT EXISTS idx_static_pages_published on public.static_pages(is_
 
 alter table public.static_pages enable row level security;
 DO $$ BEGIN
-  create policy "Anyone can view published static pages"
+    create policy "Anyone can view published static pages"
   on public.static_pages for select
   using (is_published = true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins can manage static pages"
+    create policy "Admins can manage static pages"
   on public.static_pages for all
   using (
     exists (
@@ -377,12 +378,12 @@ CREATE INDEX IF NOT EXISTS idx_terms_versions_active on public.terms_versions(is
 
 alter table public.terms_versions enable row level security;
 DO $$ BEGIN
-  create policy "Anyone can view active terms versions"
+    create policy "Anyone can view active terms versions"
   on public.terms_versions for select
   using (is_active = true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins can manage terms versions"
+    create policy "Admins can manage terms versions"
   on public.terms_versions for all
   using (
     exists (
@@ -405,12 +406,12 @@ CREATE INDEX IF NOT EXISTS idx_privacy_versions_active on public.privacy_version
 
 alter table public.privacy_versions enable row level security;
 DO $$ BEGIN
-  create policy "Anyone can view active privacy versions"
+    create policy "Anyone can view active privacy versions"
   on public.privacy_versions for select
   using (is_active = true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins can manage privacy versions"
+    create policy "Admins can manage privacy versions"
   on public.privacy_versions for all
   using (
     exists (
@@ -442,12 +443,12 @@ CREATE INDEX IF NOT EXISTS idx_seo_settings_url on public.seo_settings(page_url)
 
 alter table public.seo_settings enable row level security;
 DO $$ BEGIN
-  create policy "Anyone can view SEO settings"
+    create policy "Anyone can view SEO settings"
   on public.seo_settings for select
   using (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins can manage SEO settings"
+    create policy "Admins can manage SEO settings"
   on public.seo_settings for all
   using (
     exists (
@@ -469,12 +470,12 @@ CREATE INDEX IF NOT EXISTS idx_redirects_from on public.redirects(from_url);
 
 alter table public.redirects enable row level security;
 DO $$ BEGIN
-  create policy "Anyone can view redirects"
+    create policy "Anyone can view redirects"
   on public.redirects for select
   using (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins can manage redirects"
+    create policy "Admins can manage redirects"
   on public.redirects for all
   using (
     exists (
@@ -497,12 +498,12 @@ CREATE INDEX IF NOT EXISTS idx_sitemap_entries_url on public.sitemap_entries(url
 
 alter table public.sitemap_entries enable row level security;
 DO $$ BEGIN
-  create policy "Anyone can view sitemap entries"
+    create policy "Anyone can view sitemap entries"
   on public.sitemap_entries for select
   using (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-  create policy "Admins can manage sitemap entries"
+    create policy "Admins can manage sitemap entries"
   on public.sitemap_entries for all
   using (
     exists (
