@@ -1,0 +1,2 @@
+-- This file has been renamed to 03_schema_v2_profiles.sql
+-- Do not run this file.
