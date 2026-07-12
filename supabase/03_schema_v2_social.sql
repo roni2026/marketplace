@@ -241,7 +241,7 @@ create policy "Select own attachments" on public.message_attachments for select 
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Insert own attachments" on public.message_attachments for insert with check (
+  create policy "Insert own attachments" on public.message_attachments for insert with check (
   exists(select 1 from public.messages m where m.id = message_id and m.sender_id = auth.uid())
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -299,7 +299,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- review_replies: review author or seller can view; authenticated can insert
 DO $$ BEGIN
-    create policy "Select review replies" on public.review_replies for select using (
+  create policy "Select review replies" on public.review_replies for select using (
   exists(select 1 from public.reviews r where r.id = review_id and (r.status = 'approved' or r.reviewer_id = auth.uid() or r.seller_id = auth.uid()))
 );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -389,6 +389,6 @@ DO $$ BEGIN
   create policy "Update own reminders" on public.buying_reminders for update using (user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    create policy "Delete own reminders" on public.buying_reminders for delete using (user_id = auth.uid());
+  create policy "Delete own reminders" on public.buying_reminders for delete using (user_id = auth.uid());
 
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
