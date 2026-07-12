@@ -16,7 +16,7 @@ export function HeroBanner() {
   };
 
   return (
-    <section className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-background py-16 md:py-24">
+    <section className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-background py-12 md:py-24">
       <div className="container mx-auto px-4 text-center">
         <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
           Buy & Sell Anything in <span className="text-primary">Bangladesh</span>
@@ -42,7 +42,8 @@ export function HeroBanner() {
           </Button>
         </form>
 
-        <div className="mt-6 flex flex-wrap justify-center gap-2 text-sm">
+        {/* Popular searches - hidden on mobile */}
+        <div className="mt-6 hidden md:flex flex-wrap justify-center gap-2 text-sm">
           <span className="text-muted-foreground">Popular:</span>
           {['iPhone', 'Car', 'Flat', 'Laptop', 'Bike'].map((term) => (
             <button
@@ -55,7 +56,8 @@ export function HeroBanner() {
           ))}
         </div>
 
-        <div className="mt-10 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
+        {/* Trust badges - hidden on mobile */}
+        <div className="mt-10 hidden md:flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
           <span className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-primary" />
             Free & secure listings
