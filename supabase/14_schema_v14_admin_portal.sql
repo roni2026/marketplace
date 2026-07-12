@@ -162,12 +162,12 @@ create index if not exists idx_admin_preferences_user on public.admin_preference
 create or replace function public.update_updated_at_v14()
 returns trigger
 language plpgsql
-as $$
+as $func$
 begin
   new.updated_at = now();
   return new;
 end;
-$$;
+$func$;
 
 drop trigger if exists trg_admin_widgets_updated_at on public.admin_dashboard_widgets;
 create trigger trg_admin_widgets_updated_at
@@ -194,12 +194,12 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   insert into public.admin_activity_log (admin_id, action, resource_type, resource_id, details)
   values (p_admin_id, p_action, p_resource_type, p_resource_id, p_details);
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: get_dashboard_stats
@@ -210,7 +210,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 declare
   result jsonb;
 begin
@@ -240,7 +240,7 @@ begin
   ) into result;
   return result;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: get_user_growth_chart
@@ -253,7 +253,7 @@ returns table (date text, count bigint)
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   return query
   select
@@ -264,7 +264,7 @@ begin
   group by d.date
   order by d.date;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Function: get_listing_growth_chart
@@ -277,7 +277,7 @@ returns table (date text, count bigint)
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 begin
   return query
   select
@@ -288,7 +288,7 @@ begin
   group by d.date
   order by d.date;
 end;
-$$;
+$func$;
 
 -- =========================================================================
 -- Row Level Security
