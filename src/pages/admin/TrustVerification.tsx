@@ -60,7 +60,7 @@ export default function TrustVerification() {
 
   useEffect(() => {
     if (isAdmin === false) {
-      navigate('/');
+      // removed silent bounce: navigate('/') when not admin
     }
   }, [isAdmin, navigate]);
 

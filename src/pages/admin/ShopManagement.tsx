@@ -49,7 +49,7 @@ export default function ShopManagement() {
 
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
-    if (isAdmin === false) { navigate('/'); return; }
+    if (isAdmin === false) { /* stay on page — AdminRoute already gates access */ return; }
     if (isAdmin) fetchShops();
   }, [user, isAdmin, navigate]);
 

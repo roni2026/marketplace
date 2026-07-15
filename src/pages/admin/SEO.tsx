@@ -74,10 +74,7 @@ export default function SEOPage() {
       navigate('/auth');
       return;
     }
-    if (isAdmin === false) {
-      navigate('/');
-      return;
-    }
+    if (isAdmin === false) { /* stay on page — AdminRoute already gates access */ return; }
   }, [user, isAdmin, navigate]);
 
   const fetchAll = useCallback(async () => {

@@ -58,7 +58,7 @@ export default function SellerReports() {
 
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
-    if (isAdmin === false) { navigate('/'); return; }
+    if (isAdmin === false) { /* stay on page — AdminRoute already gates access */ return; }
     if (isAdmin) fetchReports();
   }, [user, isAdmin, navigate, fetchReports]);
 

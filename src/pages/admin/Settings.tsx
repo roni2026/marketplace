@@ -64,10 +64,7 @@ export default function SettingsPage() {
       navigate('/auth');
       return;
     }
-    if (isAdmin === false) {
-      navigate('/');
-      return;
-    }
+    if (isAdmin === false) { /* stay on page — AdminRoute already gates access */ return; }
     if (isAdmin) {
       // In a real app, these would be fetched from a settings table
       // For now we use defaults stored in localStorage
