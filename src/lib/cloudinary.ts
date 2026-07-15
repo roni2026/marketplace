@@ -21,9 +21,11 @@ export const CLOUDINARY_API_KEY =
   (import.meta.env.VITE_CLOUDINARY_API_KEY as string | undefined)?.trim() ||
   '477828215824789';
 
+// Default matches the preset you should create in Cloudinary (unsigned).
+// Override with VITE_CLOUDINARY_UPLOAD_PRESET if you use a different name.
 const UPLOAD_PRESET =
   (import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined)?.trim() ||
-  '';
+  'bazarbd_unsigned';
 
 const DEFAULT_FOLDER =
   (import.meta.env.VITE_CLOUDINARY_FOLDER as string | undefined)?.trim() ||
@@ -45,10 +47,18 @@ export function isCloudinaryConfigured(): boolean {
   return Boolean(CLOUDINARY_CLOUD_NAME && UPLOAD_PRESET);
 }
 
+export function getCloudinaryUploadPreset(): string {
+  return UPLOAD_PRESET;
+}
+
 export function cloudinaryConfigError(): string | null {
   if (!CLOUDINARY_CLOUD_NAME) return 'VITE_CLOUDINARY_CLOUD_NAME is missing';
   if (!UPLOAD_PRESET) {
-    return 'VITE_CLOUDINARY_UPLOAD_PRESET is missing — create an unsigned upload preset in Cloudinary and set it in Render env';
+    return (
+      'No Cloudinary upload preset. In Cloudinary: Settings (gear) → Upload → Upload presets → ' +
+      'Add upload preset → Signing mode = Unsigned → name it bazarbd_unsigned → Save. ' +
+      'Then set VITE_CLOUDINARY_UPLOAD_PRESET=bazarbd_unsigned on Render.'
+    );
   }
   return null;
 }
