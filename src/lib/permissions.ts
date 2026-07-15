@@ -91,7 +91,7 @@ const ROLE_PERMISSIONS: Record<AppRole, Permission[]> = {
   ],
 };
 
-const ADMIN_ROLES: AppRole[] = ['super_admin', 'admin'];
+const ADMIN_ROLES: AppRole[] = ['super_admin', 'admin', 'moderator'];
 const STAFF_ROLES: AppRole[] = ['super_admin', 'admin', 'moderator', 'customer_support'];
 
 export function getRolePermissions(role: AppRole): Permission[] {
@@ -174,30 +174,54 @@ const ADMIN_ROLE_NAMES = new Set(['super_admin', 'admin', 'moderator']);
  * Uses RPC first so RLS cannot hide the caller's own super_admin row.
  */
 export async function checkIsAdmin(userId: string): Promise<boolean> {
+  if (!userId) return false;
   try {
-    // RPC path (security definer)
+    // 0) am_i_admin() — current JWT, no args (added in 18_fix_super_admin_access.sql)
     try {
-      const { data, error } = await supabase.rpc('get_my_roles');
-      if (!error && Array.isArray(data)) {
-        const roles = normalizeRoles(data as any[]);
-        if (roles.some((r) => ADMIN_ROLE_NAMES.has(String(r).toLowerCase()))) return true;
-        // if RPC works and returns empty, user truly has no roles
-        if (data.length === 0) {
-          // still try table once in case RPC is stale/mis-deployed
-        }
+      const { data, error } = await supabase.rpc('am_i_admin' as any);
+      if (!error && data === true) return true;
+    } catch {
+      // continue — function may not be deployed yet
+    }
+
+    // 1) is_admin(uuid) — security definer, works even when SELECT on user_roles is blocked
+    try {
+      const { data, error } = await supabase.rpc('is_admin', { _user_id: userId });
+      if (!error && data === true) return true;
+      // Some deployments used (user_id) instead of (_user_id)
+      if (error) {
+        const alt = await supabase.rpc('is_admin', { user_id: userId } as any);
+        if (!alt.error && alt.data === true) return true;
       }
     } catch {
       // continue
     }
 
-    // is_admin(uuid) helper if present
+    // 2) has_role(user, super_admin|admin) — also security definer
+    for (const role of ['super_admin', 'admin', 'moderator'] as const) {
+      try {
+        const { data, error } = await supabase.rpc('has_role', {
+          _user_id: userId,
+          _role: role,
+        });
+        if (!error && data === true) return true;
+      } catch {
+        // continue
+      }
+    }
+
+    // 3) get_my_roles() — returns caller's roles via security definer
     try {
-      const { data, error } = await supabase.rpc('is_admin', { _user_id: userId });
-      if (!error && data === true) return true;
+      const { data, error } = await supabase.rpc('get_my_roles');
+      if (!error && Array.isArray(data)) {
+        const roles = normalizeRoles(data as any[]);
+        if (roles.some((r) => ADMIN_ROLE_NAMES.has(String(r).toLowerCase()))) return true;
+      }
     } catch {
       // continue
     }
 
+    // 4) Direct table select (needs users_select_own_roles + GRANT)
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')

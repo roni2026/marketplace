@@ -27,7 +27,8 @@ interface HeaderProps {
 }
 
 export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderProps) {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, roles, signOut } = useAuth();
+  const showAdmin = isAdmin === true || (roles || []).some((r) => ['super_admin','admin','moderator'].includes(String(r)));
   const { unreadCount: unreadNotifications } = useNotifications();
   const { unreadCount: unreadMessages } = useMessages();
   const [isOpen, setIsOpen] = useState(false);
@@ -64,7 +65,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
           {t('nav.favorites')}
         </Link>
       )}
-      {isAdmin && (
+      {showAdmin && (
         <Link 
           to="/admin" 
           className="text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"

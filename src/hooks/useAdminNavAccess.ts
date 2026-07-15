@@ -9,9 +9,12 @@ import { hrefToPermissionKey, isAlwaysVisibleForAnyAdmin } from '@/lib/adminNavA
  */
 export function useAdminNavAccess() {
   const { user, roles, isAdmin } = useAuth();
+  const roleList = useMemo(() => (roles || []).map((r) => String(r).toLowerCase()), [roles]);
+  // Super admin, plain admin, or confirmed admin with no role rows yet (RPC lag)
+  // all get the full sidebar — limited staff still go through tab grants.
   const isSuperAdmin = useMemo(
-    () => (roles || []).includes('super_admin' as any) || (roles || []).includes('super_admin'),
-    [roles],
+    () => roleList.includes('super_admin') || roleList.includes('admin'),
+    [roleList],
   );
   const [allowed, setAllowed] = useState<Set<string> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,7 +27,9 @@ export function useAdminNavAccess() {
         setLoading(false);
         return;
       }
-      if (isSuperAdmin) {
+      // Full access: super_admin / admin, or admin flag true with empty roles
+      // (role select failed but is_admin RPC succeeded).
+      if (isSuperAdmin || roleList.length === 0) {
         setAllowed(null); // null => all
         setLoading(false);
         return;
@@ -48,7 +53,7 @@ export function useAdminNavAccess() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, isAdmin, isSuperAdmin]);
+  }, [user?.id, isAdmin, isSuperAdmin, roleList.length]);
 
   const canAccessHref = useCallback(
     (href: string) => {

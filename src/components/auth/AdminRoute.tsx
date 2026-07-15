@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { checkIsAdmin } from '@/lib/permissions';
@@ -173,28 +173,37 @@ export function AdminRoute({ children }: { children: ReactNode }) {
   const { user, isLoading, isAdmin, roles, refreshRoles } = useAuth();
   const [rechecking, setRechecking] = useState(false);
   const [fallbackAdmin, setFallbackAdmin] = useState<boolean | null>(null);
+  const [checkedUserId, setCheckedUserId] = useState<string | null>(null);
 
-  const runChecks = async () => {
+  const runChecks = async (opts?: { silent?: boolean }) => {
     if (!user) return;
-    setRechecking(true);
+    if (!opts?.silent) setRechecking(true);
     try {
       await refreshRoles();
       const result = await checkIsAdmin(user.id);
       setFallbackAdmin(result);
+      setCheckedUserId(user.id);
     } finally {
-      setRechecking(false);
+      if (!opts?.silent) setRechecking(false);
     }
   };
 
-  // When visiting /admin, re-check roles (SQL grants often happen after login).
+  // Re-check once per user when landing on /admin (covers SQL grants after login).
+  // Do not re-run while already confirmed admin — that caused a loader blink loop.
   useEffect(() => {
     if (!user || isLoading) return;
-    if (isAdmin === true) return;
-    void runChecks();
+    if (isAdmin === true) {
+      setFallbackAdmin(true);
+      setCheckedUserId(user.id);
+      return;
+    }
+    if (checkedUserId === user.id && fallbackAdmin !== null) return;
+    void runChecks({ silent: isAdmin === null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, isLoading]);
+  }, [user?.id, isLoading, isAdmin]);
 
-  if (isLoading || (user && isAdmin === null) || rechecking) {
+  // Session still resolving, or first admin check in flight
+  if (isLoading || (user && isAdmin === null && fallbackAdmin === null) || rechecking) {
     return <FullScreenLoader />;
   }
 
@@ -210,7 +219,11 @@ export function AdminRoute({ children }: { children: ReactNode }) {
     <AccessDenied
       userId={user.id}
       roles={(roles || []).map(String)}
-      onRecheck={() => void runChecks()}
+      onRecheck={() => {
+        setCheckedUserId(null);
+        setFallbackAdmin(null);
+        void runChecks();
+      }}
     />
   );
 }

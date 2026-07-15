@@ -75,7 +75,11 @@ as $$
   select exists (
     select 1 from public.user_roles
     where user_id = _user_id
-      and role in ('super_admin'::public.app_role, 'admin'::public.app_role)
+      and role in (
+        'super_admin'::public.app_role,
+        'admin'::public.app_role,
+        'moderator'::public.app_role
+      )
   );
 $$;
 
@@ -99,6 +103,7 @@ as $$
 $$;
 
 -- Client-callable: returns the current user's roles (security definer)
+-- Returns rows shaped as { role: text } so supabase-js maps them cleanly.
 create or replace function public.get_my_roles()
 returns table (role text)
 language sql
@@ -106,15 +111,27 @@ stable
 security definer
 set search_path = public
 as $$
-  select ur.role::text
+  select ur.role::text as role
   from public.user_roles ur
   where ur.user_id = auth.uid();
+$$;
+
+-- Convenience boolean for the current JWT (no args — harder to misuse from client)
+create or replace function public.am_i_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select public.is_admin(auth.uid());
 $$;
 
 grant execute on function public.has_role(uuid, public.app_role) to authenticated, anon;
 grant execute on function public.is_admin(uuid) to authenticated, anon;
 grant execute on function public.is_staff(uuid) to authenticated, anon;
 grant execute on function public.get_my_roles() to authenticated, anon;
+grant execute on function public.am_i_admin() to authenticated, anon;
 
 -- ---------------------------------------------------------------------------
 -- 3) RLS policies — users must read own rows without needing to already be admin

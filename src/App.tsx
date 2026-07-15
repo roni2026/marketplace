@@ -148,8 +148,8 @@ const App = () => (
                 <Route path="/admin/bulk-operations" element={<AdminRoute><BulkOperations /></AdminRoute>} />
                 <Route path="/admin/search" element={<AdminRoute><AdminSearch /></AdminRoute>} />
                 <Route path="/admin/ads" element={<AdminRoute><AdModeration /></AdminRoute>} />
-                <Route path="/admin/categories" element={<AdminRoute><CategoryManagement />
-          <Route path="/admin/brands" element={<AdminRoute><BrandManagement /></AdminRoute>} /></AdminRoute>} />
+                <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
+                <Route path="/admin/brands" element={<AdminRoute><BrandManagement /></AdminRoute>} />
                 <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
                 <Route path="/admin/reports" element={<AdminRoute><ReportManagement /></AdminRoute>} />
                 <Route path="/admin/audit" element={<AdminRoute><AuditLogPage /></AdminRoute>} />

@@ -78,15 +78,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkRoles = useCallback(async (userId: string) => {
-    const userRoles = await fetchUserRoles(userId);
-    setRoles(userRoles);
-    if (isAdminRole(userRoles)) {
-      setIsAdmin(true);
-      return;
+    try {
+      const userRoles = await fetchUserRoles(userId);
+      setRoles(userRoles);
+      if (isAdminRole(userRoles) || userRoles.includes('super_admin') || userRoles.includes('admin') || userRoles.includes('moderator')) {
+        setIsAdmin(true);
+        return;
+      }
+      // Role list empty/incomplete (RLS or missing RPC) — use security-definer checks.
+      const admin = await checkIsAdmin(userId);
+      setIsAdmin(admin);
+    } catch (err) {
+      console.warn('checkRoles failed:', err);
+      try {
+        const admin = await checkIsAdmin(userId);
+        setIsAdmin(admin);
+      } catch {
+        setIsAdmin(false);
+      }
     }
-    // If the role list is empty/incomplete (RLS), fall back to definer checks.
-    const admin = await checkIsAdmin(userId);
-    setIsAdmin(admin);
   }, []);
 
   const calculateProfileCompletion = (p: ProfileData | null): number => {
@@ -116,36 +126,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    let mounted = true;
+    let bootstrapped = false;
+
+    const applySession = async (session: Session | null, opts?: { resetAdmin?: boolean }) => {
+      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        setIsAdmin(null);
-        setTimeout(() => {
-          checkRoles(session.user.id);
-          fetchProfile(session.user.id);
-        }, 0);
+        // Only clear isAdmin on real sign-in so TOKEN_REFRESHED does not
+        // flash the admin UI / bounce /admin back to a loader.
+        if (opts?.resetAdmin) setIsAdmin(null);
+        await Promise.all([
+          checkRoles(session.user.id),
+          fetchProfile(session.user.id),
+        ]);
       } else {
         setIsAdmin(false);
         setRoles([]);
         setProfile(null);
       }
-    });
+    };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkRoles(session.user.id);
-        fetchProfile(session.user.id);
-      } else {
-        setIsAdmin(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Ignore noisy token refreshes for role state — session token is updated
+      // by setSession but roles stay put.
+      if (event === 'TOKEN_REFRESHED') {
+        setSession(session);
+        setUser(session?.user ?? null);
+        return;
       }
-      setIsLoading(false);
+
+      const resetAdmin = event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED';
+      void (async () => {
+        await applySession(session, { resetAdmin });
+        if (mounted && !bootstrapped) {
+          bootstrapped = true;
+          setIsLoading(false);
+        }
+      })();
     });
 
-    return () => subscription.unsubscribe();
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      await applySession(session, { resetAdmin: true });
+      if (mounted) {
+        bootstrapped = true;
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [checkRoles, fetchProfile]);
 
   const signUp = async (email: string, password: string, fullName: string) => {

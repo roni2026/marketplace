@@ -786,6 +786,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_my_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: { role: string }[]
+      }
       is_admin: {
         Args: {
           _user_id: string
