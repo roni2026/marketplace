@@ -331,6 +331,25 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
+      <>
+      {/* Customer portal shortcuts */}
+      <div className="border-b bg-muted/30">
+        <div className="container mx-auto px-4 py-3 flex flex-wrap gap-2 text-sm">
+          <a className="underline-offset-4 hover:underline" href="/my/addresses">Addresses</a>
+          <span className="text-muted-foreground">·</span>
+          <a className="underline-offset-4 hover:underline" href="/my/offers">Offers</a>
+          <span className="text-muted-foreground">·</span>
+          <a className="underline-offset-4 hover:underline" href="/my/support">Support</a>
+          <span className="text-muted-foreground">·</span>
+          <a className="underline-offset-4 hover:underline" href="/favorites">Favorites</a>
+          <span className="text-muted-foreground">·</span>
+          <a className="underline-offset-4 hover:underline" href="/saved-searches">Saved searches</a>
+          <span className="text-muted-foreground">·</span>
+          <a className="underline-offset-4 hover:underline" href="/compare">Compare</a>
+          <span className="text-muted-foreground">·</span>
+          <a className="underline-offset-4 hover:underline" href="/messages">Messages</a>
+        </div>
+      </div>
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Profile Completion */}

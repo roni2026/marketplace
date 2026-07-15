@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useAdminNavAccess } from '@/hooks/useAdminNavAccess';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Users, Package, Shield, Store, Flag, CreditCard,
@@ -54,6 +55,7 @@ const navSections: NavSection[] = [
       { title: 'Sponsored Listings', href: '/admin/sponsored-listings', icon: Star },
       { title: 'Ad Moderation', href: '/admin/ads', icon: FileCheck },
       { title: 'Categories', href: '/admin/categories', icon: FolderTree },
+      { title: 'Brands & Models', href: '/admin/brands', icon: Tag },
       { title: 'Inventory', href: '/admin/inventory', icon: Package },
     ],
   },
@@ -132,20 +134,24 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const { user } = useAuth();
+  const { canAccessHref, isSuperAdmin, loading: accessLoading } = useAdminNavAccess();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredSections = useMemo(() => {
-    if (!searchQuery.trim()) return navSections;
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.trim().toLowerCase();
     return navSections
       .map((section) => ({
         ...section,
-        items: section.items.filter((item) => item.title.toLowerCase().includes(q)),
+        items: section.items.filter((item) => {
+          if (!canAccessHref(item.href)) return false;
+          if (!q) return true;
+          return item.title.toLowerCase().includes(q);
+        }),
       }))
       .filter((section) => section.items.length > 0);
-  }, [searchQuery]);
+  }, [searchQuery, canAccessHref]);
 
   const isActive = useCallback(
     (href: string) => {
@@ -259,7 +265,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-medium truncate">{user?.email || 'Admin'}</p>
-                <p className="text-[9px] text-muted-foreground">Administrator</p>
+                <p className="text-[9px] text-muted-foreground">{isSuperAdmin ? 'Super admin' : accessLoading ? '…' : 'Limited admin'}</p>
               </div>
             </div>
             <Button

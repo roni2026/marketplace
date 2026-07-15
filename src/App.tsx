@@ -41,6 +41,10 @@ import UserActivity from "./pages/UserActivity";
 import MessagesV2 from "./pages/MessagesV2";
 import Compare from "./pages/Compare";
 import PublicProfile from "./pages/PublicProfile";
+import MyAddresses from "./pages/MyAddresses";
+import MySupport from "./pages/MySupport";
+import MyOffers from "./pages/MyOffers";
+import BrandManagement from "./pages/admin/BrandManagement";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -144,7 +148,8 @@ const App = () => (
                 <Route path="/admin/bulk-operations" element={<AdminRoute><BulkOperations /></AdminRoute>} />
                 <Route path="/admin/search" element={<AdminRoute><AdminSearch /></AdminRoute>} />
                 <Route path="/admin/ads" element={<AdminRoute><AdModeration /></AdminRoute>} />
-                <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
+                <Route path="/admin/categories" element={<AdminRoute><CategoryManagement />
+          <Route path="/admin/brands" element={<AdminRoute><BrandManagement /></AdminRoute>} /></AdminRoute>} />
                 <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
                 <Route path="/admin/reports" element={<AdminRoute><ReportManagement /></AdminRoute>} />
                 <Route path="/admin/audit" element={<AdminRoute><AuditLogPage /></AdminRoute>} />
@@ -184,7 +189,10 @@ const App = () => (
                 <Route path="/admin/sponsored-listings" element={<AdminRoute><SponsoredListings /></AdminRoute>} />
                 <Route path="/admin/seller-reports" element={<AdminRoute><SellerReports /></AdminRoute>} />
 
-                <Route path="*" element={<NotFound />} />
+                <Route path="/my/addresses" element={<ProtectedRoute><MyAddresses /></ProtectedRoute>} />
+          <Route path="/my/support" element={<ProtectedRoute><MySupport /></ProtectedRoute>} />
+          <Route path="/my/offers" element={<ProtectedRoute><MyOffers /></ProtectedRoute>} />
+          <Route path="*" element={<NotFound />} />
               </Routes>
               <InstallPrompt />
             </BrowserRouter>

@@ -26,6 +26,7 @@ import {
 } from '@/lib/permissions_v2';
 import { ROLE_LABELS, type AppRole } from '@/lib/permissions';
 import { Search, Shield, Key, Check, X } from 'lucide-react';
+import { AdminTabGrants } from '@/components/admin/AdminTabGrants';
 
 interface UserWithRoles {
   user_id: string;
@@ -361,6 +362,11 @@ export default function Permissions() {
           </Card>
         </TabsContent>
       </Tabs>
+      {selectedUserId ? (
+        <div className="mt-8">
+          <AdminTabGrants userId={selectedUserId} />
+        </div>
+      ) : null}
     </AdminLayout>
   );
 }

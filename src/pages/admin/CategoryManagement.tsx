@@ -82,12 +82,28 @@ export default function CategoryManagement() {
     if (editing) {
       const { error } = await supabase.from('categories').update(payload).eq('id', editing.id);
       if (error) { toast.error('Failed to update category'); return; }
+      // Keep legacy subcategories table in sync when using parent_id nesting.
+      if (payload.parent_id) {
+        await supabase.from('subcategories').delete().eq('slug', payload.slug);
+        await supabase.from('subcategories').insert({
+          category_id: payload.parent_id,
+          name: payload.name,
+          slug: payload.slug,
+        });
+      }
       if (user) await logActivity('update_category', 'category', editing.id, { name: formData.name });
       toast.success('Category updated');
     } else {
-      const { error } = await supabase.from('categories').insert(payload);
+      const { data: created, error } = await supabase.from('categories').insert(payload).select('id').single();
       if (error) { toast.error('Failed to create category'); return; }
-      if (user) await logActivity('create_category', 'category', undefined, { name: formData.name });
+      if (payload.parent_id && created?.id) {
+        await supabase.from('subcategories').insert({
+          category_id: payload.parent_id,
+          name: payload.name,
+          slug: payload.slug,
+        });
+      }
+      if (user) await logActivity('create_category', 'category', created?.id, { name: formData.name });
       toast.success('Category created');
     }
     setShowForm(false);

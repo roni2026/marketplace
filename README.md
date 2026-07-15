@@ -90,3 +90,14 @@ supabase/
 ## 📄 License
 
 See [LICENSE](./LICENSE).
+
+## Phase 15 (brands, limited admin tabs, customer portal)
+
+See [docs/PHASE15_CATALOG_RBAC_CUSTOMER.md](docs/PHASE15_CATALOG_RBAC_CUSTOMER.md).
+
+Apply SQL: `supabase/17_schema_v15_catalog_rbac_customer.sql`
+
+- Super admin: full `/admin` sidebar
+- Limited admin: only granted tabs (`admin_tab_permissions`)
+- Brands & models: `/admin/brands`
+- Customer: `/my/addresses`, `/my/support`, `/my/offers`
