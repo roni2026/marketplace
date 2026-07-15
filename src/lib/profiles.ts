@@ -3,6 +3,7 @@
 // All profile-related API operations: CRUD, follows, badges, reviews, stats.
 
 import { supabase } from '@/integrations/supabase/client';
+import { isCloudinaryConfigured, uploadToCloudinary } from '@/lib/cloudinary';
 import type {
   ExtendedProfile,
   PublicProfile,
@@ -167,6 +168,14 @@ export async function uploadBanner(
   file: File
 ): Promise<{ url: string | null; error: Error | null }> {
   try {
+    if (isCloudinaryConfigured()) {
+      const up = await uploadToCloudinary(file, {
+        folder: `bazarbd/banners/${userId}`,
+        tags: ['banner', userId],
+      });
+      return { url: up.secure_url, error: null };
+    }
+
     const ext = file.name.split('.').pop() || 'png';
     const fileName = `${userId}/${Date.now()}-banner.${ext}`;
 

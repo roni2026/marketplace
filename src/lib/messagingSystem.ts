@@ -21,6 +21,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { isCloudinaryConfigured, uploadToCloudinary } from '@/lib/cloudinary';
 import { toast } from 'sonner';
 import type {
   ExtendedMessage, Conversation, TypingIndicator, UserPresence,
@@ -499,19 +500,32 @@ export async function uploadAttachment(messageId: string, file: File): Promise<M
   const ext = file.name.split('.').pop()?.toLowerCase() || 'file';
   const filePath = `message-attachments/${messageId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from('ad-images')
-    .upload(filePath, file);
-
-  if (uploadError) { console.error('uploadAttachment:', uploadError); return null; }
-
-  const { data: urlData } = supabase.storage.from('ad-images').getPublicUrl(filePath);
+  let fileUrl = '';
+  if (isCloudinaryConfigured()) {
+    try {
+      const up = await uploadToCloudinary(file, {
+        folder: `bazarbd/messages/${messageId}`,
+        tags: ['message', messageId],
+      });
+      fileUrl = up.secure_url;
+    } catch (err) {
+      console.error('Cloudinary uploadAttachment:', err);
+    }
+  }
+  if (!fileUrl) {
+    const { error: uploadError } = await supabase.storage
+      .from('ad-images')
+      .upload(filePath, file);
+    if (uploadError) { console.error('uploadAttachment:', uploadError); return null; }
+    const { data: urlData } = supabase.storage.from('ad-images').getPublicUrl(filePath);
+    fileUrl = urlData.publicUrl;
+  }
 
   const { data, error } = await supabase
     .from('message_attachments')
     .insert({
       message_id: messageId,
-      file_url: urlData.publicUrl,
+      file_url: fileUrl,
       file_type: file.type,
       file_name: file.name,
       file_size: file.size,

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { isCloudinaryConfigured, uploadToCloudinary } from '@/lib/cloudinary';
 import { toast } from 'sonner';
 import { Loader2, X, ImageIcon, ArrowLeft, ArrowRight, Calendar } from 'lucide-react';
 import { DIVISIONS, DISTRICTS, generateSlug } from '@/lib/constants';
@@ -140,22 +141,31 @@ export default function PostAd() {
 
   const uploadImages = async (adId: string) => {
     const uploadedUrls: string[] = [];
-    
+
     for (const image of images) {
+      if (isCloudinaryConfigured()) {
+        const up = await uploadToCloudinary(image, {
+          folder: `bazarbd/ads/${adId}`,
+          tags: ['ad', adId],
+        });
+        uploadedUrls.push(up.secure_url);
+        continue;
+      }
+
       const fileName = `${adId}/${Date.now()}-${image.name}`;
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('ad-images')
         .upload(fileName, image);
-      
+
       if (error) throw error;
-      
+
       const { data: urlData } = supabase.storage
         .from('ad-images')
         .getPublicUrl(fileName);
-      
+
       uploadedUrls.push(urlData.publicUrl);
     }
-    
+
     return uploadedUrls;
   };
 

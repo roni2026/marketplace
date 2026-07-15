@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
+import { isCloudinaryConfigured, uploadToCloudinary } from '@/lib/cloudinary';
 import { toast } from 'sonner';
 import {
   Loader2, Upload, User, BadgeCheck, Shield, Monitor, Trash2, AlertTriangle,
@@ -216,17 +217,25 @@ export default function ProfilePage() {
     const fileName = `${user.id}/${Date.now()}-avatar`;
 
     try {
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
+      let publicUrl = '';
+      if (isCloudinaryConfigured()) {
+        const up = await uploadToCloudinary(file, {
+          folder: `bazarbd/avatars/${user.id}`,
+          tags: ['avatar', user.id],
+        });
+        publicUrl = up.secure_url;
+      } else {
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, file, { upsert: true });
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+        publicUrl = urlData.publicUrl;
+      }
 
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      setProfile(prev => ({ ...prev, avatar_url: urlData.publicUrl }));
+      setProfile(prev => ({ ...prev, avatar_url: publicUrl }));
       toast.success(t('toast.avatarUploaded'));
     } catch (error) {
       toast.error(t('toast.avatarUploadFailed'));

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { AppRole, fetchUserRoles, checkIsAdmin, hasPermission as checkPermission, isAdminRole, isStaffRole, Permission } from '@/lib/permissions';
+import { AppRole, fetchUserRoles, checkIsAdmin, hasPermission as checkPermission, isAdminRole, isStaffRole, Permission, clearAdminCache, readAdminCache } from '@/lib/permissions';
 import { logLogin, logLogout, logLoginAttempt } from '@/lib/audit';
 
 interface ProfileData {
@@ -78,10 +78,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkRoles = useCallback(async (userId: string) => {
+    // Optimistic: if we already confirmed admin this session, don't flash false.
+    const cached = readAdminCache(userId);
+    if (cached === true) setIsAdmin(true);
+
     try {
       const userRoles = await fetchUserRoles(userId);
       setRoles(userRoles);
-      if (isAdminRole(userRoles) || userRoles.includes('super_admin') || userRoles.includes('admin') || userRoles.includes('moderator')) {
+      if (
+        isAdminRole(userRoles) ||
+        userRoles.includes('super_admin') ||
+        userRoles.includes('admin') ||
+        userRoles.includes('moderator')
+      ) {
         setIsAdmin(true);
         return;
       }
@@ -94,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const admin = await checkIsAdmin(userId);
         setIsAdmin(admin);
       } catch {
-        setIsAdmin(false);
+        setIsAdmin(cached === true ? true : false);
       }
     }
   }, []);
@@ -231,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     await supabase.auth.signOut();
+    clearAdminCache();
     setIsAdmin(false);
     setRoles([]);
     setProfile(null);

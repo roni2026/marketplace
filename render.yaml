@@ -1,0 +1,11 @@
+# Render static site — SPA routes like /admin must rewrite to index.html
+services:
+  - type: web
+    name: bazarbd-marketplace
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { isCloudinaryConfigured, uploadToCloudinary } from '@/lib/cloudinary';
 import { toast } from 'sonner';
 import type {
   MediaLibraryItem,
@@ -26,22 +27,38 @@ export async function uploadToMediaLibrary(
   const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
   const filePath = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-  // Upload to storage bucket
-  const { error: uploadError } = await supabase.storage
-    .from('media-library')
-    .upload(filePath, file);
-
-  if (uploadError) {
-    toast.error('Failed to upload file');
-    console.error('uploadToMediaLibrary upload error:', uploadError);
-    return null;
+  // Prefer Cloudinary when configured; fall back to Supabase Storage.
+  let url = '';
+  if (isCloudinaryConfigured()) {
+    try {
+      const up = await uploadToCloudinary(file, {
+        folder: `bazarbd/media-library/${userId}`,
+        tags: ['media-library', userId],
+      });
+      url = up.secure_url;
+      // Keep a stable path-ish id for later deletes (best-effort)
+      // filePath already generated above for supabase path; ignore when using CDN.
+    } catch (err) {
+      console.error('Cloudinary media-library upload failed, trying Supabase:', err);
+    }
   }
+  if (!url) {
+    const { error: uploadError } = await supabase.storage
+      .from('media-library')
+      .upload(filePath, file);
 
-  const { data: urlData } = supabase.storage
-    .from('media-library')
-    .getPublicUrl(filePath);
+    if (uploadError) {
+      toast.error('Failed to upload file');
+      console.error('uploadToMediaLibrary upload error:', uploadError);
+      return null;
+    }
 
-  const url = urlData.publicUrl;
+    const { data: urlData } = supabase.storage
+      .from('media-library')
+      .getPublicUrl(filePath);
+
+    url = urlData.publicUrl;
+  }
 
   // Generate thumbnail
   const thumbnailUrl = await generateThumbnail(file);

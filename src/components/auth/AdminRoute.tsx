@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { checkIsAdmin } from '@/lib/permissions';
+import { checkIsAdmin, readAdminCache } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -140,8 +140,7 @@ function AccessDenied({
             <br />
             roles loaded: {roles.length ? roles.join(', ') : '(none)'}
             <br />
-            Fix: run supabase/18_fix_super_admin_access.sql in Supabase SQL Editor
-            (paste your UUID), then click Re-check roles.
+            Fix: In Supabase SQL Editor run supabase/18_fix_super_admin_access.sql with your UUID, then also run supabase/16_fix_permissions.sql. Hard-refresh this page and click Re-check roles. If the site is on Render/Netlify, ensure SPA rewrites send /admin → index.html.
           </p>
           <div className="flex flex-col gap-2">
             <Button onClick={onRecheck}>Re-check roles</Button>
@@ -211,10 +210,13 @@ export function AdminRoute({ children }: { children: ReactNode }) {
     return <AdminLogin />;
   }
 
-  if (isAdmin === true || fallbackAdmin === true) {
+  const cachedAdmin = user ? readAdminCache(user.id) === true : false;
+
+  if (isAdmin === true || fallbackAdmin === true || cachedAdmin) {
     return <>{children}</>;
   }
 
+  // Stay on /admin with a clear panel (no silent redirect to marketplace).
   return (
     <AccessDenied
       userId={user.id}

@@ -12,6 +12,7 @@ import { MobileNav } from '@/components/layout/MobileNav';
 import { useAuth } from '@/hooks/useAuth';
 import { useListingManagement } from '@/hooks/useListingManagement';
 import { supabase } from '@/integrations/supabase/client';
+import { isCloudinaryConfigured, uploadToCloudinary } from '@/lib/cloudinary';
 import { DIVISIONS, DISTRICTS, generateSlug, formatPrice } from '@/lib/constants';
 import { validateTitle, validateDescription, validatePrice, validateImageFile, sanitizeText, sanitizeRichText } from '@/lib/validation';
 import {
@@ -345,14 +346,32 @@ export default function PostAdV4() {
   const uploadImages = async (adId: string) => {
     for (let i = 0; i < images.length; i++) {
       const file = images[i];
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const filePath = `${adId}/${Date.now()}-${i}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from('ad-images').upload(filePath, file);
-      if (uploadError) { console.error('Image upload error:', uploadError); continue; }
-      const { data: urlData } = supabase.storage.from('ad-images').getPublicUrl(filePath);
+      let imageUrl = '';
+
+      if (isCloudinaryConfigured()) {
+        try {
+          const up = await uploadToCloudinary(file, {
+            folder: `bazarbd/ads/${adId}`,
+            tags: ['ad', adId],
+          });
+          imageUrl = up.secure_url;
+        } catch (err) {
+          console.error('Cloudinary image upload error:', err);
+        }
+      }
+
+      if (!imageUrl) {
+        const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const filePath = `${adId}/${Date.now()}-${i}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from('ad-images').upload(filePath, file);
+        if (uploadError) { console.error('Image upload error:', uploadError); continue; }
+        const { data: urlData } = supabase.storage.from('ad-images').getPublicUrl(filePath);
+        imageUrl = urlData.publicUrl;
+      }
+
       await supabase.from('ad_images').insert({
         ad_id: adId,
-        image_url: urlData.publicUrl,
+        image_url: imageUrl,
         sort_order: i,
       });
     }

@@ -114,13 +114,21 @@ export function isStaffRole(roles: AppRole[]): boolean {
   return roles.some((r) => STAFF_ROLES.includes(r));
 }
 
-function normalizeRoles(rows: Array<{ role?: unknown } | string | null | undefined>): AppRole[] {
+function normalizeRoles(rows: Array<{ role?: unknown } | string | null | undefined> | unknown): AppRole[] {
   const out: AppRole[] = [];
-  for (const row of rows || []) {
-    const raw = typeof row === 'string' ? row : (row as any)?.role;
-    if (raw == null) continue;
+  const list: any[] = Array.isArray(rows)
+    ? rows
+    : rows && typeof rows === 'object'
+      ? Object.values(rows as object)
+      : [];
+  for (const row of list) {
+    let raw: unknown = row;
+    if (row && typeof row === 'object') {
+      raw = (row as any).role ?? (row as any).get_my_roles ?? (row as any).is_admin ?? null;
+    }
+    if (raw == null || raw === true || raw === false) continue;
     const role = String(raw).trim().toLowerCase() as AppRole;
-    if (role && !out.includes(role)) out.push(role);
+    if (role && !out.includes(role) && role.length < 64) out.push(role);
   }
   return out;
 }
@@ -169,59 +177,105 @@ export async function fetchUserRoles(userId: string): Promise<AppRole[]> {
 
 const ADMIN_ROLE_NAMES = new Set(['super_admin', 'admin', 'moderator']);
 
+const ADMIN_CACHE_KEY = 'bazarbd_is_admin_v1';
+
+export function readAdminCache(userId: string): boolean | null {
+  try {
+    const raw = sessionStorage.getItem(ADMIN_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { userId?: string; isAdmin?: boolean; at?: number };
+    if (parsed.userId !== userId) return null;
+    // 12h cache — SQL grants rarely change mid-session
+    if (parsed.at && Date.now() - parsed.at > 12 * 60 * 60 * 1000) return null;
+    return typeof parsed.isAdmin === 'boolean' ? parsed.isAdmin : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeAdminCache(userId: string, isAdmin: boolean) {
+  try {
+    sessionStorage.setItem(
+      ADMIN_CACHE_KEY,
+      JSON.stringify({ userId, isAdmin, at: Date.now() }),
+    );
+  } catch {
+    /* private mode */
+  }
+}
+
+export function clearAdminCache() {
+  try {
+    sessionStorage.removeItem(ADMIN_CACHE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Direct admin check - queries user_roles for any admin-level role.
  * Uses RPC first so RLS cannot hide the caller's own super_admin row.
  */
 export async function checkIsAdmin(userId: string): Promise<boolean> {
   if (!userId) return false;
+
+  const finish = (ok: boolean) => {
+    writeAdminCache(userId, ok);
+    return ok;
+  };
+
+  // Instant path: previous successful check this session
+  const cached = readAdminCache(userId);
+  if (cached === true) return true;
+
   try {
-    // 0) am_i_admin() — current JWT, no args (added in 18_fix_super_admin_access.sql)
+    // 0) am_i_admin() — current JWT, no args
     try {
       const { data, error } = await supabase.rpc('am_i_admin' as any);
-      if (!error && data === true) return true;
+      if (!error && data === true) return finish(true);
     } catch {
-      // continue — function may not be deployed yet
+      // continue
     }
 
-    // 1) is_admin(uuid) — security definer, works even when SELECT on user_roles is blocked
+    // 1) is_admin(uuid)
     try {
       const { data, error } = await supabase.rpc('is_admin', { _user_id: userId });
-      if (!error && data === true) return true;
-      // Some deployments used (user_id) instead of (_user_id)
+      if (!error && data === true) return finish(true);
       if (error) {
         const alt = await supabase.rpc('is_admin', { user_id: userId } as any);
-        if (!alt.error && alt.data === true) return true;
+        if (!alt.error && alt.data === true) return finish(true);
       }
     } catch {
       // continue
     }
 
-    // 2) has_role(user, super_admin|admin) — also security definer
+    // 2) has_role for each admin role
     for (const role of ['super_admin', 'admin', 'moderator'] as const) {
       try {
         const { data, error } = await supabase.rpc('has_role', {
           _user_id: userId,
           _role: role,
         });
-        if (!error && data === true) return true;
+        if (!error && data === true) return finish(true);
       } catch {
         // continue
       }
     }
 
-    // 3) get_my_roles() — returns caller's roles via security definer
+    // 3) get_my_roles()
     try {
       const { data, error } = await supabase.rpc('get_my_roles');
-      if (!error && Array.isArray(data)) {
-        const roles = normalizeRoles(data as any[]);
-        if (roles.some((r) => ADMIN_ROLE_NAMES.has(String(r).toLowerCase()))) return true;
+      if (!error && data != null) {
+        const roles = normalizeRoles(data as any);
+        if (roles.some((r) => ADMIN_ROLE_NAMES.has(String(r).toLowerCase()))) {
+          return finish(true);
+        }
       }
     } catch {
       // continue
     }
 
-    // 4) Direct table select (needs users_select_own_roles + GRANT)
+    // 4) Direct table select
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')
@@ -229,15 +283,20 @@ export async function checkIsAdmin(userId: string): Promise<boolean> {
 
     if (error) {
       console.warn('checkIsAdmin table select:', error.message);
-      return false;
+      // Keep prior cache if any (avoid locking user out on transient errors)
+      if (cached === true) return true;
+      return finish(false);
     }
 
-    return ((data as any[]) || []).some((r) => {
+    const ok = ((data as any[]) || []).some((r) => {
       const role = String(r.role ?? '').toLowerCase();
       return ADMIN_ROLE_NAMES.has(role);
     });
-  } catch {
-    return false;
+    return finish(ok);
+  } catch (err) {
+    console.warn('checkIsAdmin failed:', err);
+    if (cached === true) return true;
+    return finish(false);
   }
 }
 
