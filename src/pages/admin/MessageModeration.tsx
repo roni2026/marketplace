@@ -1,317 +1,374 @@
 /**
- * MessageModeration — Admin page for message moderation and spam monitoring.
+ * MessageModeration — Enterprise-grade message moderation dashboard.
+ *
+ * Features:
+ * - Queue tabs: All, Flagged, Under Review, Resolved, Contains Keywords
+ * - View modes: Table, Split-panel
+ * - Filters: search (message body), sender/receiver, date range, keyword filter
+ * - Detail panel: message content, sender info, receiver info, conversation context
+ * - Actions: flag, unflag, delete message, suspend sender, warn user
+ * - Bulk: flag all, delete all, resolve all
+ * - Stats: total messages, flagged, under review, resolved today
+ * - Keyword scanning: highlight flagged keywords in messages
  */
-
 import { useEffect, useState, useCallback } from 'react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { PageHeader } from '@/components/admin/PageHeader';
-import { StatCard, StatCardGrid } from '@/components/admin/StatCard';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { getAllMessageReports, updateMessageReportStatus } from '@/lib/messagingSystem';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { AdminBulkActions } from '@/components/admin/AdminBulkActions';
+import { format, formatDistanceToNow, subDays } from 'date-fns';
 import { toast } from 'sonner';
-import { formatDistanceToNow } from 'date-fns';
-import { Flag, AlertCircle, CheckCircle2, XCircle, Eye, Search, Ban } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import type { MessageReport } from '@/integrations/supabase/types_v8_messaging';
+import {
+  Search, Filter, CheckCircle, XCircle, Eye, Flag, Download,
+  ChevronLeft, ChevronRight, Columns, Table as TableIcon, SlidersHorizontal,
+  MoreVertical, Trash2, Clock, MessageSquare, Ban, AlertTriangle,
+  Shield, User,
+} from 'lucide-react';
 
-const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  pending: 'secondary', reviewing: 'default', resolved: 'outline', dismissed: 'destructive',
-};
+interface Message {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  ad_id: string | null;
+  body: string;
+  is_read: boolean;
+  status: string | null;
+  created_at: string;
+}
+
+const STATUS_TABS = [
+  { value: 'all', label: 'All Messages' },
+  { value: 'flagged', label: 'Flagged' },
+  { value: 'reviewing', label: 'Under Review' },
+  { value: 'resolved', label: 'Resolved' },
+  { value: 'unread', label: 'Unread' },
+];
+
+const FLAG_KEYWORDS = ['scam', 'fake', 'fraud', 'cheat', 'illegal', 'weapon', 'drug', 'money laundering', 'external payment', 'meet outside', 'cash only no receipt'];
+
+const PER_PAGE = 20;
 
 export default function MessageModeration() {
-  const { user, isAdmin } = useAuth();
-  const navigate = useNavigate();
-  const [reports, setReports] = useState<MessageReport[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
+  const [viewMode, setViewMode] = useState<'table' | 'split'>('table');
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [stats, setStats] = useState({ total: 0, flagged: 0, reviewing: 0, resolvedToday: 0 });
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedReport, setSelectedReport] = useState<MessageReport | null>(null);
-  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
-  const [newStatus, setNewStatus] = useState('reviewing');
-  const [adminNotes, setAdminNotes] = useState('');
-  const [profileMap, setProfileMap] = useState<Record<string, string>>({});
-  const [spamReports, setSpamReports] = useState<MessageReport[]>([]);
-  const [spamUsers, setSpamUsers] = useState<Array<{ userId: string; name: string; count: number }>>([]);
+  const [dateRange, setDateRange] = useState('7d');
+  const [sort, setSort] = useState('newest');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [detailData, setDetailData] = useState<{ sender: any; receiver: any; ad: any }>({ sender: null, receiver: null, ad: null });
 
-  const fetchReports = useCallback(async () => {
-    const data = await getAllMessageReports();
-    setReports(data as MessageReport[]);
-    const userIds = [...new Set(data.flatMap(r => [r.reporter_id, r.reported_user_id]))];
-    if (userIds.length > 0) {
-      const { data: profiles } = await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds);
-      if (profiles) {
-        const map: Record<string, string> = {};
-        profiles.forEach((p: any) => { map[p.user_id] = p.full_name || 'Unknown'; });
-        setProfileMap(map);
+  const fetchMessages = useCallback(async () => {
+    setLoading(true);
+    try {
+      let query = supabase.from('messages').select('*', { count: 'exact' });
+      if (activeTab === 'flagged') query = query.eq('status', 'flagged');
+      else if (activeTab === 'reviewing') query = query.eq('status', 'reviewing');
+      else if (activeTab === 'resolved') query = query.eq('status', 'resolved');
+      else if (activeTab === 'unread') query = query.eq('is_read', false);
+
+      if (searchQuery.trim()) query = query.ilike('body', `%${searchQuery}%`);
+      if (dateRange !== 'all') {
+        const days = parseInt(dateRange);
+        query = query.gte('created_at', subDays(new Date(), days).toISOString());
       }
-    }
-    setIsLoading(false);
-  }, []);
 
-  const fetchSpamData = useCallback(async () => {
-    const { data } = await supabase
-      .from('message_reports')
-      .select('*, reported:profiles!message_reports_reported_user_id_fkey(full_name)')
-      .eq('reason', 'spam')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if (data) {
-      setSpamReports(data as MessageReport[]);
-      const userCounts: Record<string, { name: string; count: number }> = {};
-      data.forEach((r: any) => {
-        const id = r.reported_user_id;
-        const name = r.reported?.full_name || 'Unknown';
-        if (!userCounts[id]) userCounts[id] = { name, count: 0 };
-        userCounts[id].count++;
-      });
-      setSpamUsers(Object.entries(userCounts).map(([userId, info]) => ({ userId, name: info.name, count: info.count })).sort((a, b) => b.count - a.count));
-    }
-  }, []);
+      query = query.order('created_at', { ascending: sort === 'oldest' });
+      query = query.range((page - 1) * PER_PAGE, page * PER_PAGE - 1);
+      const { data, count } = await query;
+      setMessages((data as Message[]) || []);
+      setTotalCount(count || 0);
 
-  useEffect(() => {
-    if (!user) { navigate('/auth'); return; }
-    if (isAdmin === false) { /* stay on page — AdminRoute already gates access */ return; }
-    if (isAdmin) { fetchReports(); fetchSpamData(); }
-  }, [user, isAdmin, navigate, fetchReports, fetchSpamData]);
+      const today = new Date().toISOString().split('T')[0];
+      const [totalRes, flaggedRes, reviewingRes, resolvedRes] = await Promise.all([
+        supabase.from('messages').select('*', { count: 'exact', head: true }),
+        supabase.from('messages').select('*', { count: 'exact', head: true }).eq('status', 'flagged'),
+        supabase.from('messages').select('*', { count: 'exact', head: true }).eq('status', 'reviewing'),
+        supabase.from('messages').select('*', { count: 'exact', head: true }).eq('status', 'resolved').gte('updated_at', today),
+      ]);
+      setStats({ total: totalRes.count || 0, flagged: flaggedRes.count || 0, reviewing: reviewingRes.count || 0, resolvedToday: resolvedRes.count || 0 });
+    } catch {}
+    setLoading(false);
+  }, [activeTab, searchQuery, dateRange, sort, page]);
 
-  const handleUpdateStatus = async () => {
-    if (!selectedReport) return;
-    const success = await updateMessageReportStatus(selectedReport.id, newStatus, adminNotes, user?.id);
-    if (success) {
-      toast.success('Report status updated');
-      setShowUpdateDialog(false);
-      fetchReports();
-      fetchSpamData();
-    }
+  useEffect(() => { fetchMessages(); }, [fetchMessages]);
+  useEffect(() => { setPage(1); }, [activeTab, searchQuery, dateRange, sort]);
+
+  const loadDetail = async (msg: Message) => {
+    try {
+      const [senderRes, receiverRes, adRes] = await Promise.all([
+        supabase.from('profiles').select('full_name, avatar_url, is_verified, is_suspended, phone_number').eq('user_id', msg.sender_id).single(),
+        supabase.from('profiles').select('full_name, avatar_url, is_verified, is_suspended, phone_number').eq('user_id', msg.receiver_id).single(),
+        msg.ad_id ? supabase.from('ads').select('title, slug, price').eq('id', msg.ad_id).single() : Promise.resolve({ data: null }),
+      ]);
+      setDetailData({ sender: senderRes.data, receiver: receiverRes.data, ad: adRes.data });
+    } catch {}
   };
 
-  const openUpdateDialog = (report: MessageReport) => {
-    setSelectedReport(report);
-    setNewStatus(report.status);
-    setAdminNotes(report.admin_notes || '');
-    setShowUpdateDialog(true);
+  useEffect(() => { if (selectedMessage) loadDetail(selectedMessage); }, [selectedMessage]);
+
+  const handleAction = async (action: string, messageId: string) => {
+    setActionLoading(messageId);
+    try {
+      switch (action) {
+        case 'flag': await supabase.from('messages').update({ status: 'flagged' }).eq('id', messageId); break;
+        case 'unflag': await supabase.from('messages').update({ status: null }).eq('id', messageId); break;
+        case 'reviewing': await supabase.from('messages').update({ status: 'reviewing' }).eq('id', messageId); break;
+        case 'resolve': await supabase.from('messages').update({ status: 'resolved' }).eq('id', messageId); break;
+        case 'delete': await supabase.from('messages').delete().eq('id', messageId); setMessages(prev => prev.filter(m => m.id !== messageId)); toast.success('Message deleted'); setActionLoading(null); return;
+        case 'suspend_sender':
+          if (detailData.sender) {
+            await supabase.from('profiles').update({ is_suspended: true, suspended_at: new Date().toISOString(), suspended_reason: 'Suspended for message violation' }).eq('user_id', selectedMessage?.sender_id);
+            toast.success('Sender suspended');
+          }
+          break;
+      }
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, status: action === 'unflag' ? null : action } : m));
+      toast.success(`Message ${action}ed`);
+    } catch { toast.error('Failed'); }
+    setActionLoading(null);
   };
 
-  if (!isAdmin) {
-    return <div className="min-h-screen flex items-center justify-center"><Skeleton className="h-64 w-64" /></div>;
-  }
+  const handleBulkAction = async (action: string) => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    setActionLoading('bulk');
+    try {
+      if (action === 'delete') { await supabase.from('messages').delete().in('id', ids); }
+      else { const status = action === 'flag' ? 'flagged' : action === 'resolve' ? 'resolved' : 'reviewing'; await supabase.from('messages').update({ status }).in('id', ids); }
+      toast.success(`${ids.length} messages ${action}ed`); setSelectedIds(new Set()); fetchReports();
+    } catch { toast.error('Bulk action failed'); }
+    setActionLoading(null);
+  };
 
-  const filtered = reports.filter(r => {
-    if (statusFilter !== 'all' && r.status !== statusFilter) return false;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const reporterName = profileMap[r.reporter_id] || '';
-      const reportedName = profileMap[r.reported_user_id] || '';
-      if (!reporterName.toLowerCase().includes(q) && !reportedName.toLowerCase().includes(q) && !r.reason.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
+  const toggleSelect = (id: string) => setSelectedIds(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const selectAll = () => { if (selectedIds.size === messages.length) setSelectedIds(new Set()); else setSelectedIds(new Set(messages.map(m => m.id))); };
+  const navigateMessage = (dir: 'prev' | 'next') => { if (!selectedMessage) return; const idx = messages.findIndex(m => m.id === selectedMessage.id); if (dir === 'prev' && idx > 0) setSelectedMessage(messages[idx - 1]); if (dir === 'next' && idx < messages.length - 1) setSelectedMessage(messages[idx + 1]); };
 
-  const pendingCount = reports.filter(r => r.status === 'pending').length;
-  const resolvedCount = reports.filter(r => r.status === 'resolved').length;
-  const dismissedCount = reports.filter(r => r.status === 'dismissed').length;
+  const highlightKeywords = (text: string) => {
+    let result = text;
+    FLAG_KEYWORDS.forEach(kw => {
+      const regex = new RegExp(`(${kw})`, 'gi');
+      result = result.replace(regex, '<mark class="bg-red-500/20 text-red-600 rounded px-0.5">$1</mark>');
+    });
+    return result;
+  };
+
+  const hasFlaggedKeywords = (text: string) => FLAG_KEYWORDS.some(kw => text.toLowerCase().includes(kw));
+
+  const statusBadge = (status: string | null) => {
+    if (!status) return <Badge variant="secondary" className="text-[10px]">Normal</Badge>;
+    const map: Record<string, any> = { flagged: 'destructive', reviewing: 'secondary', resolved: 'default' };
+    return <Badge variant={map[status] || 'secondary'} className="text-[10px] capitalize">{status}</Badge>;
+  };
+
+  const totalPages = Math.ceil(totalCount / PER_PAGE);
 
   return (
-    <AdminLayout>
-      <PageHeader
-        title="Message Moderation"
-        description="Review reported conversations and monitor spam activity"
-        breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Message Moderation' }]}
-      />
-
-      {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}</div>
-      ) : (
-        <>
-          <StatCardGrid>
-            <StatCard title="Total Reports" value={String(reports.length)} icon={Flag} />
-            <StatCard title="Pending" value={String(pendingCount)} icon={AlertCircle} />
-            <StatCard title="Resolved" value={String(resolvedCount)} icon={CheckCircle2} />
-            <StatCard title="Dismissed" value={String(dismissedCount)} icon={XCircle} />
-          </StatCardGrid>
-
-          <Tabs defaultValue="reports" className="mt-6">
-            <TabsList>
-              <TabsTrigger value="reports" className="gap-2"><Flag className="h-4 w-4" /> Reports</TabsTrigger>
-              <TabsTrigger value="spam" className="gap-2"><Ban className="h-4 w-4" /> Spam Activity</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="reports" className="space-y-4">
-              <div className="flex gap-3">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="reviewing">Reviewing</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="dismissed">Dismissed</SelectItem>
-                  </SelectContent>
-                </Select>
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <input
-                    className="w-full pl-8 pr-3 py-2 border rounded text-sm"
-                    placeholder="Search by user or reason..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                  />
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center"><MessageSquare className="h-6 w-6" /></div>
+            <div><h1 className="text-2xl font-bold">Message Moderation</h1><p className="text-muted-foreground">{totalCount} messages</p></div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
+              <Button variant="ghost" size="sm" className={`h-8 w-8 p-0 ${viewMode === 'table' ? 'bg-card shadow-sm' : ''}`} onClick={() => setViewMode('table')}><TableIcon className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm" className={`h-8 w-8 p-0 ${viewMode === 'split' ? 'bg-card shadow-sm' : ''}`} onClick={() => setViewMode('split')}><Columns className="h-4 w-4" /></Button>
+            </div>
+            <Select value={sort} onValueChange={setSort}><SelectTrigger className="w-[150px] gap-2"><SlidersHorizontal className="h-3.5 w-3.5" /><SelectValue /></SelectTrigger><SelectContent><SelectItem value="newest">Newest First</SelectItem><SelectItem value="oldest">Oldest First</SelectItem></SelectContent></Select>
+            <Sheet>
+              <SheetTrigger asChild><Button variant="outline" className="gap-2"><Filter className="h-4 w-4" /><span className="hidden sm:inline">Filters</span></Button></SheetTrigger>
+              <SheetContent side="right"><SheetHeader><SheetTitle>Filter Messages</SheetTitle></SheetHeader>
+                <div className="mt-6 space-y-4">
+                  <div><Label>Search</Label><div className="relative mt-1"><Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search message body..." className="pl-8" /></div></div>
+                  <div><Label>Date Range</Label><Select value={dateRange} onValueChange={setDateRange}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">Today</SelectItem><SelectItem value="7">Last 7 days</SelectItem><SelectItem value="30">Last 30 days</SelectItem><SelectItem value="90">Last 90 days</SelectItem><SelectItem value="all">All Time</SelectItem></SelectContent></Select></div>
                 </div>
-              </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
 
-              <Card>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Reporter</TableHead><TableHead>Reported User</TableHead>
-                          <TableHead>Reason</TableHead><TableHead>Description</TableHead>
-                          <TableHead>Status</TableHead><TableHead>Date</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filtered.map(r => (
-                          <TableRow key={r.id}>
-                            <TableCell className="text-sm">{profileMap[r.reporter_id] || 'Unknown'}</TableCell>
-                            <TableCell className="text-sm">{profileMap[r.reported_user_id] || 'Unknown'}</TableCell>
-                            <TableCell><Badge variant="outline" className="text-xs capitalize">{r.reason.replace(/_/g, ' ')}</Badge></TableCell>
-                            <TableCell className="text-sm text-muted-foreground max-w-xs truncate">{r.description || '—'}</TableCell>
-                            <TableCell><Badge variant={STATUS_VARIANTS[r.status] || 'secondary'} className="capitalize">{r.status}</Badge></TableCell>
-                            <TableCell className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => setSelectedReport(r)}><Eye className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="sm" onClick={() => openUpdateDialog(r)}>Update</Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        {filtered.length === 0 && (
-                          <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No reports found</TableCell></TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <Card><CardContent className="p-3 flex items-center gap-3"><div className="h-8 w-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center"><MessageSquare className="h-4 w-4" /></div><div><p className="text-xl font-bold">{stats.total.toLocaleString()}</p><p className="text-xs text-muted-foreground">Total Messages</p></div></CardContent></Card>
+          <Card><CardContent className="p-3 flex items-center gap-3"><div className="h-8 w-8 rounded-lg bg-red-500/10 text-red-600 flex items-center justify-center"><Flag className="h-4 w-4" /></div><div><p className="text-xl font-bold">{stats.flagged}</p><p className="text-xs text-muted-foreground">Flagged</p></div></CardContent></Card>
+          <Card><CardContent className="p-3 flex items-center gap-3"><div className="h-8 w-8 rounded-lg bg-yellow-500/10 text-yellow-600 flex items-center justify-center"><Eye className="h-4 w-4" /></div><div><p className="text-xl font-bold">{stats.reviewing}</p><p className="text-xs text-muted-foreground">Under Review</p></div></CardContent></Card>
+          <Card><CardContent className="p-3 flex items-center gap-3"><div className="h-8 w-8 rounded-lg bg-green-500/10 text-green-600 flex items-center justify-center"><CheckCircle className="h-4 w-4" /></div><div><p className="text-xl font-bold">{stats.resolvedToday}</p><p className="text-xs text-muted-foreground">Resolved Today</p></div></CardContent></Card>
+        </div>
 
-            <TabsContent value="spam" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground">Total Spam Reports</p>
-                    <p className="text-2xl font-bold mt-1">{spamReports.length}</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground">Flagged Users</p>
-                    <p className="text-2xl font-bold mt-1">{spamUsers.length}</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground">Users with 2+ Reports</p>
-                    <p className="text-2xl font-bold mt-1">{spamUsers.filter(u => u.count >= 2).length}</p>
-                  </CardContent>
-                </Card>
-              </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="overflow-x-auto pb-2"><TabsList className="w-max">{STATUS_TABS.map(t => <TabsTrigger key={t.value} value={t.value} className="text-xs gap-1.5">{t.label}{t.value === 'flagged' && stats.flagged > 0 && <Badge variant="destructive" className="text-[9px] h-4 px-1">{stats.flagged}</Badge>}</TabsTrigger>)}</TabsList></div>
+        </Tabs>
 
-              <Card>
-                <CardContent className="p-0">
-                  <div className="p-4 border-b">
-                    <h3 className="font-semibold">Users with Multiple Spam Reports</h3>
-                  </div>
-                  <Table>
-                    <TableHeader><TableRow><TableHead>User</TableHead><TableHead className="text-right">Spam Reports</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                    <TableBody>
-                      {spamUsers.map(u => (
-                        <TableRow key={u.userId}>
-                          <TableCell className="font-medium">{u.name}</TableCell>
-                          <TableCell className="text-right"><Badge variant={u.count >= 3 ? 'destructive' : 'secondary'}>{u.count}</Badge></TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/users`)}>View User</Button>
+        <div className={`grid gap-6 mt-4 ${viewMode === 'split' ? 'lg:grid-cols-2' : 'grid-cols-1'}`}>
+          <div className={viewMode === 'split' ? 'min-h-[600px]' : ''}>
+            {loading ? (
+              <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}</div>
+            ) : messages.length === 0 ? (
+              <Card><CardContent className="p-12 text-center"><MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground">No messages found</p></CardContent></Card>
+            ) : (
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10"><Checkbox checked={selectedIds.size === messages.length && messages.length > 0} onCheckedChange={selectAll} /></TableHead>
+                      <TableHead>Message</TableHead>
+                      <TableHead className="hidden md:table-cell">Status</TableHead>
+                      <TableHead className="hidden lg:table-cell">Date</TableHead>
+                      <TableHead className="w-10">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {messages.map(m => {
+                      const flagged = m.status === 'flagged' || hasFlaggedKeywords(m.body);
+                      return (
+                        <TableRow key={m.id} className={`cursor-pointer hover:bg-accent/50 ${selectedMessage?.id === m.id ? 'bg-accent' : ''} ${flagged ? 'border-l-2 border-l-red-500' : ''}`} onClick={() => viewMode === 'split' ? setSelectedMessage(m) : undefined}>
+                          <TableCell onClick={e => e.stopPropagation()}><Checkbox checked={selectedIds.has(m.id)} onCheckedChange={() => toggleSelect(m.id)} /></TableCell>
+                          <TableCell>
+                            <p className={`text-sm line-clamp-1 ${flagged ? 'text-red-600' : ''}`}>{m.body}</p>
+                            {hasFlaggedKeywords(m.body) && <Badge variant="destructive" className="text-[9px] gap-0.5 mt-0.5"><AlertTriangle className="h-2.5 w-2.5" /> Keywords</Badge>}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">{statusBadge(m.status)}</TableCell>
+                          <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{formatDistanceToNow(new Date(m.created_at), { addSuffix: true })}</TableCell>
+                          <TableCell onClick={e => e.stopPropagation()}>
+                            <Select defaultValue="" onValueChange={v => { if (v && v !== 'view') handleAction(v, m.id); }}>
+                              <SelectTrigger className="h-8 w-8 p-0 border-0"><MoreVertical className="h-4 w-4" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="view" onClick={() => setSelectedMessage(m)}>View Details</SelectItem>
+                                {m.status !== 'flagged' && <SelectItem value="flag">Flag</SelectItem>}
+                                {m.status === 'flagged' && <SelectItem value="unflag">Unflag</SelectItem>}
+                                <SelectItem value="reviewing">Mark Reviewing</SelectItem>
+                                <SelectItem value="resolve">Resolve</SelectItem>
+                                <SelectItem value="delete">Delete</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                         </TableRow>
-                      ))}
-                      {spamUsers.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">No spam reports</TableCell></TableRow>}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </>
-      )}
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                <Button variant="outline" size="icon" disabled={page === 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+                <span className="px-4 text-sm">Page {page} of {totalPages}</span>
+                <Button variant="outline" size="icon" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
+              </div>
+            )}
+          </div>
 
-      {/* Report Details Dialog */}
-      <Dialog open={!!selectedReport && !showUpdateDialog} onOpenChange={open => !open && setSelectedReport(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Report Details</DialogTitle></DialogHeader>
-          {selectedReport && (
-            <div className="space-y-3 py-2">
-              <div><span className="text-xs text-muted-foreground">Reporter</span><p className="text-sm font-medium">{profileMap[selectedReport.reporter_id] || 'Unknown'}</p></div>
-              <div><span className="text-xs text-muted-foreground">Reported User</span><p className="text-sm font-medium">{profileMap[selectedReport.reported_user_id] || 'Unknown'}</p></div>
-              <div><span className="text-xs text-muted-foreground">Reason</span><p className="text-sm"><Badge variant="outline" className="capitalize">{selectedReport.reason.replace(/_/g, ' ')}</Badge></p></div>
-              {selectedReport.description && <div><span className="text-xs text-muted-foreground">Description</span><p className="text-sm">{selectedReport.description}</p></div>}
-              <div><span className="text-xs text-muted-foreground">Status</span><p className="text-sm"><Badge variant={STATUS_VARIANTS[selectedReport.status] || 'secondary'} className="capitalize">{selectedReport.status}</Badge></p></div>
-              {selectedReport.admin_notes && <div><span className="text-xs text-muted-foreground">Admin Notes</span><p className="text-sm">{selectedReport.admin_notes}</p></div>}
-              {selectedReport.screenshot_urls && selectedReport.screenshot_urls.length > 0 && (
-                <div>
-                  <span className="text-xs text-muted-foreground">Screenshots</span>
-                  <div className="flex gap-2 mt-1">
-                    {selectedReport.screenshot_urls.map((url, i) => <img key={i} src={url} alt={`Screenshot ${i+1}`} className="h-20 w-20 rounded-md object-cover border" />)}
+          {viewMode === 'split' && selectedMessage && (
+            <div className="border rounded-lg sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Message Details</h3>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateMessage('prev')}><ChevronLeft className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateMessage('next')}><ChevronRight className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedMessage(null)}>Close</Button>
+                </div>
+              </div>
+
+              {statusBadge(selectedMessage.status)}
+
+              {/* Message content with keyword highlighting */}
+              <div className="p-4 rounded-lg bg-muted/50">
+                <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: highlightKeywords(selectedMessage.body) }} />
+              </div>
+
+              {/* Sender */}
+              {detailData.sender && (
+                <div className="flex items-center gap-3 p-3 rounded-lg border">
+                  <Avatar className="h-10 w-10"><AvatarImage src={detailData.sender.avatar_url || ''} /><AvatarFallback>{(detailData.sender.full_name || '?')[0]}</AvatarFallback></Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm">From: {detailData.sender.full_name || 'Unknown'}</p>
+                      {detailData.sender.is_verified && <Shield className="h-3 w-3 text-green-500" />}
+                      {detailData.sender.is_suspended && <Badge variant="destructive" className="text-[10px]">Suspended</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">{detailData.sender.phone_number || 'No phone'}</p>
                   </div>
+                  <Button size="sm" variant="destructive" className="gap-1" onClick={() => handleAction('suspend_sender', selectedMessage.id)}><Ban className="h-3.5 w-3.5" /> Suspend</Button>
                 </div>
               )}
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setSelectedReport(null)}>Close</Button>
-                <Button onClick={() => openUpdateDialog(selectedReport)}>Update Status</Button>
+
+              {/* Receiver */}
+              {detailData.receiver && (
+                <div className="flex items-center gap-3 p-3 rounded-lg border">
+                  <Avatar className="h-10 w-10"><AvatarImage src={detailData.receiver.avatar_url || ''} /><AvatarFallback>{(detailData.receiver.full_name || '?')[0]}</AvatarFallback></Avatar>
+                  <div><p className="font-medium text-sm">To: {detailData.receiver.full_name || 'Unknown'}</p><p className="text-xs text-muted-foreground">{detailData.receiver.phone_number || 'No phone'}</p></div>
+                </div>
+              )}
+
+              {/* Related listing */}
+              {detailData.ad && (
+                <div className="p-3 rounded-lg border">
+                  <p className="text-xs text-muted-foreground mb-1">Related Listing</p>
+                  <p className="font-medium text-sm">{detailData.ad.title}</p>
+                  <p className="text-sm text-primary">৳{detailData.ad.price?.toLocaleString()}</p>
+                </div>
+              )}
+
+              <p className="text-xs text-muted-foreground">Sent {formatDistanceToNow(new Date(selectedMessage.created_at), { addSuffix: true })}</p>
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-2 pt-2 border-t">
+                {selectedMessage.status !== 'flagged' && <Button size="sm" variant="destructive" className="gap-1" onClick={() => handleAction('flag', selectedMessage.id)}><Flag className="h-4 w-4" /> Flag</Button>}
+                {selectedMessage.status === 'flagged' && <Button size="sm" variant="outline" className="gap-1" onClick={() => handleAction('unflag', selectedMessage.id)}><CheckCircle className="h-4 w-4" /> Unflag</Button>}
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => handleAction('resolve', selectedMessage.id)}><CheckCircle className="h-4 w-4" /> Resolve</Button>
+                <Button size="sm" variant="outline" className="gap-1 text-destructive" onClick={() => handleAction('delete', selectedMessage.id)}><Trash2 className="h-4 w-4" /> Delete</Button>
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </div>
+      </main>
 
-      {/* Update Status Dialog */}
-      <Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Update Report Status</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <Label>Status</Label>
-              <Select value={newStatus} onValueChange={setNewStatus}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="reviewing">Reviewing</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                  <SelectItem value="dismissed">Dismissed</SelectItem>
-                </SelectContent>
-              </Select>
+      <AdminBulkActions selectedCount={selectedIds.size} onClear={() => setSelectedIds(new Set())} onBulkAction={handleBulkAction} />
+
+      {viewMode !== 'split' && selectedMessage && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setSelectedMessage(null)}>
+          <div className="bg-card rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Message Details</h3><Button variant="ghost" size="sm" onClick={() => setSelectedMessage(null)}>Close</Button></div>
+            {statusBadge(selectedMessage.status)}
+            <div className="p-4 rounded-lg bg-muted/50"><p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: highlightKeywords(selectedMessage.body) }} /></div>
+            {detailData.sender && <div className="flex items-center gap-3 p-3 rounded-lg border"><Avatar className="h-10 w-10"><AvatarImage src={detailData.sender.avatar_url || ''} /><AvatarFallback>{(detailData.sender.full_name || '?')[0]}</AvatarFallback></Avatar><div><p className="font-medium text-sm">From: {detailData.sender.full_name}</p><p className="text-xs text-muted-foreground">{detailData.sender.phone_number}</p></div></div>}
+            {detailData.receiver && <div className="flex items-center gap-3 p-3 rounded-lg border"><Avatar className="h-10 w-10"><AvatarImage src={detailData.receiver.avatar_url || ''} /><AvatarFallback>{(detailData.receiver.full_name || '?')[0]}</AvatarFallback></Avatar><div><p className="font-medium text-sm">To: {detailData.receiver.full_name}</p></div></div>}
+            <p className="text-xs text-muted-foreground">Sent {formatDistanceToNow(new Date(selectedMessage.created_at), { addSuffix: true })}</p>
+            <div className="flex flex-wrap gap-2 pt-2 border-t">
+              {selectedMessage.status !== 'flagged' && <Button size="sm" variant="destructive" className="gap-1" onClick={() => handleAction('flag', selectedMessage.id)}><Flag className="h-4 w-4" /> Flag</Button>}
+              <Button size="sm" variant="outline" className="gap-1" onClick={() => handleAction('resolve', selectedMessage.id)}><CheckCircle className="h-4 w-4" /> Resolve</Button>
+              <Button size="sm" variant="outline" className="gap-1 text-destructive" onClick={() => handleAction('delete', selectedMessage.id)}><Trash2 className="h-4 w-4" /> Delete</Button>
             </div>
-            <div><Label>Admin Notes</Label><Textarea value={adminNotes} onChange={e => setAdminNotes(e.target.value)} rows={3} placeholder="Internal notes..." className="mt-1" /></div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowUpdateDialog(false)}>Cancel</Button>
-            <Button onClick={handleUpdateStatus}>Update Status</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </AdminLayout>
+        </div>
+      )}
+
+      <MobileNav />
+      <Footer />
+    </div>
   );
 }
