@@ -8,13 +8,18 @@
  *   VITE_CLOUDINARY_CLOUD_NAME=iok4ild8
  *   VITE_CLOUDINARY_UPLOAD_PRESET=<unsigned preset name>
  * Optional:
- *   VITE_CLOUDINARY_API_KEY=<public api key only>
+ *   VITE_CLOUDINARY_API_KEY=477828215824789  (public API key only — never the secret)
  *   VITE_CLOUDINARY_FOLDER=bazarbd
  */
 
 export const CLOUDINARY_CLOUD_NAME =
   (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim() ||
   'iok4ild8';
+
+/** Public Cloudinary API key only — never ship the API secret in Vite. */
+export const CLOUDINARY_API_KEY =
+  (import.meta.env.VITE_CLOUDINARY_API_KEY as string | undefined)?.trim() ||
+  '477828215824789';
 
 const UPLOAD_PRESET =
   (import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined)?.trim() ||
@@ -82,6 +87,7 @@ export async function uploadToCloudinary(
   const form = new FormData();
   form.append('file', file);
   form.append('upload_preset', UPLOAD_PRESET);
+  if (CLOUDINARY_API_KEY) form.append('api_key', CLOUDINARY_API_KEY);
 
   const folder = opts?.folder || DEFAULT_FOLDER;
   if (folder) form.append('folder', folder);
