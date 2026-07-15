@@ -94,6 +94,20 @@ import AdminActivityLog from "./pages/admin/AdminActivityLog";
 import AdminSettingsV2 from "./pages/admin/AdminSettings";
 import BulkOperations from "./pages/admin/BulkOperations";
 import AdminSearch from "./pages/admin/AdminSearch";
+// New customer portal pages
+import RecentlyViewedPage from "./pages/RecentlyViewedPage";
+import PriceAlertsPage from "./pages/PriceAlertsPage";
+import NotificationPreferencesPage from "./pages/NotificationPreferencesPage";
+
+// New admin pages
+import FeatureFlags from "./pages/admin/FeatureFlags";
+import AdminEmailQueue from "./pages/admin/AdminEmailQueue";
+import AdminFailedJobs from "./pages/admin/AdminFailedJobs";
+import AdminWebhooks from "./pages/admin/AdminWebhooks";
+import AdminScheduledReports from "./pages/admin/AdminScheduledReports";
+import AdminComplianceDashboard from "./pages/admin/AdminComplianceDashboard";
+import AdminRevenueAnalytics from "./pages/admin/AdminRevenueAnalytics";
+import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
 
 const queryClient = new QueryClient();
 
@@ -189,10 +203,27 @@ const App = () => (
                 <Route path="/admin/sponsored-listings" element={<AdminRoute><SponsoredListings /></AdminRoute>} />
                 <Route path="/admin/seller-reports" element={<AdminRoute><SellerReports /></AdminRoute>} />
 
+                
+                {/* New Customer Portal Routes */}
+                <Route path="/recently-viewed" element={<ProtectedRoute><RecentlyViewedPage /></ProtectedRoute>} />
+                <Route path="/price-alerts" element={<ProtectedRoute><PriceAlertsPage /></ProtectedRoute>} />
+                <Route path="/notification-preferences" element={<ProtectedRoute><NotificationPreferencesPage /></ProtectedRoute>} />
+
                 <Route path="/my/addresses" element={<ProtectedRoute><MyAddresses /></ProtectedRoute>} />
           <Route path="/my/support" element={<ProtectedRoute><MySupport /></ProtectedRoute>} />
           <Route path="/my/offers" element={<ProtectedRoute><MyOffers /></ProtectedRoute>} />
-          <Route path="*" element={<NotFound />} />
+          
+                {/* New Admin Routes */}
+                <Route path="/admin/feature-flags" element={<AdminRoute><FeatureFlags /></AdminRoute>} />
+                <Route path="/admin/email-queue" element={<AdminRoute><AdminEmailQueue /></AdminRoute>} />
+                <Route path="/admin/failed-jobs" element={<AdminRoute><AdminFailedJobs /></AdminRoute>} />
+                <Route path="/admin/webhooks" element={<AdminRoute><AdminWebhooks /></AdminRoute>} />
+                <Route path="/admin/scheduled-reports" element={<AdminRoute><AdminScheduledReports /></AdminRoute>} />
+                <Route path="/admin/compliance-dashboard" element={<AdminRoute><AdminComplianceDashboard /></AdminRoute>} />
+                <Route path="/admin/revenue-analytics" element={<AdminRoute><AdminRevenueAnalytics /></AdminRoute>} />
+                <Route path="/admin/system-health" element={<AdminRoute><AdminSystemHealth /></AdminRoute>} />
+
+                <Route path="*" element={<NotFound />} />
               </Routes>
               <InstallPrompt />
             </BrowserRouter>
