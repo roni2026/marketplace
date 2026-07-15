@@ -48,7 +48,7 @@ export default function Permissions() {
 
   useEffect(() => {
     if (isAdmin === false) {
-      navigate('/');
+      // removed silent bounce: navigate('/') when not admin
     }
   }, [isAdmin, navigate]);
 

@@ -81,7 +81,7 @@ export default function MessageModeration() {
 
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
-    if (isAdmin === false) { navigate('/'); return; }
+    if (isAdmin === false) { /* stay on page — AdminRoute already gates access */ return; }
     if (isAdmin) { fetchReports(); fetchSpamData(); }
   }, [user, isAdmin, navigate, fetchReports, fetchSpamData]);
 

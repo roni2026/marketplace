@@ -46,7 +46,7 @@ export default function Coupons() {
 
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
-    if (isAdmin === false) { navigate('/'); return; }
+    if (isAdmin === false) { /* stay on page — AdminRoute already gates access */ return; }
     if (isAdmin) {
       // Coupons are currently managed in-memory. When a coupons table is added to the DB,
       // this will fetch from supabase. For now, start with an empty list.

@@ -94,7 +94,7 @@ export default function FraudDetection() {
 
   useEffect(() => {
     if (isAdmin === false) {
-      navigate('/');
+      // removed silent bounce: navigate('/') when not admin
     }
   }, [isAdmin, navigate]);
 
