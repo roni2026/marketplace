@@ -331,7 +331,6 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <>
       {/* Customer portal shortcuts */}
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 py-3 flex flex-wrap gap-2 text-sm">
