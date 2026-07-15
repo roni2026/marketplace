@@ -33,7 +33,7 @@ export default function AuditLogPage() {
       return;
     }
     if (isAdmin === false) {
-      navigate('/');
+      // removed silent bounce: navigate('/') when not admin
     }
   }, [user, isAdmin, navigate]);
 

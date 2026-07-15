@@ -97,10 +97,7 @@ export default function CMSPage() {
       navigate('/auth');
       return;
     }
-    if (isAdmin === false) {
-      navigate('/');
-      return;
-    }
+    if (isAdmin === false) { /* stay on page — AdminRoute already gates access */ return; }
   }, [user, isAdmin, navigate]);
 
   useEffect(() => {
