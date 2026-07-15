@@ -112,7 +112,15 @@ function AdminLogin() {
   );
 }
 
-function AccessDenied() {
+function AccessDenied({
+  onRecheck,
+  roles,
+  userId,
+}: {
+  onRecheck: () => void;
+  roles: string[];
+  userId?: string;
+}) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4">
       <Card className="max-w-md w-full">
@@ -124,10 +132,19 @@ function AccessDenied() {
         </CardHeader>
         <CardContent className="space-y-4 text-center">
           <p className="text-muted-foreground">
-            You are signed in, but your account does not have admin privileges.
-            Please contact a super admin if you believe this is an error.
+            You are signed in, but this browser session could not load an admin role
+            from <code className="text-xs">user_roles</code>.
+          </p>
+          <p className="text-xs text-muted-foreground text-left rounded-md border border-slate-800 bg-slate-900/60 p-3 font-mono break-all">
+            user_id: {userId || '—'}
+            <br />
+            roles loaded: {roles.length ? roles.join(', ') : '(none)'}
+            <br />
+            Fix: run supabase/18_fix_super_admin_access.sql in Supabase SQL Editor
+            (paste your UUID), then click Re-check roles.
           </p>
           <div className="flex flex-col gap-2">
+            <Button onClick={onRecheck}>Re-check roles</Button>
             <Button variant="outline" onClick={() => supabase.auth.signOut()}>
               Sign Out
             </Button>
@@ -153,50 +170,47 @@ function FullScreenLoader() {
 }
 
 export function AdminRoute({ children }: { children: ReactNode }) {
-  const { user, isLoading, isAdmin, refreshRoles } = useAuth();
+  const { user, isLoading, isAdmin, roles, refreshRoles } = useAuth();
   const [rechecking, setRechecking] = useState(false);
   const [fallbackAdmin, setFallbackAdmin] = useState<boolean | null>(null);
 
-  // When visiting /admin, re-check roles in case they were added via SQL
-  // after the initial login. Also do a direct admin check as fallback.
+  const runChecks = async () => {
+    if (!user) return;
+    setRechecking(true);
+    try {
+      await refreshRoles();
+      const result = await checkIsAdmin(user.id);
+      setFallbackAdmin(result);
+    } finally {
+      setRechecking(false);
+    }
+  };
+
+  // When visiting /admin, re-check roles (SQL grants often happen after login).
   useEffect(() => {
     if (!user || isLoading) return;
+    if (isAdmin === true) return;
+    void runChecks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, isLoading]);
 
-    // If useAuth says not admin, do a fresh direct check
-    if (isAdmin === false) {
-      setRechecking(true);
-      checkIsAdmin(user.id).then((result) => {
-        setFallbackAdmin(result);
-        setRechecking(false);
-      });
-    }
-  }, [user, isLoading, isAdmin]);
-
-  // Still resolving the session, or the admin check hasn't returned yet.
-  if (isLoading || (user && isAdmin === null)) {
+  if (isLoading || (user && isAdmin === null) || rechecking) {
     return <FullScreenLoader />;
   }
 
-  // Re-checking admin status via fallback
-  if (rechecking) {
-    return <FullScreenLoader />;
-  }
-
-  // Not logged in → show dedicated admin login (NOT customer /auth)
   if (!user) {
     return <AdminLogin />;
   }
 
-  // If useAuth says admin, render
-  if (isAdmin === true) {
+  if (isAdmin === true || fallbackAdmin === true) {
     return <>{children}</>;
   }
 
-  // If fallback check says admin, render
-  if (fallbackAdmin === true) {
-    return <>{children}</>;
-  }
-
-  // Logged in but not an admin → show access denied
-  return <AccessDenied />;
+  return (
+    <AccessDenied
+      userId={user.id}
+      roles={(roles || []).map(String)}
+      onRecheck={() => void runChecks()}
+    />
+  );
 }

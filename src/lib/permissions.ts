@@ -114,7 +114,41 @@ export function isStaffRole(roles: AppRole[]): boolean {
   return roles.some((r) => STAFF_ROLES.includes(r));
 }
 
+function normalizeRoles(rows: Array<{ role?: unknown } | string | null | undefined>): AppRole[] {
+  const out: AppRole[] = [];
+  for (const row of rows || []) {
+    const raw = typeof row === 'string' ? row : (row as any)?.role;
+    if (raw == null) continue;
+    const role = String(raw).trim().toLowerCase() as AppRole;
+    if (role && !out.includes(role)) out.push(role);
+  }
+  return out;
+}
+
+/**
+ * Load roles for the signed-in user.
+ * Prefer security-definer RPC `get_my_roles()` (bypasses RLS chicken-and-egg),
+ * then fall back to a direct table select.
+ */
 export async function fetchUserRoles(userId: string): Promise<AppRole[]> {
+  // 1) Preferred: RPC that always returns the caller's own roles
+  try {
+    const { data, error } = await supabase.rpc('get_my_roles');
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return normalizeRoles(data as any[]);
+    }
+    // empty array can be legitimate (no roles) — still try table path once
+    if (!error && Array.isArray(data) && data.length === 0) {
+      // continue to table path for diagnostics / older installs without role yet
+    }
+    if (error) {
+      console.warn('fetchUserRoles rpc get_my_roles:', error.message);
+    }
+  } catch (err) {
+    console.warn('fetchUserRoles rpc failed:', err);
+  }
+
+  // 2) Direct table select (requires users_select_own_roles policy)
   try {
     const { data, error } = await supabase
       .from('user_roles')
@@ -122,46 +156,62 @@ export async function fetchUserRoles(userId: string): Promise<AppRole[]> {
       .eq('user_id', userId);
 
     if (error) {
-      // Table might not exist or enum might not match - try raw query
-      console.warn('fetchUserRoles error, trying fallback:', error.message);
+      console.warn('fetchUserRoles table select:', error.message);
       return [];
     }
 
-    return (data?.map((r) => r.role as AppRole)) || [];
+    return normalizeRoles((data as any[]) || []);
   } catch (err) {
     console.warn('fetchUserRoles failed:', err);
     return [];
   }
 }
 
+const ADMIN_ROLE_NAMES = new Set(['super_admin', 'admin', 'moderator']);
+
 /**
- * Direct admin check - queries user_roles table for any admin-level role.
- * This is a fallback that doesn't depend on the AppRole enum type matching.
+ * Direct admin check - queries user_roles for any admin-level role.
+ * Uses RPC first so RLS cannot hide the caller's own super_admin row.
  */
 export async function checkIsAdmin(userId: string): Promise<boolean> {
   try {
+    // RPC path (security definer)
+    try {
+      const { data, error } = await supabase.rpc('get_my_roles');
+      if (!error && Array.isArray(data)) {
+        const roles = normalizeRoles(data as any[]);
+        if (roles.some((r) => ADMIN_ROLE_NAMES.has(String(r).toLowerCase()))) return true;
+        // if RPC works and returns empty, user truly has no roles
+        if (data.length === 0) {
+          // still try table once in case RPC is stale/mis-deployed
+        }
+      }
+    } catch {
+      // continue
+    }
+
+    // is_admin(uuid) helper if present
+    try {
+      const { data, error } = await supabase.rpc('is_admin', { _user_id: userId });
+      if (!error && data === true) return true;
+    } catch {
+      // continue
+    }
+
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', userId)
-      .in('role', ['admin', 'super_admin', 'moderator']);
+      .eq('user_id', userId);
 
     if (error) {
-      // If the .in() filter fails (maybe enum mismatch), try without it
-      const { data: allData, error: allError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-
-      if (allError) return false;
-
-      return (allData || []).some((r: any) => {
-        const role = String(r.role).toLowerCase();
-        return role === 'admin' || role === 'super_admin' || role === 'moderator';
-      });
+      console.warn('checkIsAdmin table select:', error.message);
+      return false;
     }
 
-    return (data || []).length > 0;
+    return ((data as any[]) || []).some((r) => {
+      const role = String(r.role ?? '').toLowerCase();
+      return ADMIN_ROLE_NAMES.has(role);
+    });
   } catch {
     return false;
   }

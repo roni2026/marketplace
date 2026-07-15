@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { AppRole, fetchUserRoles, hasPermission as checkPermission, isAdminRole, isStaffRole, Permission } from '@/lib/permissions';
+import { AppRole, fetchUserRoles, checkIsAdmin, hasPermission as checkPermission, isAdminRole, isStaffRole, Permission } from '@/lib/permissions';
 import { logLogin, logLogout, logLoginAttempt } from '@/lib/audit';
 
 interface ProfileData {
@@ -80,7 +80,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkRoles = useCallback(async (userId: string) => {
     const userRoles = await fetchUserRoles(userId);
     setRoles(userRoles);
-    setIsAdmin(isAdminRole(userRoles) ? true : false);
+    if (isAdminRole(userRoles)) {
+      setIsAdmin(true);
+      return;
+    }
+    // If the role list is empty/incomplete (RLS), fall back to definer checks.
+    const admin = await checkIsAdmin(userId);
+    setIsAdmin(admin);
   }, []);
 
   const calculateProfileCompletion = (p: ProfileData | null): number => {
