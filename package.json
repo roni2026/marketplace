@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:rebuild": "python3 scripts/rebuild_supabase_schema.py",
+    "db:rebuild:dry": "DRY_RUN=1 python3 scripts/rebuild_supabase_schema.py",
+    "start": "npx --yes serve -s dist -l ${PORT:-3000}"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

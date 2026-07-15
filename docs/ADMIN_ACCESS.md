@@ -34,3 +34,12 @@ Copy UUID from Supabase → Authentication → Users. Redeploy.
 ### Proper fix (SQL)
 
 Run `supabase/19_admin_bootstrap_and_cloudinary_notes.sql` in Supabase SQL Editor after pasting your UUID. Also run `16_fix_permissions.sql` if tables 403.
+
+
+## Symptom: typing /admin removes "admin" from the URL
+
+That is **not** React Router hiding the page. The host never served `index.html` for `/admin`, so the browser left the SPA (or got redirected to `/`).
+
+Fix: **Rewrite** `/*` → `/index.html` with status **200** (not a 301 Redirect).
+
+Also: many admin sub-pages used to call `navigate('/')` when `isAdmin === false`, which made the URL jump home even when the SPA loaded. Those silent bounces are removed; `/admin` itself uses `AdminRoute` + `AdminDashboardV2` and should stay on `/admin` (login or Access Denied).

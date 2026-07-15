@@ -221,6 +221,11 @@ export function AdminRoute({ children }: { children: ReactNode }) {
     return <AdminLogin />;
   }
 
+  // Keep browser URL on /admin even while checking (helps debug SPA rewrite)
+  if (typeof document !== 'undefined' && !document.title.includes('Admin')) {
+    document.title = 'BazarBD Admin';
+  }
+
   const cachedAdmin = user ? readAdminCache(user.id) === true : false;
   const allowlisted = isAllowlistedAdmin(user);
 
