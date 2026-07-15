@@ -2,10 +2,11 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, MapPin, Clock, Star, Zap, Eye, TrendingUp } from 'lucide-react';
+import { Heart, MapPin, Clock, Star, Zap, Eye, TrendingUp, Layers, Tag } from 'lucide-react';
 import { formatPrice } from '@/lib/constants';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
+import { useCompare } from '@/hooks/useCompare';
 import { supabase } from '@/integrations/supabase/client';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -29,24 +30,31 @@ interface AdCardProps {
     created_at: string;
     ad_images: { image_url: string }[];
     categories?: { name: string; slug: string } | null;
+    brand?: string | null;
+    original_price?: number | null;
+    discount_percentage?: number | null;
   };
   isFavorite?: boolean;
   onFavoriteToggle?: () => void;
+  showCompare?: boolean;
 }
 
-export function AdCard({ ad, isFavorite = false, onFavoriteToggle }: AdCardProps) {
+export function AdCard({ ad, isFavorite = false, onFavoriteToggle, showCompare = true }: AdCardProps) {
   const { user } = useAuth();
+  const { compareIds, addToCompare, removeFromCompare } = useCompare();
   const [isFav, setIsFav] = useState(isFavorite);
   const [isLoading, setIsLoading] = useState(false);
   const [imgError, setImgError] = useState(false);
 
   const imageUrl = !imgError && ad.ad_images?.[0]?.image_url ? ad.ad_images[0].image_url : '/placeholder.svg';
   const isNew = Date.now() - new Date(ad.created_at).getTime() < 48 * 60 * 60 * 1000;
+  const isComparing = compareIds.includes(ad.id);
+  const hasDiscount = ad.discount_percentage && ad.discount_percentage > 0 && ad.original_price && ad.original_price > (ad.price || 0);
 
   const handleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!user) {
       toast.error('Please login to save favorites');
       return;
@@ -68,6 +76,22 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle }: AdCardProps
       toast.error('Something went wrong');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCompare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isComparing) {
+      removeFromCompare(ad.id);
+      toast.success('Removed from comparison');
+    } else {
+      if (compareIds.length >= 4) {
+        toast.error('You can compare up to 4 items at a time');
+        return;
+      }
+      addToCompare(ad as any);
+      toast.success('Added to comparison');
     }
   };
 
@@ -107,38 +131,68 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle }: AdCardProps
                 Urgent
               </Badge>
             )}
+            {hasDiscount && (
+              <Badge className="bg-orange-600 hover:bg-orange-600 text-white gap-1">
+                <Tag className="h-3 w-3" />
+                {ad.discount_percentage}% OFF
+              </Badge>
+            )}
             {isNew && !ad.is_featured && !ad.is_premium && !ad.is_boosted && (
               <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white">New</Badge>
             )}
           </div>
-          <Badge 
-            variant="secondary" 
+          <Badge
+            variant="secondary"
             className="absolute top-2 right-2 capitalize"
           >
             {ad.condition}
           </Badge>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`absolute bottom-2 right-2 bg-card/80 hover:bg-card ${
-              isFav ? 'text-destructive' : 'text-muted-foreground'
-            }`}
-            onClick={handleFavorite}
-            disabled={isLoading}
-            aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
-            style={{ touchAction: 'manipulation', minHeight: '44px', minWidth: '44px' }}
-          >
-            <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
-          </Button>
+          <div className="absolute bottom-2 right-2 flex gap-1">
+            {showCompare && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`bg-card/80 hover:bg-card ${isComparing ? 'text-primary' : 'text-muted-foreground'}`}
+                onClick={handleCompare}
+                aria-label={isComparing ? 'Remove from comparison' : 'Add to comparison'}
+                style={{ touchAction: 'manipulation', minHeight: '36px', minWidth: '36px' }}
+              >
+                <Layers className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`bg-card/80 hover:bg-card ${
+                isFav ? 'text-destructive' : 'text-muted-foreground'
+              }`}
+              onClick={handleFavorite}
+              disabled={isLoading}
+              aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+              style={{ touchAction: 'manipulation', minHeight: '36px', minWidth: '36px' }}
+            >
+              <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
+            </Button>
+          </div>
         </div>
         <CardContent className="p-4">
           <div className="space-y-2">
             <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors text-sm sm:text-base">
               {ad.title}
             </h3>
-            <p className="text-base sm:text-lg font-bold text-primary">
-              {formatPrice(ad.price, ad.price_type)}
-            </p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-base sm:text-lg font-bold text-primary">
+                {formatPrice(ad.price, ad.price_type)}
+              </p>
+              {hasDiscount && ad.original_price && (
+                <p className="text-xs text-muted-foreground line-through">
+                  ৳{new Intl.NumberFormat('en-BD').format(ad.original_price)}
+                </p>
+              )}
+            </div>
+            {ad.brand && (
+              <p className="text-xs text-muted-foreground">{ad.brand}</p>
+            )}
             <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
               <MapPin className="h-3 w-3" />
               <span className="truncate">{ad.district}, {ad.division}</span>
@@ -148,12 +202,20 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle }: AdCardProps
                 <Clock className="h-3 w-3" />
                 <span>{formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}</span>
               </span>
-              {(ad.views_count || 0) > 0 && (
-                <span className="flex items-center gap-1">
-                  <Eye className="h-3 w-3" />
-                  {ad.views_count}
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {(ad.views_count || 0) > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Eye className="h-3 w-3" />
+                    {ad.views_count}
+                  </span>
+                )}
+                {(ad.favorites_count || 0) > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Heart className="h-3 w-3" />
+                    {ad.favorites_count}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>
