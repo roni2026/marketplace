@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { checkIsAdmin, readAdminCache } from '@/lib/permissions';
+import { isAllowlistedAdmin, allowlistConfigured } from '@/lib/adminAllowlist';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -140,7 +141,17 @@ function AccessDenied({
             <br />
             roles loaded: {roles.length ? roles.join(', ') : '(none)'}
             <br />
-            Fix: In Supabase SQL Editor run supabase/18_fix_super_admin_access.sql with your UUID, then also run supabase/16_fix_permissions.sql. Hard-refresh this page and click Re-check roles. If the site is on Render/Netlify, ensure SPA rewrites send /admin → index.html.
+            <br />
+            FAST FIX (no SQL): on Render set env
+            <br />
+            VITE_ADMIN_USER_IDS={userId || 'YOUR-UUID'}
+            <br />
+            then Redeploy. That allowlists your account even if user_roles fails.
+            <br />
+            <br />
+            Also run supabase/19_admin_bootstrap_and_cloudinary_notes.sql (paste UUID) in Supabase SQL Editor.
+            <br />
+            Hosting: SPA rewrite MUST map /* → /index.html (200). Without it /admin cannot load the React app.
           </p>
           <div className="flex flex-col gap-2">
             <Button onClick={onRecheck}>Re-check roles</Button>
@@ -211,8 +222,9 @@ export function AdminRoute({ children }: { children: ReactNode }) {
   }
 
   const cachedAdmin = user ? readAdminCache(user.id) === true : false;
+  const allowlisted = isAllowlistedAdmin(user);
 
-  if (isAdmin === true || fallbackAdmin === true || cachedAdmin) {
+  if (isAdmin === true || fallbackAdmin === true || cachedAdmin || allowlisted) {
     return <>{children}</>;
   }
 

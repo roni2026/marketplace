@@ -1,3 +1,4 @@
+import { isAllowlistedAdmin } from '@/lib/adminAllowlist';
 import { supabase } from '@/integrations/supabase/client';
 
 export type AppRole =
@@ -223,6 +224,11 @@ export async function checkIsAdmin(userId: string): Promise<boolean> {
     writeAdminCache(userId, ok);
     return ok;
   };
+
+  // Emergency allowlist (env) — bypasses broken RLS/RPCs
+  if (isAllowlistedAdmin({ id: userId })) {
+    return finish(true);
+  }
 
   // Instant path: previous successful check this session
   const cached = readAdminCache(userId);

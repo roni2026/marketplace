@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AppRole, fetchUserRoles, checkIsAdmin, hasPermission as checkPermission, isAdminRole, isStaffRole, Permission, clearAdminCache, readAdminCache } from '@/lib/permissions';
+import { isAllowlistedAdmin } from '@/lib/adminAllowlist';
 import { logLogin, logLogout, logLoginAttempt } from '@/lib/audit';
 
 interface ProfileData {
@@ -81,6 +82,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Optimistic: if we already confirmed admin this session, don't flash false.
     const cached = readAdminCache(userId);
     if (cached === true) setIsAdmin(true);
+    // Emergency env allowlist (works even when DB roles cannot be read)
+    if (isAllowlistedAdmin({ id: userId })) {
+      setIsAdmin(true);
+    }
 
     try {
       const userRoles = await fetchUserRoles(userId);

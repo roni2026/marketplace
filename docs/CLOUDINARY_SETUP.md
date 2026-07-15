@@ -1,22 +1,8 @@
 # Cloudinary setup (cloud `iok4ild8`)
 
-You do **not** get a preset automatically — you create one once.
+## Status
 
-## Create the unsigned upload preset (2 minutes)
-
-1. Open [https://console.cloudinary.com](https://console.cloudinary.com) and select cloud **iok4ild8**.
-2. Click the **gear icon** (Settings) in the left sidebar (or top-right).
-3. Open the **Upload** tab.
-4. Scroll to **Upload presets**.
-5. Click **Add upload preset**.
-6. Set:
-   - **Preset name:** `bazarbd_unsigned` (must match exactly)
-   - **Signing Mode:** **Unsigned** (important — Signed will fail from the browser)
-   - **Folder** (optional): `bazarbd`
-   - **Use filename** / unique filename: leave defaults
-7. Click **Save**.
-
-You should now see `bazarbd_unsigned` in the Upload presets list. That name **is** the preset name.
+Unsigned upload preset **`bazarbd_unsigned`** has been created on cloud `iok4ild8` via Admin API.
 
 ## Env vars (Render / local)
 
@@ -27,16 +13,15 @@ VITE_CLOUDINARY_UPLOAD_PRESET=bazarbd_unsigned
 VITE_CLOUDINARY_FOLDER=bazarbd
 ```
 
-The app already defaults cloud name, API key, and preset name `bazarbd_unsigned`.
-After you create the preset, redeploy (or set the env vars and redeploy).
+The app defaults to these values if env is missing (except you should still set them on Render for clarity).
 
-## Cannot find “Upload presets”?
+## Recreate preset (if deleted)
 
-- Product: **Programmable Media** (not MediaFlows only).
-- Settings → **Upload** (not “Security” or “Product environment settings” only).
-- On some accounts: **Settings → Product Environment Settings → Upload**.
-- Mobile/narrow UI: open full desktop console.
+```bash
+export CLOUDINARY_API_SECRET=...   # never put in VITE_*
+python3 scripts/create_cloudinary_preset.py
+```
 
 ## Never put the API Secret in Vite
 
-The **API Secret** is only for server-side signed uploads. Browser uploads use the **unsigned** preset only.
+The **API Secret** is only for server-side Admin API. Browser uploads use the **unsigned** preset only.
