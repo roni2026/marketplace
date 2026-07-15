@@ -108,6 +108,14 @@ import AdminScheduledReports from "./pages/admin/AdminScheduledReports";
 import AdminComplianceDashboard from "./pages/admin/AdminComplianceDashboard";
 import AdminRevenueAnalytics from "./pages/admin/AdminRevenueAnalytics";
 import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
+// Membership & Shop dedicated pages
+import MembershipPlansPage from "./pages/MembershipPlansPage";
+import MembershipBenefitsPage from "./pages/MembershipBenefitsPage";
+import BillingHistoryPage from "./pages/BillingHistoryPage";
+import ShopStaffPage from "./pages/ShopStaffPage";
+import ShopAnalyticsPage from "./pages/ShopAnalyticsPage";
+import ShopVerificationPage from "./pages/ShopVerificationPage";
+import ShopCouponsPage from "./pages/ShopCouponsPage";
 
 const queryClient = new QueryClient();
 
@@ -222,6 +230,16 @@ const App = () => (
                 <Route path="/admin/compliance-dashboard" element={<AdminRoute><AdminComplianceDashboard /></AdminRoute>} />
                 <Route path="/admin/revenue-analytics" element={<AdminRoute><AdminRevenueAnalytics /></AdminRoute>} />
                 <Route path="/admin/system-health" element={<AdminRoute><AdminSystemHealth /></AdminRoute>} />
+
+                
+                {/* Membership & Shop Dedicated Pages */}
+                <Route path="/membership-plans" element={<ProtectedRoute><MembershipPlansPage /></ProtectedRoute>} />
+                <Route path="/membership-benefits" element={<MembershipBenefitsPage />} />
+                <Route path="/billing" element={<ProtectedRoute><BillingHistoryPage /></ProtectedRoute>} />
+                <Route path="/shop-staff" element={<ProtectedRoute><ShopStaffPage /></ProtectedRoute>} />
+                <Route path="/shop-analytics" element={<ProtectedRoute><ShopAnalyticsPage /></ProtectedRoute>} />
+                <Route path="/shop-verification" element={<ProtectedRoute><ShopVerificationPage /></ProtectedRoute>} />
+                <Route path="/shop-coupons" element={<ProtectedRoute><ShopCouponsPage /></ProtectedRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
