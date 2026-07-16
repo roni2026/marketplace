@@ -758,34 +758,42 @@ export function subscribeToMessages(
   onMessage: (message: ExtendedMessage) => void
 ) {
   const channelName = `conversation:${conversationId}:${userId}`;
-  try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
-  const channel = supabase
-    .channel(channelName)
-    .on('postgres_changes',
-      {
-        event: 'insert',
-        schema: 'public',
-        table: 'messages',
-        filter: `receiver_id=eq.${userId}`,
-      },
-      (payload) => {
-        onMessage(payload.new as ExtendedMessage);
-      }
-    )
-    .on('postgres_changes',
-      {
-        event: 'update',
-        schema: 'public',
-        table: 'messages',
-        filter: `receiver_id=eq.${userId}`,
-      },
-      () => {
-        // Message updated (read status, edit, delete)
-      }
-    )
-    .subscribe();
+  // Remove any existing channel with the same name
+  supabase.getChannels()
+    .filter(ch => ch.topic === channelName)
+    .forEach(ch => { try { supabase.removeChannel(ch); } catch {} });
+  try {
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes',
+        {
+          event: 'insert',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${userId}`,
+        },
+        (payload) => {
+          onMessage(payload.new as ExtendedMessage);
+        }
+      )
+      .on('postgres_changes',
+        {
+          event: 'update',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${userId}`,
+        },
+        () => {
+          // Message updated (read status, edit, delete)
+        }
+      )
+      .subscribe();
 
-  return channel;
+    return channel;
+  } catch (err) {
+    console.warn('subscribeToMessages: failed:', err);
+    return null as any;
+  }
 }
 
 export function subscribeToTyping(
@@ -793,24 +801,31 @@ export function subscribeToTyping(
   onTyping: (indicators: TypingIndicator[]) => void
 ) {
   const channelName = `typing:${conversationId}`;
-  try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
-  const channel = supabase
-    .channel(channelName)
-    .on('postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'typing_indicators',
-        filter: `conversation_id=eq.${conversationId}`,
-      },
-      async () => {
-        const indicators = await getTypingIndicator(conversationId);
-        onTyping(indicators);
-      }
-    )
-    .subscribe();
+  supabase.getChannels()
+    .filter(ch => ch.topic === channelName)
+    .forEach(ch => { try { supabase.removeChannel(ch); } catch {} });
+  try {
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'typing_indicators',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        async () => {
+          const indicators = await getTypingIndicator(conversationId);
+          onTyping(indicators);
+        }
+      )
+      .subscribe();
 
-  return channel;
+    return channel;
+  } catch (err) {
+    console.warn('subscribeToTyping: failed:', err);
+    return null as any;
+  }
 }
 
 export function subscribeToPresence(
@@ -818,23 +833,30 @@ export function subscribeToPresence(
   onPresenceChange: (presence: UserPresence | null) => void
 ) {
   const channelName = `presence:${userId}`;
-  try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
-  const channel = supabase
-    .channel(channelName)
-    .on('postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'user_presence',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => {
-        onPresenceChange(payload.new as UserPresence);
-      }
-    )
-    .subscribe();
+  supabase.getChannels()
+    .filter(ch => ch.topic === channelName)
+    .forEach(ch => { try { supabase.removeChannel(ch); } catch {} });
+  try {
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_presence',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          onPresenceChange(payload.new as UserPresence);
+        }
+      )
+      .subscribe();
 
-  return channel;
+    return channel;
+  } catch (err) {
+    console.warn('subscribeToPresence: failed:', err);
+    return null as any;
+  }
 }
 
 export function subscribeToConversations(
@@ -842,27 +864,34 @@ export function subscribeToConversations(
   onChange: () => void
 ) {
   const channelName = `conversations:${userId}`;
-  try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
-  const channel = supabase
-    .channel(channelName)
-    .on('postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'conversations',
-      },
-      () => onChange()
-    )
-    .on('postgres_changes',
-      {
-        event: 'insert',
-        schema: 'public',
-        table: 'messages',
-        filter: `receiver_id=eq.${userId}`,
-      },
-      () => onChange()
-    )
-    .subscribe();
+  supabase.getChannels()
+    .filter(ch => ch.topic === channelName)
+    .forEach(ch => { try { supabase.removeChannel(ch); } catch {} });
+  try {
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations',
+        },
+        () => onChange()
+      )
+      .on('postgres_changes',
+        {
+          event: 'insert',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${userId}`,
+        },
+        () => onChange()
+      )
+      .subscribe();
 
-  return channel;
+    return channel;
+  } catch (err) {
+    console.warn('subscribeToConversations: failed:', err);
+    return null as any;
+  }
 }

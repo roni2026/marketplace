@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -151,18 +151,27 @@ export function useMessages() {
 
   useEffect(() => {
     if (!user) return;
-    const channelName = `messages:${user.id}`;
-    // Remove any existing channel with the same name to prevent
-    // "cannot add postgres_changes callbacks after subscribe()" errors
-    try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
-    const channel = supabase
-      .channel(channelName)
-      .on('postgres_changes',
-        { event: 'insert', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` },
-        () => fetchConversations()
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    // Use a unique channel name per hook instance — Header and MobileNav
+    // both call useMessages(), so they'd collide on the same channel.
+    const instanceId = Math.random().toString(36).slice(2, 10);
+    const channelName = `messages:${user.id}:${instanceId}`;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(channelName)
+        .on('postgres_changes',
+          { event: 'insert', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` },
+          () => fetchConversations()
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn('useMessages: failed to subscribe to realtime channel:', err);
+    }
+    return () => {
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch {}
+      }
+    };
   }, [user, fetchConversations]);
 
   return {

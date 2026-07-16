@@ -82,16 +82,17 @@ export function useMessagingSystem() {
     await fetchMessages(conversationId);
     // Subscribe to real-time messages
     if (user) {
+      if (user) {
       const channel = subscribeToMessages(conversationId, user.id, (msg) => {
         setMessages(prev => [...prev, msg]);
       });
-      channelsRef.current[`msg-${conversationId}`] = channel;
+      if (channel) channelsRef.current[`msg-${conversationId}`] = channel;
 
       // Subscribe to typing
       const typingChannel = subscribeToTyping(conversationId, (indicators) => {
         setTypingIndicators(indicators);
       });
-      channelsRef.current[`typing-${conversationId}`] = typingChannel;
+      if (typingChannel) channelsRef.current[`typing-${conversationId}`] = typingChannel;
     }
   }, [user, fetchMessages]);
 
@@ -262,7 +263,7 @@ export function useMessagingSystem() {
       const channel = subscribeToConversations(user.id, () => {
         fetchConversations();
       });
-      channelsRef.current['conversations'] = channel;
+      if (channel) channelsRef.current['conversations'] = channel;
     }
 
     return () => {

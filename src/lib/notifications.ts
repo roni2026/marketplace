@@ -389,28 +389,37 @@ export function subscribeToNotifications(
   onDelete: (id: string) => void,
 ): () => void {
   const channelName = `notifications:${userId}`;
-  try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
-  const channel = supabase
-    .channel(channelName)
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
-      (payload) => onInsert(payload.new as Notification),
-    )
-    .on(
-      'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
-      (payload) => onUpdate(payload.new as Notification),
-    )
-    .on(
-      'postgres_changes',
-      { event: 'DELETE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
-      (payload) => onDelete(payload.old.id as string),
-    )
-    .subscribe();
+  supabase.getChannels()
+    .filter(ch => ch.topic === channelName)
+    .forEach(ch => { try { supabase.removeChannel(ch); } catch {} });
+  let channel: ReturnType<typeof supabase.channel> | null = null;
+  try {
+    channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+        (payload) => onInsert(payload.new as Notification),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+        (payload) => onUpdate(payload.new as Notification),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+        (payload) => onDelete(payload.old.id as string),
+      )
+      .subscribe();
+  } catch (err) {
+    console.warn('subscribeToNotifications: failed:', err);
+  }
 
   return () => {
-    supabase.removeChannel(channel);
+    if (channel) {
+      try { supabase.removeChannel(channel); } catch {}
+    }
   };
 }
 
