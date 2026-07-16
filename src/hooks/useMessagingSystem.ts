@@ -82,7 +82,6 @@ export function useMessagingSystem() {
     await fetchMessages(conversationId);
     // Subscribe to real-time messages
     if (user) {
-      if (user) {
       const channel = subscribeToMessages(conversationId, user.id, (msg) => {
         setMessages(prev => [...prev, msg]);
       });
