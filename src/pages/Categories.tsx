@@ -3,15 +3,15 @@
  * expandable subcategories, and rich lucide-react icons.
  *
  * Features:
+ * - Always shows static CATEGORY_DATA immediately (no blank page)
+ * - Enhances with DB categories/subcategories when available
  * - Live search across categories and subcategories
  * - Grid layout with category cards showing icon, name, description
  * - Expandable subcategory lists with individual icons
  * - "View All" toggle per category for large subcategory lists
  * - Stats bar showing total categories and subcategories
- * - Fallback to static CATEGORY_DATA when DB is empty
  * - Responsive: 1 col mobile, 2 col tablet, 3-4 col desktop
  * - Dark mode support
- * - Smooth animations and transitions
  */
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   FolderTree, ChevronRight, ChevronDown, Search, AlertCircle,
-  LayoutGrid, List, TrendingUp, Package, ArrowRight, X,
+  LayoutGrid, List, Package, ArrowRight, X,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
@@ -57,11 +57,9 @@ export default function Categories() {
   const { t } = useTranslation();
   const [dbCategories, setDbCategories] = useState<DBCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
-  const [useFallback, setUseFallback] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -69,7 +67,6 @@ export default function Categories() {
 
   const fetchCategories = async () => {
     setIsLoading(true);
-    setError(null);
     try {
       const { data: catData, error: catError } = await supabase
         .from('categories')
@@ -79,7 +76,8 @@ export default function Categories() {
       if (catError) throw catError;
 
       if (!catData || catData.length === 0) {
-        setUseFallback(true);
+        // DB is empty — use static fallback data
+        setDbCategories([]);
         setIsLoading(false);
         return;
       }
@@ -101,10 +99,10 @@ export default function Categories() {
       }));
 
       setDbCategories(categoriesWithSubs);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching categories:', err);
-      setError(err?.message || 'Failed to load categories');
-      setUseFallback(true);
+      // Silently fall back to static data
+      setDbCategories([]);
     }
     setIsLoading(false);
   };
@@ -118,57 +116,62 @@ export default function Categories() {
     });
   }, []);
 
-  // Use fallback data if DB is empty or errored
+  // Build the display list: use DB data if available, otherwise static fallback.
+  // Always have content — never show an empty page.
   const activeCategories: CategoryDef[] = useMemo(() => {
-    if (useFallback || (dbCategories.length === 0 && !isLoading)) {
-      return searchCategories(searchQuery);
-    }
-    // Map DB categories to the display format, merging with fallback icons
-    return dbCategories
-      .map(dbCat => {
-        const fallback = CATEGORY_DATA.find(fc => fc.slug === dbCat.slug || fc.name === dbCat.name);
-        const icon = fallback?.icon;
-        const color = fallback?.color || 'text-primary bg-primary/10';
-        const description = fallback?.description || '';
-        const fallbackSubs = fallback?.subcategories || [];
+    // If we have DB categories, map them (merging with static icons/descriptions)
+    if (dbCategories.length > 0) {
+      return dbCategories
+        .map(dbCat => {
+          const fallback = CATEGORY_DATA.find(fc => fc.slug === dbCat.slug || fc.name === dbCat.name);
+          const icon = fallback?.icon;
+          const color = fallback?.color || 'text-primary bg-primary/10';
+          const description = fallback?.description || '';
+          const fallbackSubs = fallback?.subcategories || [];
 
-        const dbSubs = (dbCat.subcategories || []).map(dbSub => {
-          const fallbackSub = fallbackSubs.find(fs => fs.slug === dbSub.slug || fs.name === dbSub.name);
+          const dbSubs = (dbCat.subcategories || []).map(dbSub => {
+            const fallbackSub = fallbackSubs.find(fs => fs.slug === dbSub.slug || fs.name === dbSub.name);
+            return {
+              id: dbSub.id,
+              name: dbSub.name,
+              slug: dbSub.slug,
+              icon: fallbackSub?.icon,
+            };
+          });
+
+          // If DB has no subcategories, use fallback
+          const subs = dbSubs.length > 0 ? dbSubs : fallbackSubs;
+
           return {
-            id: dbSub.id,
-            name: dbSub.name,
-            slug: dbSub.slug,
-            icon: fallbackSub?.icon,
+            id: dbCat.id,
+            name: dbCat.name,
+            slug: dbCat.slug,
+            icon: icon || Package,
+            color,
+            description,
+            subcategories: searchQuery
+              ? subs.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
+              : subs,
           };
+        })
+        .filter(cat => {
+          if (!searchQuery) return true;
+          const lower = searchQuery.toLowerCase();
+          return cat.name.toLowerCase().includes(lower) ||
+                 cat.description.toLowerCase().includes(lower) ||
+                 cat.subcategories.length > 0;
         });
+    }
 
-        // If DB has no subcategories, use fallback
-        const subs = dbSubs.length > 0 ? dbSubs : fallbackSubs;
-
-        return {
-          id: dbCat.id,
-          name: dbCat.name,
-          slug: dbCat.slug,
-          icon: icon || Package,
-          color,
-          description,
-          subcategories: searchQuery
-            ? subs.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
-            : subs,
-        };
-      })
-      .filter(cat => {
-        if (!searchQuery) return true;
-        const lower = searchQuery.toLowerCase();
-        return cat.name.toLowerCase().includes(lower) ||
-               cat.description.toLowerCase().includes(lower) ||
-               cat.subcategories.length > 0;
-      });
-  }, [useFallback, dbCategories, isLoading, searchQuery]);
+    // No DB data — use static fallback (always available)
+    return searchCategories(searchQuery);
+  }, [dbCategories, searchQuery]);
 
   const totalSubs = useMemo(() =>
     activeCategories.reduce((sum, cat) => sum + cat.subcategories.length, 0),
   [activeCategories]);
+
+  const usingFallback = dbCategories.length === 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -186,9 +189,7 @@ export default function Categories() {
                   {t('nav.categories', 'Browse Categories')}
                 </h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  Explore {useFallback ? TOTAL_CATEGORIES : dbCategories.length} categories
-                  {' '}&{' '}
-                  {useFallback ? TOTAL_SUBCATEGORIES : totalSubs} subcategories
+                  Explore {activeCategories.length} categories & {totalSubs} subcategories
                 </p>
               </div>
             </div>
@@ -246,7 +247,7 @@ export default function Categories() {
               <FolderTree className="h-3.5 w-3.5" />
               {totalSubs} subcategories
             </Badge>
-            {useFallback && (
+            {usingFallback && !isLoading && (
               <Badge variant="outline" className="gap-1.5 px-3 py-1 text-amber-600 border-amber-300">
                 <AlertCircle className="h-3.5 w-3.5" />
                 Using default catalog
@@ -258,17 +259,6 @@ export default function Categories() {
         {/* Content */}
         {isLoading ? (
           <CategoryGridSkeleton />
-        ) : error && !useFallback ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Could Not Load Categories</h3>
-              <p className="text-sm text-muted-foreground mb-4">{error}</p>
-              <Button variant="outline" size="sm" onClick={fetchCategories}>
-                Try again
-              </Button>
-            </CardContent>
-          </Card>
         ) : activeCategories.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
