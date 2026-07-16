@@ -45,7 +45,7 @@ import {
   Archive, Trash2, Download, ChevronLeft, ChevronRight, LayoutGrid,
   Table as TableIcon, Columns, SlidersHorizontal, AlertTriangle,
   ShieldCheck, Image as ImageIcon, Clock, Package, Loader2, Ban,
-  DollarSign, FileText, MoreVertical,
+  DollarSign, FileText, MoreVertical, Heart,
 } from 'lucide-react';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
