@@ -757,8 +757,10 @@ export function subscribeToMessages(
   userId: string,
   onMessage: (message: ExtendedMessage) => void
 ) {
+  const channelName = `conversation:${conversationId}:${userId}`;
+  try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
   const channel = supabase
-    .channel(`conversation:${conversationId}`)
+    .channel(channelName)
     .on('postgres_changes',
       {
         event: 'insert',
@@ -790,8 +792,10 @@ export function subscribeToTyping(
   conversationId: string,
   onTyping: (indicators: TypingIndicator[]) => void
 ) {
+  const channelName = `typing:${conversationId}`;
+  try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
   const channel = supabase
-    .channel(`typing:${conversationId}`)
+    .channel(channelName)
     .on('postgres_changes',
       {
         event: '*',
@@ -813,8 +817,10 @@ export function subscribeToPresence(
   userId: string,
   onPresenceChange: (presence: UserPresence | null) => void
 ) {
+  const channelName = `presence:${userId}`;
+  try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
   const channel = supabase
-    .channel(`presence:${userId}`)
+    .channel(channelName)
     .on('postgres_changes',
       {
         event: '*',
@@ -835,8 +841,10 @@ export function subscribeToConversations(
   userId: string,
   onChange: () => void
 ) {
+  const channelName = `conversations:${userId}`;
+  try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
   const channel = supabase
-    .channel(`conversations:${userId}`)
+    .channel(channelName)
     .on('postgres_changes',
       {
         event: '*',

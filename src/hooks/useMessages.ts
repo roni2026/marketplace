@@ -151,8 +151,12 @@ export function useMessages() {
 
   useEffect(() => {
     if (!user) return;
+    const channelName = `messages:${user.id}`;
+    // Remove any existing channel with the same name to prevent
+    // "cannot add postgres_changes callbacks after subscribe()" errors
+    try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
     const channel = supabase
-      .channel('messages')
+      .channel(channelName)
       .on('postgres_changes',
         { event: 'insert', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` },
         () => fetchConversations()

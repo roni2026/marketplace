@@ -9,7 +9,7 @@ export function Footer() {
   return (
     <footer className="bg-secondary text-secondary-foreground mt-auto pb-16 lg:pb-0">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
           <div>
             <h3 className="font-bold text-lg mb-4">{t('footer.brandName')}</h3>
             <p className="text-sm opacity-80">
@@ -34,6 +34,21 @@ export function Footer() {
               <li><Link to="/post-ad" className="hover:opacity-100">{t('footer.postAnAd')}</Link></li>
               <li><Link to="/my-ads" className="hover:opacity-100">{t('footer.myAds')}</Link></li>
               <li><Link to="/favorites" className="hover:opacity-100">{t('footer.favorites')}</Link></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold mb-4">Membership &amp; Customer</h4>
+            <ul className="space-y-2 text-sm opacity-80">
+              <li><Link to="/membership-plans" className="hover:opacity-100">Membership Plans</Link></li>
+              <li><Link to="/membership-benefits" className="hover:opacity-100">Membership Benefits</Link></li>
+              <li><Link to="/billing" className="hover:opacity-100">Billing History</Link></li>
+              <li><Link to="/my/addresses" className="hover:opacity-100">My Addresses</Link></li>
+              <li><Link to="/my/offers" className="hover:opacity-100">My Offers</Link></li>
+              <li><Link to="/my/support" className="hover:opacity-100">Customer Support</Link></li>
+              <li><Link to="/recently-viewed" className="hover:opacity-100">Recently Viewed</Link></li>
+              <li><Link to="/price-alerts" className="hover:opacity-100">Price Alerts</Link></li>
+              <li><Link to="/notification-preferences" className="hover:opacity-100">Notification Preferences</Link></li>
             </ul>
           </div>
           

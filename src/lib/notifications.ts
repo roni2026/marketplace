@@ -388,8 +388,10 @@ export function subscribeToNotifications(
   onUpdate: (notification: Notification) => void,
   onDelete: (id: string) => void,
 ): () => void {
+  const channelName = `notifications:${userId}`;
+  try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
   const channel = supabase
-    .channel(`notifications:${userId}`)
+    .channel(channelName)
     .on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
