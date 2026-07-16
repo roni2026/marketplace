@@ -37,7 +37,7 @@ import {
   Download, Save, Undo2, Send, ArrowUp, UserCog, FileText,
   MapPin, Tag, DollarSign, Star, Zap, Crown, ExternalLink,
   History, StickyNote, ChevronDown, ChevronUp, Timer,
-  TrendingUp, AlertCircle, EyeOff, ArrowRight, Copy,
+  TrendingUp, AlertCircle, EyeOff, ArrowRight, Copy, Share2,
 } from 'lucide-react';
 import {
   logModerationAction, ensureManualReviewInitialized, getModerationActions,
