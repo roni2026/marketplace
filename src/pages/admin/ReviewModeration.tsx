@@ -40,11 +40,16 @@ import {
 interface Review {
   id: string;
   seller_id: string;
-  buyer_id: string;
+  reviewer_id: string;
   ad_id: string | null;
   rating: number;
+  title: string | null;
+  body: string | null;
   comment: string | null;
   status: string;
+  is_verified_purchase: boolean;
+  helpful_count: number;
+  appeal_reason: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -81,7 +86,7 @@ export default function ReviewModeration() {
     try {
       let query = supabase.from('reviews').select('*', { count: 'exact' });
       if (activeTab !== 'all') query = query.eq('status', activeTab);
-      if (searchQuery.trim()) query = query.ilike('comment', `%${searchQuery}%`);
+      if (searchQuery.trim()) query = query.or(`comment.ilike.%${searchQuery}%,body.ilike.%${searchQuery}%,title.ilike.%${searchQuery}%`);
       if (ratingFilter !== 'all') {
         if (ratingFilter === 'positive') query = query.gte('rating', 4);
         else if (ratingFilter === 'negative') query = query.lte('rating', 2);
@@ -112,9 +117,9 @@ export default function ReviewModeration() {
   const loadDetail = async (review: Review) => {
     try {
       const [sellerRes, buyerRes, adRes] = await Promise.all([
-        supabase.from('profiles').select('full_name, avatar_url, is_verified, seller_rating, total_sales').eq('user_id', review.seller_id).single(),
-        supabase.from('profiles').select('full_name, avatar_url, is_verified').eq('user_id', review.buyer_id).single(),
-        review.ad_id ? supabase.from('ads').select('title, slug, price, ad_images(image_url)').eq('id', review.ad_id).single() : Promise.resolve({ data: null }),
+        supabase.from('profiles').select('full_name, avatar_url, is_verified, seller_rating, total_sales').eq('user_id', review.seller_id).maybeSingle(),
+        supabase.from('profiles').select('full_name, avatar_url, is_verified').eq('user_id', review.reviewer_id).maybeSingle(),
+        review.ad_id ? supabase.from('ads').select('title, slug, price, ad_images(image_url)').eq('id', review.ad_id).maybeSingle() : Promise.resolve({ data: null }),
       ]);
       setDetailData({ seller: sellerRes.data, buyer: buyerRes.data, ad: adRes.data });
     } catch {}
@@ -223,7 +228,7 @@ export default function ReviewModeration() {
                     {reviews.map(r => (
                       <TableRow key={r.id} className={`cursor-pointer hover:bg-accent/50 ${selectedReview?.id === r.id ? 'bg-accent' : ''} ${r.status === 'pending' ? 'border-l-2 border-l-yellow-500' : ''}`} onClick={() => viewMode === 'split' ? setSelectedReview(r) : undefined}>
                         <TableCell onClick={e => e.stopPropagation()}><Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} /></TableCell>
-                        <TableCell><p className="text-sm line-clamp-2">{r.comment || '(no comment)'}</p></TableCell>
+                        <TableCell><p className="text-sm line-clamp-2">{r.body || r.comment || r.title || '(no comment)'}</p></TableCell>
                         <TableCell className="hidden md:table-cell"><div className="flex items-center gap-0.5">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className={`h-3 w-3 ${i < r.rating ? 'text-yellow-500 fill-current' : 'text-muted'}`} />)}</div></TableCell>
                         <TableCell className="hidden md:table-cell">{statusBadge(r.status)}</TableCell>
                         <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}</TableCell>
@@ -272,6 +277,8 @@ export default function ReviewModeration() {
 
               {/* Comment */}
               {selectedReview.comment && <div className="p-3 rounded-lg bg-muted/50 text-sm">{selectedReview.comment}</div>}
+              {selectedReview.body && <div className="p-3 rounded-lg bg-muted/50 text-sm">{selectedReview.body}</div>}
+              {selectedReview.title && <div className="p-3 rounded-lg bg-muted/50 text-sm font-medium">{selectedReview.title}</div>}
 
               {/* Seller */}
               {detailData.seller && (
@@ -318,6 +325,8 @@ export default function ReviewModeration() {
             <div className="flex items-center justify-between"><h3 className="font-semibold">Review Details</h3><Button variant="ghost" size="sm" onClick={() => setSelectedReview(null)}>Close</Button></div>
             <div className="text-center py-4"><div className="flex items-center justify-center gap-1 mb-2">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className={`h-6 w-6 ${i < selectedReview.rating ? 'text-yellow-500 fill-current' : 'text-muted'}`} />)}</div>{statusBadge(selectedReview.status)}</div>
             {selectedReview.comment && <div className="p-3 rounded-lg bg-muted/50 text-sm">{selectedReview.comment}</div>}
+            {selectedReview.body && <div className="p-3 rounded-lg bg-muted/50 text-sm">{selectedReview.body}</div>}
+            {selectedReview.title && <div className="p-3 rounded-lg bg-muted/50 text-sm font-medium">{selectedReview.title}</div>}
             {detailData.seller && <div className="flex items-center gap-3 p-3 rounded-lg border"><Avatar className="h-10 w-10"><AvatarImage src={detailData.seller.avatar_url || ''} /><AvatarFallback>{(detailData.seller.full_name || '?')[0]}</AvatarFallback></Avatar><div><p className="font-medium text-sm">Seller: {detailData.seller.full_name}</p><p className="text-xs text-muted-foreground">⭐ {detailData.seller.seller_rating || 0}</p></div></div>}
             {detailData.buyer && <div className="flex items-center gap-3 p-3 rounded-lg border"><Avatar className="h-10 w-10"><AvatarImage src={detailData.buyer.avatar_url || ''} /><AvatarFallback>{(detailData.buyer.full_name || '?')[0]}</AvatarFallback></Avatar><div><p className="font-medium text-sm">Reviewer: {detailData.buyer.full_name}</p></div></div>}
             <p className="text-xs text-muted-foreground">Submitted {formatDistanceToNow(new Date(selectedReview.created_at), { addSuffix: true })}</p>
