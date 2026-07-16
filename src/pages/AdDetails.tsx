@@ -95,7 +95,7 @@ export default function AdDetails() {
   useEffect(() => {
     fetchAd();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adId]);
+  }, [slug]);
 
   useEffect(() => {
     if (user && ad) {
@@ -107,45 +107,80 @@ export default function AdDetails() {
 
   const fetchAd = async () => {
     setIsLoading(true);
+    setAd(null);
     try {
-      const { data, error } = await supabase
-        .from('ads')
-        .select('*, ad_images(*), categories(name, slug), subcategories(name, slug)')
-        .eq('id', adId)
-        .single();
+      // The URL slug can be in several formats:
+      //   /ad/some-title-slug-<uuid>   (slug + id, most common)
+      //   /ad/<uuid>                   (just id — uuid has hyphens, so split('-').pop() is wrong)
+      //   /ad/some-title-slug          (just slug, no id)
+      // Try by extracted ID first, then fall back to full slug lookup.
+      let data: Ad | null = null;
 
-      if (error) throw error;
-      
-      setAd(data as Ad);
+      // Attempt 1: query by extracted ID (last segment after final hyphen)
+      if (adId && adId.length >= 8) {
+        const res = await supabase
+          .from('ads')
+          .select('*, ad_images(*), categories(name, slug), subcategories(name, slug)')
+          .eq('id', adId)
+          .maybeSingle();
+        if (res.data) data = res.data as Ad;
+      }
+
+      // Attempt 2: query by full slug (handles /ad/some-slug without UUID)
+      if (!data && slug) {
+        const res = await supabase
+          .from('ads')
+          .select('*, ad_images(*), categories(name, slug), subcategories(name, slug)')
+          .eq('slug', slug)
+          .maybeSingle();
+        if (res.data) data = res.data as Ad;
+      }
+
+      // Attempt 3: the slug param might BE the full UUID (e.g. /ad/<uuid>)
+      if (!data && slug && slug.length >= 32) {
+        const res = await supabase
+          .from('ads')
+          .select('*, ad_images(*), categories(name, slug), subcategories(name, slug)')
+          .eq('id', slug)
+          .maybeSingle();
+        if (res.data) data = res.data as Ad;
+      }
+
+      if (!data) {
+        setIsLoading(false);
+        return;
+      }
+
+      setAd(data);
       recordView(data.id);
-      
+
       // Fetch seller profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, phone_number, avatar_url, created_at, is_verified')
         .eq('user_id', data.user_id)
-        .single();
-      
+        .maybeSingle();
+
       setSeller(profile);
 
       // Increment view count
       await supabase
         .from('ads')
         .update({ views_count: (data.views_count || 0) + 1 })
-        .eq('id', adId);
+        .eq('id', data.id);
 
       // Track in ad_stats
       await supabase
         .from('ad_stats')
         .upsert({
-          ad_id: adId,
+          ad_id: data.id,
           stat_date: new Date().toISOString().slice(0, 10),
           views: 1,
         }, { onConflict: 'ad_id,stat_date' });
 
       // Log view in audit
       if (user) {
-        await logAudit({ action: 'update', resourceType: 'ad_view', resourceId: adId });
+        await logAudit({ action: 'update', resourceType: 'ad_view', resourceId: data.id });
       }
     } catch (error) {
       console.error('Error fetching ad:', error);
