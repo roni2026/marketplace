@@ -89,7 +89,12 @@ export default function AdDetails() {
   const [messageText, setMessageText] = useState('');
   const [showMessageDialog, setShowMessageDialog] = useState(false);
 
-  const adId = slug?.split('-').pop() || '';
+  // Extract UUID from the URL param. The URL format is typically
+  // /ad/<slug>-<uuid> e.g. /ad/panir-bottle-c7478557-1d6a-46fb-9f56-e9648f8844f7
+  // A UUID is 8-4-4-4-12 hex chars (36 chars with hyphens). We can't use
+  // split('-').pop() because UUIDs themselves contain hyphens.
+  const uuidMatch = slug?.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+  const adId = uuidMatch?.[1] || '';
   const { makeOffer } = useOffers(adId);
 
   useEffect(() => {
@@ -109,15 +114,10 @@ export default function AdDetails() {
     setIsLoading(true);
     setAd(null);
     try {
-      // The URL slug can be in several formats:
-      //   /ad/some-title-slug-<uuid>   (slug + id, most common)
-      //   /ad/<uuid>                   (just id — uuid has hyphens, so split('-').pop() is wrong)
-      //   /ad/some-title-slug          (just slug, no id)
-      // Try by extracted ID first, then fall back to full slug lookup.
       let data: Ad | null = null;
 
-      // Attempt 1: query by extracted ID (last segment after final hyphen)
-      if (adId && adId.length >= 8) {
+      // Attempt 1: query by extracted UUID (from end of URL param)
+      if (adId) {
         const res = await supabase
           .from('ads')
           .select('*, ad_images(*), categories(name, slug), subcategories(name, slug)')
@@ -136,14 +136,18 @@ export default function AdDetails() {
         if (res.data) data = res.data as Ad;
       }
 
-      // Attempt 3: the slug param might BE the full UUID (e.g. /ad/<uuid>)
-      if (!data && slug && slug.length >= 32) {
-        const res = await supabase
-          .from('ads')
-          .select('*, ad_images(*), categories(name, slug), subcategories(name, slug)')
-          .eq('id', slug)
-          .maybeSingle();
-        if (res.data) data = res.data as Ad;
+      // Attempt 3: slug without the UUID suffix (e.g. "panir-bottle" from
+      // "panir-bottle-c7478557-...") — the DB slug column might store just the title slug
+      if (!data && slug && adId) {
+        const slugWithoutUuid = slug.replace(/-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, '');
+        if (slugWithoutUuid && slugWithoutUuid !== slug) {
+          const res = await supabase
+            .from('ads')
+            .select('*, ad_images(*), categories(name, slug), subcategories(name, slug)')
+            .eq('slug', slugWithoutUuid)
+            .maybeSingle();
+          if (res.data) data = res.data as Ad;
+        }
       }
 
       if (!data) {
