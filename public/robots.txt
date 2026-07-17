@@ -1,2 +1,41 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /auth
+Disallow: /auth/*
+Disallow: /api
+Disallow: /api/*
+Disallow: /my-ads
+Disallow: /my-offers
+Disallow: /messages
+Disallow: /messages/*
+Disallow: /notifications
+Disallow: /notifications/*
+Disallow: /profile
+Disallow: /profile/*
+Disallow: /seller-portal
+Disallow: /seller-portal/*
+Disallow: /post-ad
+Disallow: /post-ad/*
+Disallow: /cart
+Disallow: /checkout
+Disallow: /favorites
+Disallow: /settings
+Disallow: /settings/*
+Disallow: /*?query=
+Disallow: /*?search=
+Disallow: /*?filter=
+
+# Block AI scrapers
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+# Sitemaps
+Sitemap: https://bazarbd.com/sitemap-index.xml

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://bazarbd.com/sitemap-static.xml</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://bazarbd.com/sitemap-categories.xml</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://bazarbd.com/sitemap-listings.xml</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://bazarbd.com/sitemap-locations.xml</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://bazarbd.com/sitemap-shops.xml</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://bazarbd.com/sitemap-images.xml</loc>
+  </sitemap>
+</sitemapindex>
