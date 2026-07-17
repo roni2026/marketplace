@@ -66,6 +66,7 @@ export function useListingManagement() {
   const fetchListingTypes = useCallback(async () => {
     const data = await getListingTypes();
     setListingTypes(data);
+    return data;
   }, []);
 
   const fetchAllListingTypes = useCallback(async () => {
@@ -77,6 +78,7 @@ export function useListingManagement() {
   const fetchItemConditions = useCallback(async () => {
     const data = await getItemConditions();
     setItemConditions(data);
+    return data;
   }, []);
 
   const fetchAllItemConditions = useCallback(async () => {
@@ -88,6 +90,7 @@ export function useListingManagement() {
   const fetchCategoryAttributes = useCallback(async (categoryId: string) => {
     const data = await getCategoryAttributes(categoryId);
     setCategoryAttributes(data);
+    return data;
   }, []);
 
   // Fetch listing history

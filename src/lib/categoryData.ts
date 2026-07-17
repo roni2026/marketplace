@@ -507,7 +507,7 @@ const CATEGORY_BY_NAME = new Map(CATEGORY_DATA.map((c) => [c.name.toLowerCase(),
  * Cloudinary logo URLs for each category slug.
  * Logos uploaded to bazarbd/categories/ on Cloudinary.
  */
-const CATEGORY_LOGO_BASE = 'https://res.cloudinary.com/iok4ild8/image/upload/c_fill,w_128,h_128,g_auto,f_auto/bazarbd/categories/cat_';
+const CATEGORY_LOGO_BASE = 'https://res.cloudinary.com/iok4ild8/image/upload/c_fill,w_128,h_128,g_auto,f_auto/bazarbd/cat_';
 
 const CATEGORY_LOGO_MAP: Record<string, string> = {
   'electronics': `${CATEGORY_LOGO_BASE}electronics`,
