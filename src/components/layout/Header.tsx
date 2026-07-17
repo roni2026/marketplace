@@ -86,14 +86,9 @@ export function Header({ searchQuery = '', onSearchChange, onSearch, hideSearch 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <img
-              src="/brand/logo-light.png"
-              alt="SohojKenaBeca"
-              className="h-8 w-auto dark:hidden"
-            />
-            <img
-              src="/brand/logo-dark.png"
-              alt="SohojKenaBeca"
-              className="h-8 w-auto hidden dark:block"
+              src="https://res.cloudinary.com/iok4ild8/image/upload/f_auto,q_auto,w_200/bazarbd/sohoj-kena-beca-logo.jpg"
+              alt="Sohoj Kena Beca"
+              className="h-8 w-auto"
             />
           </Link>
 

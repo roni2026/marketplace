@@ -162,12 +162,13 @@ export default function PostAdV4() {
   // Load existing listing for edit mode
   useEffect(() => {
     if (editId && user) {
-      supabase.from('ads').select('*').eq('id', editId).single().then(({ data }) => {
+      supabase.from('ads').select('*').eq('id', editId).maybeSingle().then(({ data, error }) => {
+        if (error) { console.error('Edit load error:', error); return; }
         if (data) {
           const ad = data as Record<string, unknown>;
           setTitle(ad.title as string || '');
           setShortDescription(ad.short_description as string || '');
-          setRichDescription(ad.rich_description as string || '');
+          setRichDescription(ad.rich_description as string || (ad.description as string) || '');
           setListingType(ad.listing_type as string || 'new');
           setBrand(ad.brand as string || '');
           setModel(ad.model as string || '');
