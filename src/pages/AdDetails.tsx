@@ -743,22 +743,9 @@ export default function AdDetails() {
                         {whatsappClicks} {whatsappClicks === 1 ? 'whatsapp click' : 'whatsapp clicks'}
                       </p>
                     )}
-                    {!isOwnAd && (
-                      <Button
-                        variant="outline"
-                        className="w-full gap-2"
-                        onClick={() => {
-                          if (!user) { navigate('/auth'); return; }
-                          setShowMessageDialog(true);
-                        }}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                        {t('ad.message')}
-                      </Button>
-                    )}
                   </div>
                 )}
-                {!displayPhone && !isOwnAd && (
+                {!isOwnAd && (
                   <Button
                     variant="outline"
                     className="w-full gap-2"
