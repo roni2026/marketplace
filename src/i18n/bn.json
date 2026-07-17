@@ -84,7 +84,17 @@
     "send": "বার্তা পাঠান",
     "memberSince": "সদস্য হয়েছেন",
     "anonymous": "অজ্ঞাত",
-    "verifiedSeller": "যাচাইকৃত বিক্রেতা"
+    "verifiedSeller": "যাচাইকৃত বিক্রেতা",
+    "contactPhone": "যোগাযোগ ফোন",
+    "phoneRequired": "ফোন নম্বর আবশ্যক",
+    "phoneInvalid": "একটি সঠিক ফোন নম্বর লিখুন",
+    "callNow": "এখন কল করুন",
+    "callClicks": "কল ক্লিক",
+    "whatsappClicks": "হোয়াটসঅ্যাপ ক্লিক",
+    "safetyWarning": "নিরাপত্তা সতর্কতা",
+    "safetyWarningMsg": "অগ্রিম কোনো টাকা পরিশোধ করবেন না। জনসমাগমস্থলে দেখা করুন এবং অর্থ প্রদানের আগে পণ্যটি পরীক্ষা করুন।",
+    "safetyWarningMsgBn": "অগ্রিম কোনো টাকা পরিশোধ করবেন না। জনসমাগমস্থলে দেখা করুন এবং অর্থ প্রদানের আগে পণ্যটি পরীক্ষা করুন।",
+    "understood": "আমি বুঝেছি"
   },
   "search": {
     "searchPlaceholder": "যা কিছু খুঁজুন...",
@@ -148,7 +158,10 @@
     "markUrgent": "জরুরি হিসেবে চিহ্নিত করুন",
     "showUrgentBadge": "জরুরি ব্যাজ দেখান",
     "postAdButton": "বিজ্ঞাপন দিন",
-    "scheduleAdButton": "বিজ্ঞাপন সময়সূচী করুন"
+    "scheduleAdButton": "বিজ্ঞাপন সময়সূচী করুন",
+    "contactPhoneLabel": "যোগাযোগ ফোন *",
+    "contactPhonePlaceholder": "+880 1XXX-XXXXXX",
+    "contactPhoneHint": "ক্রেতারা আপনার বিজ্ঞাপন সম্পর্কে কল বা হোয়াটসঅ্যাপ করার জন্য এই নম্বর ব্যবহার করবে।"
   },
   "auth": {
     "welcome": "স্বাগতম",

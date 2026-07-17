@@ -84,7 +84,17 @@
     "send": "Send Message",
     "memberSince": "Member since",
     "anonymous": "Anonymous",
-    "verifiedSeller": "Verified seller"
+    "verifiedSeller": "Verified seller",
+    "contactPhone": "Contact Phone",
+    "phoneRequired": "Phone number is required",
+    "phoneInvalid": "Please enter a valid phone number",
+    "callNow": "Call Now",
+    "callClicks": "Call clicks",
+    "whatsappClicks": "WhatsApp clicks",
+    "safetyWarning": "Safety Warning",
+    "safetyWarningMsg": "Never pay in advance. Meet in a public place and inspect the item before making payment.",
+    "safetyWarningMsgBn": "অগ্রিম কোনো টাকা পরিশোধ করবেন না। জনসমাগমস্থলে দেখা করুন এবং অর্থ প্রদানের আগে পণ্যটি পরীক্ষা করুন।",
+    "understood": "I understand"
   },
   "search": {
     "searchPlaceholder": "Search for anything...",
@@ -148,7 +158,10 @@
     "markUrgent": "Mark as Urgent",
     "showUrgentBadge": "Show urgent badge",
     "postAdButton": "Post Ad",
-    "scheduleAdButton": "Schedule Ad"
+    "scheduleAdButton": "Schedule Ad",
+    "contactPhoneLabel": "Contact Phone *",
+    "contactPhonePlaceholder": "+880 1XXX-XXXXXX",
+    "contactPhoneHint": "Buyers will use this number to call or WhatsApp you about your ad."
   },
   "auth": {
     "welcome": "Welcome",
