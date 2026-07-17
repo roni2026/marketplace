@@ -166,7 +166,7 @@ export default function SellerListings() {
   const handleAction = async (action: string, ad: Ad) => {
     switch (action) {
       case 'edit':
-        navigate(`/post-ad?edit=${ad.id}`);
+        navigate(`/post-ad-v4?edit=${ad.id}`);
         break;
       case 'duplicate':
         await duplicateListing(ad.id);

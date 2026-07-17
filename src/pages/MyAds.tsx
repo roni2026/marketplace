@@ -305,7 +305,7 @@ export default function MyAds() {
                           <RefreshCw className="h-3 w-3" />
                           {t('myAds.renew')}
                         </Button>
-                        <Link to={`/post-ad?edit=${ad.id}`}>
+                        <Link to={`/post-ad-v4?edit=${ad.id}`}>
                           <Button variant="outline" size="sm" className="gap-2">
                             <Edit className="h-3 w-3" />
                             {t('myAds.edit')}

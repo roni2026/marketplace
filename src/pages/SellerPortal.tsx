@@ -460,7 +460,7 @@ export default function SellerPortal() {
                                 <TableCell className="hidden md:table-cell text-sm">{ad.views_count || 0}</TableCell>
                                 <TableCell className="text-right">
                                   <div className="flex items-center justify-end gap-1">
-                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => navigate(`/post-ad?edit=${ad.id}`)}>
+                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => navigate(`/post-ad-v4?edit=${ad.id}`)}>
                                       <Edit className="h-3.5 w-3.5" />
                                     </Button>
                                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleDuplicate(ad)}>
