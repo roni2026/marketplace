@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import Analytics from "@/components/Analytics";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
@@ -121,6 +122,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <HelmetProvider>
+  <Analytics />
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>

@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import SEO from '@/components/SEO';
+import { generateShopTitle, generateShopDescription } from '@/lib/seo/meta';
+import { canonicalUrl, shopUrl } from '@/lib/seo/urls';
+import { buildStore } from '@/lib/seo/structuredData';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { MobileNav } from '@/components/layout/MobileNav';
@@ -209,11 +212,15 @@ export default function PublicShopPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>{shop.name} — Marketplace</title>
-        <meta name="description" content={shop.seo_description || shop.description || `Visit ${shop.name} on Marketplace`} />
-        {shop.seo_keywords && <meta name="keywords" content={shop.seo_keywords.join(', ')} />}
-      </Helmet>
+      <SEO
+        title={generateShopTitle({ name: shop?.name || 'Shop' })}
+        description={generateShopDescription({ name: shop?.name || 'Shop', description: shop?.description })}
+        breadcrumbs={[
+          { name: 'Home', url: '/' },
+          { name: 'Shops', url: '/shops' },
+          { name: shop?.name || 'Shop', url: `/shop/${shopSlug}` },
+        ]}
+      />
       <Header />
 
       {/* Vacation Mode Banner */}

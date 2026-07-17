@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import SEO from '@/components/SEO';
+import { generateListingTitle, generateListingDescription } from '@/lib/seo/meta';
+import { buildProduct } from '@/lib/seo/structuredData';
+import { canonicalUrl, listingUrl } from '@/lib/seo/urls';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { MobileNav } from '@/components/layout/MobileNav';
@@ -443,12 +446,29 @@ export default function AdDetails() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Helmet>
-        <title>{ad.title} — SohojKenaBeca</title>
-        <meta name="description" content={ad.description?.slice(0, 155) || ad.title} />
-        <meta property="og:title" content={ad.title} />
-        {images[0] && <meta property="og:image" content={images[0].image_url} />}
-      </Helmet>
+      <SEO
+        title={generateListingTitle(ad)}
+        description={generateListingDescription(ad)}
+        type="product"
+        image={images[0]?.image_url}
+        canonical={canonicalUrl(listingUrl(ad.slug || ad.id))}
+        breadcrumbs={[
+          { name: 'Home', url: '/' },
+          { name: ad.categories?.name || 'Category', url: `/category/${ad.categories?.slug || ''}` },
+          { name: ad.title, url: listingUrl(ad.slug || ad.id) },
+        ]}
+        structuredData={buildProduct({
+          id: ad.id,
+          title: ad.title,
+          slug: ad.slug,
+          price: ad.price,
+          price_type: ad.price_type,
+          condition: ad.condition,
+          description: ad.description,
+          created_at: ad.created_at,
+          images: ad.ad_images,
+        })}
+      />
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         {/* Breadcrumb */}

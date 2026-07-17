@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import SEO from '@/components/SEO';
+import { generateSearchTitle, generateSearchDescription } from '@/lib/seo/meta';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { MobileNav } from '@/components/layout/MobileNav';
@@ -195,9 +196,14 @@ export default function Search() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Helmet>
-        <title>{query ? t('search.searchResults', { query }) : t('search.allAds')} — BazarBD</title>
-      </Helmet>
+      <SEO
+        title={generateSearchTitle(searchQuery || 'All Listings')}
+        description={generateSearchDescription(searchQuery || 'All Listings')}
+        breadcrumbs={[
+          { name: 'Home', url: '/' },
+          { name: 'Search', url: '/search' },
+        ]}
+      />
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">

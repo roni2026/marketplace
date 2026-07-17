@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import SEO from '@/components/SEO';
+import { generateCategoryTitle, generateCategoryDescription } from '@/lib/seo/meta';
+import { canonicalUrl, categoryUrl } from '@/lib/seo/urls';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { MobileNav } from '@/components/layout/MobileNav';
@@ -348,7 +350,15 @@ export default function CategoryPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Helmet><title>{category?.name || 'Category'} — BazarBD</title></Helmet>
+      <SEO
+        title={generateCategoryTitle({ name: categoryName })}
+        description={generateCategoryDescription({ name: categoryName })}
+        breadcrumbs={[
+          { name: 'Home', url: '/' },
+          { name: 'Categories', url: '/categories' },
+          { name: categoryName, url: `/category/${categorySlug}` },
+        ]}
+      />
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">

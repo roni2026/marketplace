@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import SEO from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -102,13 +102,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Helmet>
-        <title>{t('homepage.title')}</title>
-        <meta
-          name="description"
-          content={t('homepage.description')}
-        />
-      </Helmet>
+      <SEO
+      title="BazarBD — Buy & Sell Anything in Bangladesh"
+      description="BazarBD is a free classifieds marketplace to buy and sell electronics, vehicles, property, jobs and more across Bangladesh."
+      breadcrumbs={[{ name: "Home", url: "/" }]}
+    />
       <Header hideSearch />
       <main className="flex-1 pb-16 lg:pb-0">
         <HeroBanner />

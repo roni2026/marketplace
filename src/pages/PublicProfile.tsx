@@ -3,7 +3,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import SEO from '@/components/SEO';
+import { generateProfileTitle, generateProfileDescription } from '@/lib/seo/meta';
+import { canonicalUrl, profileUrl } from '@/lib/seo/urls';
+import { buildProfilePage } from '@/lib/seo/structuredData';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { MobileNav } from '@/components/layout/MobileNav';
@@ -159,10 +162,16 @@ export default function PublicProfilePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Helmet>
-        <title>{profile.full_name || 'User'} — BazarBD</title>
-        <meta name="description" content={profile.bio || `${profile.full_name}'s profile on BazarBD`} />
-      </Helmet>
+      <SEO
+        title={generateProfileTitle({ full_name: profile?.full_name })}
+        description={generateProfileDescription({ full_name: profile?.full_name })}
+        type="profile"
+        canonical={canonicalUrl(profileUrl(userId || ''))}
+        breadcrumbs={[
+          { name: 'Home', url: '/' },
+          { name: 'Seller', url: `/user/${userId}` },
+        ]}
+      />
       <Header />
       <main className="flex-1 container mx-auto px-4 py-6 pb-20 lg:pb-8">
         <div className="max-w-4xl mx-auto space-y-6">
