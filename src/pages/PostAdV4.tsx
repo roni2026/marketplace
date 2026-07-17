@@ -432,6 +432,8 @@ export default function PostAdV4() {
       barcode: data.barcode,
       user_id: user.id,
       ad_id: editId || undefined,
+      division: data.division,
+      district: data.district,
     });
 
     if (!validation.valid) {
@@ -483,7 +485,8 @@ export default function PostAdV4() {
           <p className="text-sm text-muted-foreground">Complete all steps to publish your listing</p>
         </div>
 
-        {/* Progress */}
+        {/* Progress — only for shop owner wizard */}
+        {isShopOwner && (
         <div className="mb-6">
           <div className="flex justify-between mb-2">
             <span className="text-sm font-medium">Step {currentStep} of {TOTAL_STEPS}: {stepLabels[currentStep - 1]}</span>
@@ -502,6 +505,7 @@ export default function PostAdV4() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Validation Errors */}
         {validationErrors.length > 0 && (
@@ -514,86 +518,81 @@ export default function PostAdV4() {
         {/* Step Content */}
         <Card>
           <CardContent className="p-6">
-            {/* ===== SIMPLE MODE (normal users) ===== */}
+            {/* ===== SIMPLE MODE (normal users) — single page ===== */}
             {!isShopOwner && (
-              <>
-                {/* Simple Step 1: Details */}
-                {currentStep === 1 && (
-                  <div className="space-y-4">
-                    <div><Label>Title *</Label><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. iPhone 14 Pro Max 256GB" maxLength={100} /></div>
-                    <div><Label>Description</Label><Textarea value={richDescription} onChange={e => setRichDescription(e.target.value)} placeholder="Describe your item" rows={4} maxLength={5000} /></div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div><Label>Category *</Label><Select value={categoryId} onValueChange={setCategoryId}><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>
-                      <div><Label>Subcategory</Label><Select value={subcategoryId} onValueChange={setSubcategoryId} disabled={!categoryId}><SelectTrigger><SelectValue placeholder="Select subcategory" /></SelectTrigger><SelectContent>{filteredSubcats.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div><Label>Condition *</Label><Select value={condition} onValueChange={setCondition}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(itemConditions.length > 0 ? itemConditions : [{ id: 'new', slug: 'new', name: 'New' }, { id: 'used', slug: 'used', name: 'Used' }]).map(c => <SelectItem key={c.id} value={c.slug}>{c.name}</SelectItem>)}</SelectContent></Select></div>
-                      <div><Label>Brand (optional)</Label><Input value={brand} onChange={e => setBrand(e.target.value)} placeholder="e.g. Apple" /></div>
-                    </div>
+              <div className="space-y-6">
+                {/* Section: Details */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Item Details</h3>
+                  <div><Label>Title *</Label><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. iPhone 14 Pro Max 256GB" maxLength={100} /></div>
+                  <div><Label>Description</Label><Textarea value={richDescription} onChange={e => setRichDescription(e.target.value)} placeholder="Describe your item" rows={4} maxLength={5000} /></div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div><Label>Category *</Label><Select value={categoryId} onValueChange={setCategoryId}><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>
+                    <div><Label>Subcategory</Label><Select value={subcategoryId} onValueChange={setSubcategoryId} disabled={!categoryId}><SelectTrigger><SelectValue placeholder="Select subcategory" /></SelectTrigger><SelectContent>{filteredSubcats.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
                   </div>
-                )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div><Label>Condition *</Label><Select value={condition} onValueChange={setCondition}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(itemConditions.length > 0 ? itemConditions : [{ id: 'new', slug: 'new', name: 'New' }, { id: 'used', slug: 'used', name: 'Used' }]).map(c => <SelectItem key={c.id} value={c.slug}>{c.name}</SelectItem>)}</SelectContent></Select></div>
+                    <div><Label>Brand (optional)</Label><Input value={brand} onChange={e => setBrand(e.target.value)} placeholder="e.g. Apple" /></div>
+                  </div>
+                </div>
 
-                {/* Simple Step 2: Photos & Price */}
-                {currentStep === 2 && (
-                  <div className="space-y-4">
-                    <div><Label>Price Type</Label><RadioGroup value={priceType} onValueChange={v => setPriceType(v as 'fixed' | 'negotiable' | 'free')} className="flex gap-4 pt-2"><div className="flex items-center gap-2"><RadioGroupItem value="fixed" id="fixed" /><Label htmlFor="fixed">Fixed Price</Label></div><div className="flex items-center gap-2"><RadioGroupItem value="negotiable" id="negotiable" /><Label htmlFor="negotiable">Negotiable</Label></div><div className="flex items-center gap-2"><RadioGroupItem value="free" id="free" /><Label htmlFor="free">Free</Label></div></RadioGroup></div>
-                    {priceType !== 'free' && (
-                      <div><Label>Selling Price *</Label><Input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" /></div>
-                    )}
-                    <Separator />
-                    <div><Label>Photos</Label>
-                      <div onDragOver={e => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop} className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/30'}`}>
-                        <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground mb-2">Drag and drop images here, or</p>
-                        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}><ImageIcon className="h-4 w-4 mr-2" /> Browse Files</Button>
-                        <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => e.target.files && addFiles(Array.from(e.target.files))} />
-                        <p className="text-xs text-muted-foreground mt-2">Up to {MAX_IMAGES} images</p>
-                      </div>
-                      {existingImages.length > 0 && (
-                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mt-3">
-                          {existingImages.map((img) => (
-                            <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden border">
-                              <img src={img.image_url} alt="" className="h-full w-full object-cover" />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {imagePreviews.length > 0 && (
-                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mt-3">
-                          {imagePreviews.map((preview, i) => (
-                            <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
-                              <img src={preview} alt="" className="h-full w-full object-cover" />
-                              <Button size="icon" variant="destructive" className="h-6 w-6 absolute top-1 right-1" onClick={() => removeImage(i)}><X className="h-3 w-3" /></Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                <Separator />
 
-                {/* Simple Step 3: Location & Contact */}
-                {currentStep === 3 && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div><Label>Division *</Label><Select value={division} onValueChange={v => { setDivision(v); setDistrict(''); }}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{DIVISIONS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>
-                      <div><Label>District *</Label><Select value={district} onValueChange={setDistrict} disabled={!division}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{division && DISTRICTS[division]?.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>
-                      <div><Label>Area</Label><Input value={area} onChange={e => setArea(e.target.value)} placeholder="Optional" /></div>
-                    </div>
-                    <div><Label>Contact Phone *</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="01XXXXXXXXX" /></div>
-                    <Separator />
-                    {/* Review summary */}
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-sm">Review Your Listing</h3>
-                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Title</span><span className="font-medium text-right">{title}</span></div>
-                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Condition</span><span className="font-medium capitalize">{condition}</span></div>
-                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Price</span><span className="font-medium">{priceType === 'free' ? 'Free' : formatPrice(parseFloat(price) || 0, priceType)}</span></div>
-                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Location</span><span className="font-medium">{division}, {district}</span></div>
-                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Photos</span><span className="font-medium">{images.length + existingImages.length} images</span></div>
-                    </div>
+                {/* Section: Price */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Price</h3>
+                  <div><Label>Price Type</Label><RadioGroup value={priceType} onValueChange={v => setPriceType(v as 'fixed' | 'negotiable' | 'free')} className="flex gap-4 pt-2"><div className="flex items-center gap-2"><RadioGroupItem value="fixed" id="fixed" /><Label htmlFor="fixed">Fixed Price</Label></div><div className="flex items-center gap-2"><RadioGroupItem value="negotiable" id="negotiable" /><Label htmlFor="negotiable">Negotiable</Label></div><div className="flex items-center gap-2"><RadioGroupItem value="free" id="free" /><Label htmlFor="free">Free</Label></div></RadioGroup></div>
+                  {priceType !== 'free' && (
+                    <div><Label>Selling Price *</Label><Input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" /></div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Section: Photos */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Photos</h3>
+                  <div onDragOver={e => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop} className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/30'}`}>
+                    <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground mb-2">Drag and drop images here, or</p>
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}><ImageIcon className="h-4 w-4 mr-2" /> Browse Files</Button>
+                    <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => e.target.files && addFiles(Array.from(e.target.files))} />
+                    <p className="text-xs text-muted-foreground mt-2">Up to {MAX_IMAGES} images</p>
                   </div>
-                )}
-              </>
+                  {existingImages.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mt-3">
+                      {existingImages.map((img) => (
+                        <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden border">
+                          <img src={img.image_url} alt="" className="h-full w-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mt-3">
+                      {imagePreviews.map((preview, i) => (
+                        <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
+                          <img src={preview} alt="" className="h-full w-full object-cover" />
+                          <Button size="icon" variant="destructive" className="h-6 w-6 absolute top-1 right-1" onClick={() => removeImage(i)}><X className="h-3 w-3" /></Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Section: Location & Contact */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Location & Contact</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div><Label>Division *</Label><Select value={division} onValueChange={v => { setDivision(v); setDistrict(''); }}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{DIVISIONS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>
+                    <div><Label>District *</Label><Select value={district} onValueChange={setDistrict} disabled={!division}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{division && DISTRICTS[division]?.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>
+                    <div><Label>Area</Label><Input value={area} onChange={e => setArea(e.target.value)} placeholder="Optional" /></div>
+                  </div>
+                  <div><Label>Contact Phone *</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="01XXXXXXXXX" /></div>
+                </div>
+              </div>
             )}
 
             {/* ===== FULL MODE (shop owners) ===== */}
@@ -798,13 +797,22 @@ export default function PostAdV4() {
 
         {/* Navigation */}
         <div className="flex justify-between mt-6">
-          <Button variant="outline" onClick={prevStep} disabled={currentStep === 1} className="gap-2"><ArrowLeft className="h-4 w-4" /> Back</Button>
-          {currentStep < TOTAL_STEPS ? (
-            <Button onClick={nextStep} className="gap-2">Next <ArrowRight className="h-4 w-4" /></Button>
+          {isShopOwner ? (
+            <>
+              <Button variant="outline" onClick={prevStep} disabled={currentStep === 1} className="gap-2"><ArrowLeft className="h-4 w-4" /> Back</Button>
+              {currentStep < TOTAL_STEPS ? (
+                <Button onClick={nextStep} className="gap-2">Next <ArrowRight className="h-4 w-4" /></Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => handleSubmit('draft')} disabled={isSubmitting} className="gap-2"><Save className="h-4 w-4" /> Save Draft</Button>
+                  {scheduleDate && <Button variant="secondary" onClick={() => handleSubmit('scheduled')} disabled={isSubmitting} className="gap-2"><Calendar className="h-4 w-4" /> Schedule</Button>}
+                  <Button onClick={() => setShowPublishDialog(true)} disabled={isSubmitting} className="gap-2"><Send className="h-4 w-4" /> Publish</Button>
+                </div>
+              )}
+            </>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full justify-end">
               <Button variant="outline" onClick={() => handleSubmit('draft')} disabled={isSubmitting} className="gap-2"><Save className="h-4 w-4" /> Save Draft</Button>
-              {scheduleDate && <Button variant="secondary" onClick={() => handleSubmit('scheduled')} disabled={isSubmitting} className="gap-2"><Calendar className="h-4 w-4" /> Schedule</Button>}
               <Button onClick={() => setShowPublishDialog(true)} disabled={isSubmitting} className="gap-2"><Send className="h-4 w-4" /> Publish</Button>
             </div>
           )}

@@ -369,6 +369,8 @@ export interface ListingValidationContext {
   barcode?: string | null;
   user_id: string;
   ad_id?: string;
+  division?: string;
+  district?: string;
 }
 
 // =========================================================================
