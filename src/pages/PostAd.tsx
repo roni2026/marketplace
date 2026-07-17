@@ -57,6 +57,7 @@ export default function PostAd() {
   const [division, setDivision] = useState('');
   const [district, setDistrict] = useState('');
   const [area, setArea] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -228,6 +229,16 @@ export default function PostAd() {
       return;
     }
 
+    const phoneDigits = contactPhone.replace(/[^0-9]/g, '');
+    if (!phoneDigits) {
+      toast.error('Phone number is required to post an ad.');
+      return;
+    }
+    if (!/^(?:\+?880)?1[0-9]{9}$/.test(phoneDigits)) {
+      toast.error('Please enter a valid Bangladeshi phone number (e.g., 01XXXXXXXXX).');
+      return;
+    }
+
     if (images.length === 0) {
       toast.error(t('toast.addImage'));
       return;
@@ -281,6 +292,7 @@ export default function PostAd() {
           division,
           district,
           area: sanitizeText(area),
+          contact_phone: contactPhone.trim(),
           is_urgent: isUrgent,
           scheduled_at: scheduledAt,
           expires_at: expiresAt,
@@ -569,6 +581,21 @@ export default function PostAd() {
                   onChange={(e) => setArea(e.target.value)}
                   placeholder={t('postAd.areaPlaceholder')}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contactPhone">{t('postAd.contactPhone')}</Label>
+                <Input
+                  id="contactPhone"
+                  type="tel"
+                  required
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  placeholder="01XXXXXXXXX"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t('postAd.phoneHint')}
+                </p>
               </div>
 
               {/* Scheduling & Urgent */}
