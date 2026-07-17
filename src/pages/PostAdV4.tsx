@@ -48,7 +48,8 @@ interface Category { id: string; name: string; slug: string; }
 interface Subcategory { id: string; name: string; category_id: string; }
 interface ExistingImage { id: string; image_url: string; sort_order: number; }
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS_SHOP = 8;
+const TOTAL_STEPS_SIMPLE = 3;
 const MAX_IMAGES = 10;
 const CURRENCIES = ['BDT', 'USD', 'EUR', 'GBP'];
 
@@ -58,6 +59,9 @@ export default function PostAdV4() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   const { createListing, updateListing, fetchListingTypes, fetchItemConditions, fetchCategoryAttributes, validateListing } = useListingManagement();
+
+  // Detect shop owner: check if user has a shop in the shops table
+  const [isShopOwner, setIsShopOwner] = useState(false);
 
   // Step state
   const [currentStep, setCurrentStep] = useState(1);
@@ -138,6 +142,11 @@ export default function PostAdV4() {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
+    // Check if user has a shop (shop owner gets full wizard)
+    if (user) {
+      supabase.from('shops').select('id').eq('owner_id', user.id).limit(1).maybeSingle()
+        .then(({ data }) => setIsShopOwner(!!data));
+    }
     Promise.all([
       fetchListingTypes(),
       fetchItemConditions(),
@@ -151,7 +160,7 @@ export default function PostAdV4() {
     }).catch((err) => {
       console.error('PostAdV4: failed to load initial data:', err);
     });
-  }, [fetchListingTypes, fetchItemConditions]);
+  }, [fetchListingTypes, fetchItemConditions, user]);
 
   // Load category attributes when category changes
   useEffect(() => {
@@ -267,29 +276,51 @@ export default function PostAdV4() {
   const validateStep = (step: number): boolean => {
     setValidationErrors([]);
     const errors: string[] = [];
-    switch (step) {
-      case 1:
-        if (!title || title.trim().length < 3) errors.push('Title must be at least 3 characters');
-        if (title.length > 100) errors.push('Title must be less than 100 characters');
-        if (!categoryId) errors.push('Category is required');
-        if (!condition) errors.push('Condition is required');
-        break;
-      case 2:
-        for (const attr of categoryAttrs) {
-          if (attr.is_required && (!productAttributes[attr.slug] || String(productAttributes[attr.slug]).trim() === '')) {
-            errors.push(`${attr.name} is required`);
+    if (!isShopOwner) {
+      // Simple mode: Step 1 = Details, Step 2 = Photos & Price, Step 3 = Location & Contact
+      switch (step) {
+        case 1:
+          if (!title || title.trim().length < 3) errors.push('Title must be at least 3 characters');
+          if (title.length > 100) errors.push('Title must be less than 100 characters');
+          if (!categoryId) errors.push('Category is required');
+          if (!condition) errors.push('Condition is required');
+          break;
+        case 2:
+          if (priceType !== 'free' && (!price || parseFloat(price) < 0)) errors.push('Valid price is required');
+          break;
+        case 3:
+          if (!division) errors.push('Division is required');
+          if (!district) errors.push('District is required');
+          if (!contactPhone.trim()) errors.push('Phone number is required');
+          if (contactPhone.trim() && !/^[+\d\s\-()]{7,20}$/.test(contactPhone.trim())) errors.push('Phone number is invalid');
+          break;
+      }
+    } else {
+      // Full shop owner wizard
+      switch (step) {
+        case 1:
+          if (!title || title.trim().length < 3) errors.push('Title must be at least 3 characters');
+          if (title.length > 100) errors.push('Title must be less than 100 characters');
+          if (!categoryId) errors.push('Category is required');
+          if (!condition) errors.push('Condition is required');
+          break;
+        case 2:
+          for (const attr of categoryAttrs) {
+            if (attr.is_required && (!productAttributes[attr.slug] || String(productAttributes[attr.slug]).trim() === '')) {
+              errors.push(`${attr.name} is required`);
+            }
           }
-        }
-        break;
-      case 4:
-        if (priceType !== 'free' && (!price || parseFloat(price) < 0)) errors.push('Valid price is required');
-        break;
-      case 6:
-        if (!division) errors.push('Division is required');
-        if (!district) errors.push('District is required');
-        if (!contactPhone.trim()) errors.push('Phone number is required');
-        if (contactPhone.trim() && !/^[+\d\s\-()]{7,20}$/.test(contactPhone.trim())) errors.push('Phone number is invalid');
-        break;
+          break;
+        case 4:
+          if (priceType !== 'free' && (!price || parseFloat(price) < 0)) errors.push('Valid price is required');
+          break;
+        case 6:
+          if (!division) errors.push('Division is required');
+          if (!district) errors.push('District is required');
+          if (!contactPhone.trim()) errors.push('Phone number is required');
+          if (contactPhone.trim() && !/^[+\d\s\-()]{7,20}$/.test(contactPhone.trim())) errors.push('Phone number is invalid');
+          break;
+      }
     }
     setValidationErrors(errors);
     return errors.length === 0;
@@ -435,10 +466,13 @@ export default function PostAdV4() {
     }
   };
 
+  const TOTAL_STEPS = isShopOwner ? TOTAL_STEPS_SHOP : TOTAL_STEPS_SIMPLE;
   const progress = (currentStep / TOTAL_STEPS) * 100;
   const filteredSubcats = subcategories.filter(s => s.category_id === categoryId);
 
-  const stepLabels = ['Basic Info', 'Attributes', 'Condition', 'Pricing', 'Media', 'Shipping', 'Warranty', 'Review'];
+  const stepLabels = isShopOwner
+    ? ['Basic Info', 'Attributes', 'Condition', 'Pricing', 'Media', 'Shipping', 'Warranty', 'Review']
+    : ['Details', 'Photos & Price', 'Location & Contact'];
 
   return (
     <div className="min-h-screen bg-background">
@@ -480,6 +514,91 @@ export default function PostAdV4() {
         {/* Step Content */}
         <Card>
           <CardContent className="p-6">
+            {/* ===== SIMPLE MODE (normal users) ===== */}
+            {!isShopOwner && (
+              <>
+                {/* Simple Step 1: Details */}
+                {currentStep === 1 && (
+                  <div className="space-y-4">
+                    <div><Label>Title *</Label><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. iPhone 14 Pro Max 256GB" maxLength={100} /></div>
+                    <div><Label>Description</Label><Textarea value={richDescription} onChange={e => setRichDescription(e.target.value)} placeholder="Describe your item" rows={4} maxLength={5000} /></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div><Label>Category *</Label><Select value={categoryId} onValueChange={setCategoryId}><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>
+                      <div><Label>Subcategory</Label><Select value={subcategoryId} onValueChange={setSubcategoryId} disabled={!categoryId}><SelectTrigger><SelectValue placeholder="Select subcategory" /></SelectTrigger><SelectContent>{filteredSubcats.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div><Label>Condition *</Label><Select value={condition} onValueChange={setCondition}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(itemConditions.length > 0 ? itemConditions : [{ id: 'new', slug: 'new', name: 'New' }, { id: 'used', slug: 'used', name: 'Used' }]).map(c => <SelectItem key={c.id} value={c.slug}>{c.name}</SelectItem>)}</SelectContent></Select></div>
+                      <div><Label>Brand (optional)</Label><Input value={brand} onChange={e => setBrand(e.target.value)} placeholder="e.g. Apple" /></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Simple Step 2: Photos & Price */}
+                {currentStep === 2 && (
+                  <div className="space-y-4">
+                    <div><Label>Price Type</Label><RadioGroup value={priceType} onValueChange={v => setPriceType(v as 'fixed' | 'negotiable' | 'free')} className="flex gap-4 pt-2"><div className="flex items-center gap-2"><RadioGroupItem value="fixed" id="fixed" /><Label htmlFor="fixed">Fixed Price</Label></div><div className="flex items-center gap-2"><RadioGroupItem value="negotiable" id="negotiable" /><Label htmlFor="negotiable">Negotiable</Label></div><div className="flex items-center gap-2"><RadioGroupItem value="free" id="free" /><Label htmlFor="free">Free</Label></div></RadioGroup></div>
+                    {priceType !== 'free' && (
+                      <div><Label>Selling Price *</Label><Input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" /></div>
+                    )}
+                    <Separator />
+                    <div><Label>Photos</Label>
+                      <div onDragOver={e => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop} className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/30'}`}>
+                        <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground mb-2">Drag and drop images here, or</p>
+                        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}><ImageIcon className="h-4 w-4 mr-2" /> Browse Files</Button>
+                        <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => e.target.files && addFiles(Array.from(e.target.files))} />
+                        <p className="text-xs text-muted-foreground mt-2">Up to {MAX_IMAGES} images</p>
+                      </div>
+                      {existingImages.length > 0 && (
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mt-3">
+                          {existingImages.map((img) => (
+                            <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden border">
+                              <img src={img.image_url} alt="" className="h-full w-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {imagePreviews.length > 0 && (
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mt-3">
+                          {imagePreviews.map((preview, i) => (
+                            <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
+                              <img src={preview} alt="" className="h-full w-full object-cover" />
+                              <Button size="icon" variant="destructive" className="h-6 w-6 absolute top-1 right-1" onClick={() => removeImage(i)}><X className="h-3 w-3" /></Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Simple Step 3: Location & Contact */}
+                {currentStep === 3 && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div><Label>Division *</Label><Select value={division} onValueChange={v => { setDivision(v); setDistrict(''); }}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{DIVISIONS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>
+                      <div><Label>District *</Label><Select value={district} onValueChange={setDistrict} disabled={!division}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{division && DISTRICTS[division]?.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>
+                      <div><Label>Area</Label><Input value={area} onChange={e => setArea(e.target.value)} placeholder="Optional" /></div>
+                    </div>
+                    <div><Label>Contact Phone *</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="01XXXXXXXXX" /></div>
+                    <Separator />
+                    {/* Review summary */}
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-sm">Review Your Listing</h3>
+                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Title</span><span className="font-medium text-right">{title}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Condition</span><span className="font-medium capitalize">{condition}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Price</span><span className="font-medium">{priceType === 'free' ? 'Free' : formatPrice(parseFloat(price) || 0, priceType)}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Location</span><span className="font-medium">{division}, {district}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Photos</span><span className="font-medium">{images.length + existingImages.length} images</span></div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ===== FULL MODE (shop owners) ===== */}
+            {isShopOwner && (
+            <>
             {/* Step 1: Basic Info */}
             {currentStep === 1 && (
               <div className="space-y-4">
@@ -671,6 +790,8 @@ export default function PostAdV4() {
                 <Separator />
                 <div><Label>Schedule Publishing (optional)</Label><Input type="datetime-local" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} /></div>
               </div>
+            )}
+            </>
             )}
           </CardContent>
         </Card>

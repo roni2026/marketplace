@@ -126,19 +126,36 @@ const Index = () => {
             ) : (
               displayCategories.slice(0, 12).map((category) => {
                 const logoUrl = getCategoryLogoUrl(category.slug || category.name);
+                const fallback = CATEGORY_DATA.find(c => c.slug === category.slug || c.name === category.name);
+                const FallbackIcon = fallback?.icon;
+                const fallbackColor = fallback?.color || 'bg-primary/10 text-primary';
                 return (
                   <Link
                     key={category.id}
                     to={`/category/${category.slug}`}
                     className="flex flex-col items-center gap-1 shrink-0 w-16 group"
                   >
-                    <div className="h-12 w-12 rounded-full flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110 group-active:scale-95">
+                    <div className="h-12 w-12 rounded-xl overflow-hidden flex items-center justify-center transition-transform group-hover:scale-110 group-active:scale-95">
                       {logoUrl ? (
-                        <img src={logoUrl} alt={category.name} className="w-full h-full object-cover rounded-full" loading="lazy" />
+                        <>
+                          <img
+                            src={logoUrl}
+                            alt={category.name}
+                            className="w-full h-full object-cover rounded-xl"
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                              (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                          <div className={`w-full h-full rounded-xl flex items-center justify-center ${fallbackColor} hidden`}>
+                            {FallbackIcon && <FallbackIcon className="h-5 w-5" />}
+                          </div>
+                        </>
                       ) : (
-                        <span className="text-sm font-bold text-primary">
-                          {category.name.charAt(0).toUpperCase()}
-                        </span>
+                        <div className={`w-full h-full rounded-xl flex items-center justify-center ${fallbackColor}`}>
+                          {FallbackIcon && <FallbackIcon className="h-5 w-5" />}
+                        </div>
                       )}
                     </div>
                     <span className="text-[10px] font-medium text-muted-foreground text-center leading-tight line-clamp-1 w-full">
