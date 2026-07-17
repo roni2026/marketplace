@@ -55,7 +55,7 @@ const CURRENCIES = ['BDT', 'USD', 'EUR', 'GBP'];
 
 export default function PostAdV4() {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, profile } = useAuth();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   const { createListing, updateListing, fetchListingTypes, fetchItemConditions, fetchCategoryAttributes, validateListing } = useListingManagement();
@@ -126,6 +126,7 @@ export default function PostAdV4() {
   const [district, setDistrict] = useState('');
   const [area, setArea] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  const [secondaryPhone, setSecondaryPhone] = useState('');
 
   // Step 7: Warranty
   const [warrantyType, setWarrantyType] = useState<WarrantyType>('none');
@@ -140,6 +141,16 @@ export default function PostAdV4() {
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
   }, [user, authLoading, navigate]);
+
+  // Pre-fill phone from profile (only when creating a new ad, not editing)
+  useEffect(() => {
+    if (profile?.phone_number && !editId && !contactPhone) {
+      setContactPhone(profile.phone_number);
+    }
+    if (profile?.secondary_phone && !editId && !secondaryPhone) {
+      setSecondaryPhone(profile.secondary_phone);
+    }
+  }, [profile, editId]);
 
   useEffect(() => {
     // Check if user has a shop (shop owner gets full wizard)
@@ -209,6 +220,7 @@ export default function PostAdV4() {
           setDistrict(ad.district as string || '');
           setArea(ad.area as string || '');
           setContactPhone(ad.contact_phone as string || '');
+          setSecondaryPhone(ad.secondary_phone as string || '');
           setWarrantyType((ad.warranty_type as WarrantyType) || 'none');
           setWarrantyDuration(ad.warranty_duration_months ? String(ad.warranty_duration_months) : '');
           setWarrantyCoverage(ad.warranty_coverage as string || '');
@@ -365,7 +377,8 @@ export default function PostAdV4() {
       division,
       district,
       area: area || undefined,
-      contact_phone: contactPhone.trim() || undefined,
+      contact_phone: contactPhone.trim() || null,
+      secondary_phone: secondaryPhone.trim() || null,
       shipping_methods: shippingMethods,
       shipping_fee_type: shippingFeeType,
       shipping_fee: shippingFee ? parseFloat(shippingFee) : 0,
@@ -593,6 +606,7 @@ export default function PostAdV4() {
                     <div><Label>Area</Label><Input value={area} onChange={e => setArea(e.target.value)} placeholder="Optional" /></div>
                   </div>
                   <div><Label>Contact Phone *</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="01XXXXXXXXX" /></div>
+                  <div><Label>Secondary Phone (optional)</Label><Input value={secondaryPhone} onChange={e => setSecondaryPhone(e.target.value)} placeholder="01XXXXXXXXX" /></div>
                 </div>
               </div>
             )}
@@ -756,6 +770,7 @@ export default function PostAdV4() {
                   <div><Label>Area</Label><Input value={area} onChange={e => setArea(e.target.value)} placeholder="Optional" /></div>
                 </div>
                 <div><Label>Contact Phone *</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="01XXXXXXXXX" /></div>
+                <div><Label>Secondary Phone (optional)</Label><Input value={secondaryPhone} onChange={e => setSecondaryPhone(e.target.value)} placeholder="01XXXXXXXXX" /></div>
               </div>
             )}
 
@@ -785,6 +800,7 @@ export default function PostAdV4() {
                   <div className="flex justify-between"><span className="text-muted-foreground">Images</span><span className="font-medium">{images.length + existingImages.length} images</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Location</span><span className="font-medium">{division}, {district}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Phone</span><span className="font-medium">{contactPhone || 'Not provided'}</span></div>
+                  {secondaryPhone && <div className="flex justify-between"><span className="text-muted-foreground">Secondary Phone</span><span className="font-medium">{secondaryPhone}</span></div>}
                   <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span className="font-medium">{shippingMethods.length > 0 ? shippingMethods.map(m => m.replace(/_/g, ' ')).join(', ') : 'Not specified'}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Warranty</span><span className="font-medium capitalize">{warrantyType === 'none' ? 'No Warranty' : `${warrantyType} (${warrantyDuration || 0} months)`}</span></div>
                 </div>

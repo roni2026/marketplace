@@ -47,6 +47,7 @@ import type { VerificationBadge, SocialLinks as SocialLinksType } from '@/integr
 interface ProfileForm {
   full_name: string;
   phone_number: string;
+  secondary_phone: string;
   division: string;
   district: string;
   area: string;
@@ -113,6 +114,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileForm>({
     full_name: '',
     phone_number: '',
+    secondary_phone: '',
     division: '',
     district: '',
     area: '',
@@ -176,6 +178,7 @@ export default function ProfilePage() {
       setProfile({
         full_name: data.full_name || '',
         phone_number: data.phone_number || '',
+        secondary_phone: data.secondary_phone || '',
         division: data.division || '',
         district: data.district || '',
         area: data.area || '',
@@ -266,6 +269,7 @@ export default function ProfilePage() {
       .update({
         full_name: profile.full_name,
         phone_number: profile.phone_number,
+        secondary_phone: profile.secondary_phone,
         division: profile.division,
         district: profile.district,
         area: profile.area,
@@ -492,6 +496,18 @@ export default function ProfilePage() {
                         value={profile.phone_number || ''}
                         onChange={(e) => setProfile(prev => ({ ...prev, phone_number: e.target.value }))}
                         placeholder={t('profile.phonePlaceholder')}
+                      />
+                    </div>
+
+                    {/* Secondary Phone */}
+                    <div className="space-y-2">
+                      <Label htmlFor="secondary_phone">Secondary Phone (optional)</Label>
+                      <Input
+                        id="secondary_phone"
+                        type="tel"
+                        value={profile.secondary_phone || ''}
+                        onChange={(e) => setProfile(prev => ({ ...prev, secondary_phone: e.target.value }))}
+                        placeholder="01XXXXXXXXX"
                       />
                     </div>
 

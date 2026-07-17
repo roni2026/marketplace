@@ -304,6 +304,7 @@ export interface CreateListingData {
   warranty_terms?: string;
   scheduled_at?: string | null;
   contact_phone?: string;
+  secondary_phone?: string;
 }
 
 export async function createListing(userId: string, data: CreateListingData): Promise<ExtendedListing | null> {
@@ -363,6 +364,7 @@ export async function createListing(userId: string, data: CreateListingData): Pr
     warranty_terms: data.warranty_terms || null,
     scheduled_at: data.scheduled_at || null,
     contact_phone: data.contact_phone || null,
+    secondary_phone: data.secondary_phone || null,
   };
 
   const { data: result, error } = await supabase
@@ -378,6 +380,22 @@ export async function createListing(userId: string, data: CreateListingData): Pr
   }
 
   const listing = result as ExtendedListing;
+
+  // Save contact_phone to the user's profile so it's pre-filled next time
+  if (data.contact_phone) {
+    await supabase
+      .from('profiles')
+      .update({ phone_number: data.contact_phone.trim(), updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+  }
+
+  // Save secondary_phone to the user's profile if provided
+  if (data.secondary_phone) {
+    await supabase
+      .from('profiles')
+      .update({ secondary_phone: data.secondary_phone.trim(), updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+  }
 
   // Log history
   await logListingHistoryEntry({
@@ -451,7 +469,8 @@ export async function updateListing(adId: string, userId: string, updates: Parti
   if (updates.warranty_coverage !== undefined) payload.warranty_coverage = updates.warranty_coverage;
   if (updates.warranty_terms !== undefined) payload.warranty_terms = updates.warranty_terms;
   if (updates.scheduled_at !== undefined) payload.scheduled_at = updates.scheduled_at;
-  if (updates.contact_phone !== undefined) payload.contact_phone = updates.contact_phone;
+  if (updates.contact_phone !== undefined) payload.contact_phone = updates.contact_phone || null;
+  if (updates.secondary_phone !== undefined) payload.secondary_phone = updates.secondary_phone || null;
   payload.discount_amount = discountAmount;
   payload.discount_percentage = discountPercentage;
   payload.updated_at = new Date().toISOString();
@@ -475,6 +494,22 @@ export async function updateListing(adId: string, userId: string, updates: Parti
   if (error) { toast.error('Failed to update listing'); console.error('updateListing error:', error); return null; }
 
   const listing = result as ExtendedListing;
+
+  // Save contact_phone to the user's profile so it's pre-filled next time
+  if (updates.contact_phone) {
+    await supabase
+      .from('profiles')
+      .update({ phone_number: updates.contact_phone.trim(), updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+  }
+
+  // Save secondary_phone to the user's profile if provided
+  if (updates.secondary_phone) {
+    await supabase
+      .from('profiles')
+      .update({ secondary_phone: updates.secondary_phone.trim(), updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+  }
 
   // Log history - detect what changed
   const changedFields: Record<string, { old: unknown; new: unknown }> = {};

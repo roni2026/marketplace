@@ -34,7 +34,7 @@ interface Subcategory {
 
 export default function PostAd() {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, profile } = useAuth();
   const { t } = useTranslation();
   
   const [isLoading, setIsLoading] = useState(false);
@@ -58,12 +58,23 @@ export default function PostAd() {
   const [district, setDistrict] = useState('');
   const [area, setArea] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  const [secondaryPhone, setSecondaryPhone] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
+
+  // Pre-fill phone from profile
+  useEffect(() => {
+    if (profile?.phone_number && !contactPhone) {
+      setContactPhone(profile.phone_number);
+    }
+    if (profile?.secondary_phone && !secondaryPhone) {
+      setSecondaryPhone(profile.secondary_phone);
+    }
+  }, [profile]);
 
   useEffect(() => {
     fetchCategories();
@@ -293,6 +304,7 @@ export default function PostAd() {
           district,
           area: sanitizeText(area),
           contact_phone: contactPhone.trim(),
+          secondary_phone: secondaryPhone.trim() || null,
           is_urgent: isUrgent,
           scheduled_at: scheduledAt,
           expires_at: expiresAt,
@@ -312,6 +324,20 @@ export default function PostAd() {
       }));
       
       await supabase.from('ad_images').insert(imageInserts);
+
+      // Save phone numbers to user's profile for future use
+      if (contactPhone.trim()) {
+        await supabase
+          .from('profiles')
+          .update({ phone_number: contactPhone.trim(), updated_at: new Date().toISOString() })
+          .eq('user_id', user.id);
+      }
+      if (secondaryPhone.trim()) {
+        await supabase
+          .from('profiles')
+          .update({ secondary_phone: secondaryPhone.trim(), updated_at: new Date().toISOString() })
+          .eq('user_id', user.id);
+      }
 
       // Log audit
       await logAdAction('create', ad.id, { title: sanitizedTitle, spam_score: spamScore });
@@ -595,6 +621,20 @@ export default function PostAd() {
                 />
                 <p className="text-xs text-muted-foreground">
                   {t('postAd.phoneHint')}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="secondaryPhone">Secondary Phone (optional)</Label>
+                <Input
+                  id="secondaryPhone"
+                  type="tel"
+                  value={secondaryPhone}
+                  onChange={(e) => setSecondaryPhone(e.target.value)}
+                  placeholder="01XXXXXXXXX"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Add an optional secondary contact number.
                 </p>
               </div>
 

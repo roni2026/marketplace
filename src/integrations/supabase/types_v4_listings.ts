@@ -250,6 +250,8 @@ export interface ExtendedListing {
   premium_until: string | null;
   expires_at: string | null;
   scheduled_at: string | null;
+  contact_phone: string | null;
+  secondary_phone: string | null;
   views_count: number;
   favorites_count: number;
   shares_count: number;

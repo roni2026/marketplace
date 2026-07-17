@@ -8,6 +8,7 @@ import { logLogin, logLogout, logLoginAttempt } from '@/lib/audit';
 interface ProfileData {
   full_name: string | null;
   phone_number: string | null;
+  secondary_phone: string | null;
   division: string | null;
   district: string | null;
   area: string | null;
@@ -69,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('full_name, phone_number, division, district, area, avatar_url, banner_url, bio, website, social_links, preferred_language, preferred_currency, is_verified, is_suspended, is_public, last_active_at, seller_rating, buyer_rating, total_sales, total_purchases, total_followers, total_following, total_reviews, response_rate, avg_response_time_hours')
+      .select('full_name, phone_number, secondary_phone, division, district, area, avatar_url, banner_url, bio, website, social_links, preferred_language, preferred_currency, is_verified, is_suspended, is_public, last_active_at, seller_rating, buyer_rating, total_sales, total_purchases, total_followers, total_following, total_reviews, response_rate, avg_response_time_hours')
       .eq('user_id', userId)
       .maybeSingle();
 

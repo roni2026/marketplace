@@ -96,6 +96,7 @@ export interface ExtendedProfile {
   user_id: string;
   full_name: string | null;
   phone_number: string | null;
+  secondary_phone: string | null;
   avatar_url: string | null;
   banner_url: string | null;
   bio: string | null;

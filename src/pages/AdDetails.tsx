@@ -57,6 +57,7 @@ interface Ad {
   call_clicks: number | null;
   whatsapp_clicks: number | null;
   contact_phone: string | null;
+  secondary_phone: string | null;
   created_at: string;
   user_id: string;
   category_id: string;
@@ -68,6 +69,7 @@ interface Ad {
 interface Profile {
   full_name: string | null;
   phone_number: string | null;
+  secondary_phone: string | null;
   avatar_url: string | null;
   created_at: string | null;
   is_verified: boolean | null;
@@ -205,7 +207,7 @@ export default function AdDetails() {
       // Fetch seller profile, increment view count, and track stats in parallel
       const profilePromise = supabase
         .from('profiles')
-        .select('full_name, phone_number, avatar_url, created_at, is_verified')
+        .select('full_name, phone_number, secondary_phone, avatar_url, created_at, is_verified')
         .eq('user_id', data.user_id)
         .maybeSingle();
 
@@ -398,7 +400,10 @@ export default function AdDetails() {
   };
 
   const images = ad?.ad_images?.slice().sort((a, b) => a.sort_order - b.sort_order) || [];
-  const whatsappNumber = seller?.phone_number?.replace(/[^0-9]/g, '');
+  // Prefer the ad's contact_phone, fall back to the seller's profile phone_number
+  const displayPhone = ad?.contact_phone || seller?.phone_number || null;
+  const displaySecondaryPhone = ad?.secondary_phone || seller?.secondary_phone || null;
+  const whatsappNumber = displayPhone?.replace(/[^0-9]/g, '');
   const isOwnAd = user?.id === ad?.user_id;
 
   if (isLoading) {
@@ -684,13 +689,13 @@ export default function AdDetails() {
                   </Link>
                 </div>
 
-                {seller?.phone_number && (
+                {displayPhone && (
                   <div className="space-y-2">
                     {showPhone ? (
                       <Button className="w-full gap-2" asChild onClick={trackCallClick}>
-                        <a href={`tel:${seller.phone_number}`}>
+                        <a href={`tel:${displayPhone}`}>
                           <Phone className="h-4 w-4" />
-                          {seller.phone_number}
+                          {displayPhone}
                         </a>
                       </Button>
                     ) : (
@@ -703,6 +708,14 @@ export default function AdDetails() {
                       <p className="text-xs text-muted-foreground text-center">
                         {callClicks} {callClicks === 1 ? 'call' : 'calls'}
                       </p>
+                    )}
+                    {displaySecondaryPhone && showPhone && (
+                      <Button variant="outline" className="w-full gap-2" asChild>
+                        <a href={`tel:${displaySecondaryPhone}`}>
+                          <Phone className="h-4 w-4" />
+                          {displaySecondaryPhone}
+                        </a>
+                      </Button>
                     )}
                     {whatsappNumber && (
                       <Button variant="outline" className="w-full gap-2" asChild onClick={trackWhatsAppClick}>

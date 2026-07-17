@@ -46,6 +46,7 @@ export async function updateMyProfile(
   updates: Partial<Pick<ExtendedProfile,
     | 'full_name'
     | 'phone_number'
+    | 'secondary_phone'
     | 'avatar_url'
     | 'banner_url'
     | 'bio'

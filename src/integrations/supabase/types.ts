@@ -96,6 +96,7 @@ export type Database = {
           boosted_until: string | null
           category_id: string
           condition: Database["public"]["Enums"]["item_condition"]
+          contact_phone: string | null
           created_at: string
           description: string | null
           district: string
@@ -114,6 +115,7 @@ export type Database = {
           rejection_message: string | null
           rejection_reason_code: string | null
           scheduled_at: string | null
+          secondary_phone: string | null
           shares_count: number | null
           slug: string
           status: Database["public"]["Enums"]["ad_status"]
@@ -128,6 +130,7 @@ export type Database = {
           boosted_until?: string | null
           category_id: string
           condition?: Database["public"]["Enums"]["item_condition"]
+          contact_phone?: string | null
           created_at?: string
           description?: string | null
           district: string
@@ -146,6 +149,7 @@ export type Database = {
           rejection_message?: string | null
           rejection_reason_code?: string | null
           scheduled_at?: string | null
+          secondary_phone?: string | null
           shares_count?: number | null
           slug: string
           status?: Database["public"]["Enums"]["ad_status"]
@@ -160,6 +164,7 @@ export type Database = {
           boosted_until?: string | null
           category_id?: string
           condition?: Database["public"]["Enums"]["item_condition"]
+          contact_phone?: string | null
           created_at?: string
           description?: string | null
           district?: string
@@ -178,6 +183,7 @@ export type Database = {
           rejection_message?: string | null
           rejection_reason_code?: string | null
           scheduled_at?: string | null
+          secondary_phone?: string | null
           shares_count?: number | null
           slug?: string
           status?: Database["public"]["Enums"]["ad_status"]
@@ -465,6 +471,7 @@ export type Database = {
           last_login_at: string | null
           last_login_ip: string | null
           phone_number: string | null
+          secondary_phone: string | null
           suspended_at: string | null
           suspended_reason: string | null
           updated_at: string
@@ -485,6 +492,7 @@ export type Database = {
           last_login_at?: string | null
           last_login_ip?: string | null
           phone_number?: string | null
+          secondary_phone?: string | null
           suspended_at?: string | null
           suspended_reason?: string | null
           updated_at?: string
@@ -505,6 +513,7 @@ export type Database = {
           last_login_at?: string | null
           last_login_ip?: string | null
           phone_number?: string | null
+          secondary_phone?: string | null
           suspended_at?: string | null
           suspended_reason?: string | null
           updated_at?: string
