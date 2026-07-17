@@ -18,10 +18,10 @@
     "saved": "Saved"
   },
   "homepage": {
-    "title": "BazarBD — Buy & Sell Anything in Bangladesh",
+    "title": "SohojKenaBeca — Buy & Sell Anything in Bangladesh",
     "description": "Browse thousands of free classified ads for electronics, vehicles, property and more across Bangladesh, or post your own in minutes.",
     "heroTitle": "Buy & Sell Anything in {{country}}",
-    "heroSubtitle": "Join millions of Bangladeshis buying and selling on BazarBD. From electronics to property, find everything you need.",
+    "heroSubtitle": "Join millions of Bangladeshis buying and selling on SohojKenaBeca. From electronics to property, find everything you need.",
     "heroSearchPlaceholder": "What are you looking for?",
     "heroSearchButton": "Search",
     "popular": "Popular:",
@@ -280,7 +280,7 @@
     "browseAds": "Browse Ads"
   },
   "footer": {
-    "brandName": "BazarBD",
+    "brandName": "SohojKenaBeca",
     "brandDesc": "Bangladesh's trusted marketplace for buying and selling anything. From electronics to property, find it all here.",
     "popularCategories": "Popular Categories",
     "electronics": "Electronics",
@@ -297,7 +297,7 @@
     "safetyTips": "Safety Tips",
     "contactUs": "Contact Us",
     "termsOfService": "Terms of Service",
-    "copyright": "© {{year}} BazarBD. All rights reserved. Made with ❤️ in Bangladesh",
+    "copyright": "© {{year}} SohojKenaBeca. All rights reserved. Made with ❤️ in Bangladesh",
     "androidApp": "Also available as an Android app"
   },
   "common": {
@@ -380,7 +380,7 @@
     "pleaseLoginMessage": "Please login to send a message",
     "pleaseLoginPostAd": "Please login to post an ad",
     "pleaseLoginSaveSearch": "Please login to save searches",
-    "reportSubmitted": "Report submitted. Thank you for helping keep BazarBD safe.",
+    "reportSubmitted": "Report submitted. Thank you for helping keep SohojKenaBeca safe.",
     "reportFailed": "Failed to submit report",
     "offerSent": "Offer sent to seller!",
     "offerFailed": "Failed to submit offer",

@@ -24,9 +24,10 @@ interface HeaderProps {
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   onSearch?: () => void;
+  hideSearch?: boolean;
 }
 
-export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderProps) {
+export function Header({ searchQuery = '', onSearchChange, onSearch, hideSearch = false }: HeaderProps) {
   const { user, isAdmin, roles, signOut } = useAuth();
   const showAdmin = isAdmin === true || (roles || []).some((r) => ['super_admin','admin','moderator'].includes(String(r)));
   const { unreadCount: unreadNotifications } = useNotifications();
@@ -86,18 +87,18 @@ export function Header({ searchQuery = '', onSearchChange, onSearch }: HeaderPro
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <img
               src="/brand/logo-light.png"
-              alt="BazarBD"
+              alt="SohojKenaBeca"
               className="h-8 w-auto dark:hidden"
             />
             <img
               src="/brand/logo-dark.png"
-              alt="BazarBD"
+              alt="SohojKenaBeca"
               className="h-8 w-auto hidden dark:block"
             />
           </Link>
 
-          {/* Search Bar - Desktop */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl">
+          {/* Search Bar - Desktop (hidden on homepage, hero has its own search) */}
+          <form onSubmit={handleSearch} className={`hidden md:flex flex-1 max-w-xl ${hideSearch ? 'invisible' : ''}`}>
             <div className="relative w-full">
               <Input
                 type="text"

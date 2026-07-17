@@ -109,7 +109,7 @@ const Index = () => {
           content={t('homepage.description')}
         />
       </Helmet>
-      <Header />
+      <Header hideSearch />
       <main className="flex-1 pb-16 lg:pb-0">
         <HeroBanner />
         

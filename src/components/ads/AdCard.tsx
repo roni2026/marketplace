@@ -147,33 +147,6 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle, showCompare =
           >
             {ad.condition}
           </Badge>
-          <div className="absolute bottom-2 right-2 flex gap-1">
-            {showCompare && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`bg-card/80 hover:bg-card ${isComparing ? 'text-primary' : 'text-muted-foreground'}`}
-                onClick={handleCompare}
-                aria-label={isComparing ? 'Remove from comparison' : 'Add to comparison'}
-                style={{ touchAction: 'manipulation', minHeight: '36px', minWidth: '36px' }}
-              >
-                <Layers className="h-4 w-4" />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`bg-card/80 hover:bg-card ${
-                isFav ? 'text-destructive' : 'text-muted-foreground'
-              }`}
-              onClick={handleFavorite}
-              disabled={isLoading}
-              aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
-              style={{ touchAction: 'manipulation', minHeight: '36px', minWidth: '36px' }}
-            >
-              <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
-            </Button>
-          </div>
         </div>
         <CardContent className="p-4">
           <div className="space-y-2">
@@ -216,6 +189,30 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle, showCompare =
                   </span>
                 )}
               </div>
+            </div>
+            {/* Favorite & Compare buttons below the image */}
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className={`gap-1.5 h-8 ${isFav ? 'text-destructive border-destructive/30' : ''}`}
+                onClick={handleFavorite}
+                disabled={isLoading}
+              >
+                <Heart className={`h-3.5 w-3.5 ${isFav ? 'fill-current' : ''}`} />
+                {isFav ? 'Saved' : 'Save'}
+              </Button>
+              {showCompare && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`gap-1.5 h-8 ${isComparing ? 'text-primary border-primary/30' : ''}`}
+                  onClick={handleCompare}
+                >
+                  <Layers className="h-3.5 w-3.5" />
+                  Compare
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
