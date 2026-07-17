@@ -623,40 +623,47 @@ export default function AdDetails() {
                       </DialogContent>
                     </Dialog>
 
-                    <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="flex-1 gap-2" onClick={() => { if (!user) { navigate('/auth'); return; } }}>
-                          <MessageCircle className="h-4 w-4" />
-                          {t('ad.message')}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>{t('ad.sendMessage')}</DialogTitle>
-                          <DialogDescription>
-                            {t('ad.sendMessageDesc')}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="msgText">{t('ad.message')}</Label>
-                            <UITextarea
-                              id="msgText"
-                              value={messageText}
-                              onChange={(e) => setMessageText(e.target.value)}
-                              placeholder={t('ad.messagePlaceholder')}
-                              rows={4}
-                            />
-                          </div>
-                          <Button onClick={handleSendMessage} className="w-full gap-2">
-                            <Send className="h-4 w-4" />
-                            {t('ad.send')}
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2"
+                      onClick={() => {
+                        if (!user) { navigate('/auth'); return; }
+                        setShowMessageDialog(true);
+                      }}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {t('ad.message')}
+                    </Button>
                   </div>
                 )}
+
+                {/* Message Dialog — always in DOM so seller card button can open it */}
+                <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{t('ad.sendMessage')}</DialogTitle>
+                      <DialogDescription>
+                        {t('ad.sendMessageDesc')}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="msgText">{t('ad.message')}</Label>
+                        <UITextarea
+                          id="msgText"
+                          value={messageText}
+                          onChange={(e) => setMessageText(e.target.value)}
+                          placeholder={t('ad.messagePlaceholder')}
+                          rows={4}
+                        />
+                      </div>
+                      <Button onClick={handleSendMessage} className="w-full gap-2">
+                        <Send className="h-4 w-4" />
+                        {t('ad.send')}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
 
