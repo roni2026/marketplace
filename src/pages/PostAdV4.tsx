@@ -482,7 +482,9 @@ export default function PostAdV4() {
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         <div className="mb-6">
           <h1 className="text-2xl font-bold mb-1">{editId ? 'Edit Listing' : 'Create New Listing'}</h1>
-          <p className="text-sm text-muted-foreground">Complete all steps to publish your listing</p>
+          <p className="text-sm text-muted-foreground">
+            {editId ? 'Your edited listing will be submitted for re-review before it goes live again.' : 'Complete all steps to publish your listing'}
+          </p>
         </div>
 
         {/* Progress — only for shop owner wizard */}

@@ -453,6 +453,15 @@ export async function updateListing(adId: string, userId: string, updates: Parti
   payload.discount_percentage = discountPercentage;
   payload.updated_at = new Date().toISOString();
 
+  // If the ad was previously approved, set it back to pending for re-review
+  // and mark it as an edited resubmit so it shows up in the "Edited" queue
+  const currentStatus = (current as Record<string, unknown>).status as string;
+  if (currentStatus === 'approved' && updates.status !== 'draft') {
+    payload.status = 'pending';
+    payload.rejection_reason_code = 'edited_resubmit';
+    payload.rejection_message = null;
+  }
+
   const { data: result, error } = await supabase
     .from('ads')
     .update(payload)

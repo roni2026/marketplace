@@ -96,11 +96,12 @@ export default function AdModeration() {
   const [ads, setAds] = useState<Ad[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState('member');
   const [viewMode, setViewMode] = useState<'table' | 'grid' | 'workspace'>('table');
   const [selectedAd, setSelectedAd] = useState<Ad | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [shopOwnerIds, setShopOwnerIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -149,20 +150,56 @@ export default function AdModeration() {
   const fetchAds = useCallback(async () => {
     setLoading(true);
     try {
+      // Fetch shop owner IDs for queue routing
+      const { data: shopsData } = await supabase.from('shops').select('owner_id');
+      const shopIds = new Set((shopsData || []).map(s => s.owner_id));
+      setShopOwnerIds(shopIds);
+
       let query = supabase
         .from('ads')
         .select('*, ad_images(image_url, sort_order, id), categories(name, slug)', { count: 'exact' })
         .order('created_at', { ascending: true });
 
-      if (activeTab !== 'all') query = query.eq('status', activeTab);
+      // Queue-based filtering
+      if (activeTab === 'member') {
+        // Ads from shop owners or subscribers — status pending, not edited resubmit
+        query = query.eq('status', 'pending').neq('rejection_reason_code', 'edited_resubmit');
+      } else if (activeTab === 'general') {
+        // Ads from normal customers — status pending, not edited resubmit
+        query = query.eq('status', 'pending').neq('rejection_reason_code', 'edited_resubmit');
+      } else if (activeTab === 'listing') {
+        // Ads from users who exceeded their limit (no limit yet — same as general for now)
+        query = query.eq('status', 'pending').neq('rejection_reason_code', 'edited_resubmit');
+      } else if (activeTab === 'edited') {
+        // Ads that were edited and need re-review
+        query = query.eq('status', 'pending').eq('rejection_reason_code', 'edited_resubmit');
+      } else if (activeTab === 'verify') {
+        // Auto-approved ads that need verification
+        query = query.eq('status', 'auto_approved');
+      } else if (activeTab === 'all') {
+        // All statuses
+      } else {
+        query = query.eq('status', activeTab);
+      }
+
       if (searchQuery) query = query.ilike('title', `%${searchQuery}%`);
 
       query = query.limit(PAGE_SIZE);
       const { data, error, count } = await query;
+
       if (error) throw error;
 
-      setAds((data as Ad[]) || []);
-      setTotalCount(count || 0);
+      let filteredAds = (data as Ad[]) || [];
+
+      // Client-side filtering for member vs general based on shop ownership
+      if (activeTab === 'member') {
+        filteredAds = filteredAds.filter(a => shopIds.has(a.user_id));
+      } else if (activeTab === 'general') {
+        filteredAds = filteredAds.filter(a => !shopIds.has(a.user_id));
+      }
+
+      setAds(filteredAds);
+      setTotalCount(filteredAds.length);
     } catch (err) {
       console.error('fetchAds error:', err);
     }
@@ -187,7 +224,7 @@ export default function AdModeration() {
     setCurrentIndex(index);
     setViewMode('workspace');
     // Start or resume session when entering workspace from queue
-    if (activeTab === 'pending' || activeTab === 'all') {
+    if (activeTab === 'member' || activeTab === 'general' || activeTab === 'listing' || activeTab === 'edited' || activeTab === 'verify' || activeTab === 'all') {
       await ensureSession();
     }
   };
@@ -343,7 +380,7 @@ export default function AdModeration() {
             queuePosition={currentIndex + 1}
             queueTotal={totalCount}
             sessionId={sessionRef.current}
-            enteredFromQueue={activeTab === 'pending'}
+            enteredFromQueue={['member', 'general', 'listing', 'edited', 'verify'].includes(activeTab)}
             onActionComplete={handleActionComplete}
             onNavigateNext={navigateNext}
             onNavigatePrev={navigatePrev}
@@ -373,7 +410,7 @@ export default function AdModeration() {
             <div>
               <h1 className="text-xl font-bold">Ad Moderation</h1>
               <p className="text-sm text-muted-foreground">
-                {totalCount} {activeTab === 'all' ? 'total' : activeTab} ads
+                {totalCount} {activeTab === 'member' ? 'member' : activeTab === 'general' ? 'general' : activeTab === 'listing' ? 'listing' : activeTab === 'edited' ? 'edited' : activeTab === 'verify' ? 'verify' : 'total'} ads
                 {session && ` · Session: ${sessionStats.reviewed} reviewed, ${sessionStats.approvals} approved, ${sessionStats.rejections} rejected`}
               </p>
             </div>
@@ -403,18 +440,25 @@ export default function AdModeration() {
           />
         </div>
 
-        {/* Status tabs */}
+        {/* Queue tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
           <div className="overflow-x-auto pb-2">
             <TabsList className="w-max">
-              <TabsTrigger value="pending" className="gap-1.5">
-                <Clock className="h-3.5 w-3.5" /> Pending
+              <TabsTrigger value="member" className="gap-1.5">
+                <Crown className="h-3.5 w-3.5" /> Member
               </TabsTrigger>
-              <TabsTrigger value="approved">Approved</TabsTrigger>
-              <TabsTrigger value="rejected">Rejected</TabsTrigger>
-              <TabsTrigger value="sold">Sold</TabsTrigger>
-              <TabsTrigger value="boosted">Boosted</TabsTrigger>
-              <TabsTrigger value="premium">Premium</TabsTrigger>
+              <TabsTrigger value="general" className="gap-1.5">
+                <Package className="h-3.5 w-3.5" /> General
+              </TabsTrigger>
+              <TabsTrigger value="listing" className="gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" /> Listing
+              </TabsTrigger>
+              <TabsTrigger value="edited" className="gap-1.5">
+                <Clock className="h-3.5 w-3.5" /> Edited
+              </TabsTrigger>
+              <TabsTrigger value="verify" className="gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5" /> Verify
+              </TabsTrigger>
               <TabsTrigger value="all">All</TabsTrigger>
             </TabsList>
           </div>
@@ -431,7 +475,7 @@ export default function AdModeration() {
               <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
               <h3 className="font-semibold mb-1">No ads found</h3>
               <p className="text-sm text-muted-foreground">
-                {activeTab === 'pending' ? 'The moderation queue is empty!' : `No ${activeTab} ads match your filters.`}
+                {['member', 'general', 'listing', 'edited', 'verify'].includes(activeTab) ? 'The queue is empty!' : `No ${activeTab} ads match your filters.`}
               </p>
             </CardContent>
           </Card>
@@ -553,8 +597,8 @@ export default function AdModeration() {
           </div>
         )}
 
-        {/* Queue hint for pending tab */}
-        {activeTab === 'pending' && ads.length > 0 && !loading && (
+        {/* Queue hint */}
+        {['member', 'general', 'listing', 'edited', 'verify'].includes(activeTab) && ads.length > 0 && !loading && (
           <div className="mt-4 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 text-sm text-amber-700 dark:text-amber-400">
             <strong>Tip:</strong> Click any ad to open the moderation workspace. After approving or rejecting, the next ad loads automatically — no need to return to the list.
           </div>
