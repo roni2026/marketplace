@@ -303,6 +303,7 @@ export interface CreateListingData {
   warranty_coverage?: string;
   warranty_terms?: string;
   scheduled_at?: string | null;
+  contact_phone?: string;
 }
 
 export async function createListing(userId: string, data: CreateListingData): Promise<ExtendedListing | null> {
@@ -361,6 +362,7 @@ export async function createListing(userId: string, data: CreateListingData): Pr
     warranty_coverage: data.warranty_coverage || null,
     warranty_terms: data.warranty_terms || null,
     scheduled_at: data.scheduled_at || null,
+    contact_phone: data.contact_phone || null,
   };
 
   const { data: result, error } = await supabase
@@ -449,6 +451,7 @@ export async function updateListing(adId: string, userId: string, updates: Parti
   if (updates.warranty_coverage !== undefined) payload.warranty_coverage = updates.warranty_coverage;
   if (updates.warranty_terms !== undefined) payload.warranty_terms = updates.warranty_terms;
   if (updates.scheduled_at !== undefined) payload.scheduled_at = updates.scheduled_at;
+  if (updates.contact_phone !== undefined) payload.contact_phone = updates.contact_phone;
   payload.discount_amount = discountAmount;
   payload.discount_percentage = discountPercentage;
   payload.updated_at = new Date().toISOString();
