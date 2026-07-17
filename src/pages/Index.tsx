@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from 'react-i18next';
-import { CATEGORY_DATA } from '@/lib/categoryData';
+import { CATEGORY_DATA, getCategoryLogoUrl } from '@/lib/categoryData';
 
 interface Category {
   id: string;
@@ -125,17 +125,16 @@ const Index = () => {
               ))
             ) : (
               displayCategories.slice(0, 12).map((category) => {
-                const fallback = CATEGORY_DATA.find(c => c.slug === category.slug || c.name === category.name);
-                const Icon = fallback?.icon;
+                const logoUrl = getCategoryLogoUrl(category.slug || category.name);
                 return (
                   <Link
                     key={category.id}
                     to={`/category/${category.slug}`}
                     className="flex flex-col items-center gap-1 shrink-0 w-16 group"
                   >
-                    <div className={`h-12 w-12 rounded-full flex items-center justify-center transition-transform group-hover:scale-110 group-active:scale-95 ${fallback?.color || 'bg-primary/10'}`}>
-                      {Icon ? (
-                        <Icon className="h-5 w-5" />
+                    <div className="h-12 w-12 rounded-full flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110 group-active:scale-95">
+                      {logoUrl ? (
+                        <img src={logoUrl} alt={category.name} className="w-full h-full object-cover rounded-full" loading="lazy" />
                       ) : (
                         <span className="text-sm font-bold text-primary">
                           {category.name.charAt(0).toUpperCase()}
@@ -165,7 +164,15 @@ const Index = () => {
                 </div>
               </div>
             ) : (
-              <CategoryGrid categories={displayCategories} />
+              <>
+                <div className="flex items-center justify-between mb-4 mt-6">
+                  <h2 className="text-xl font-bold">{t('homepage.categories', 'Categories')}</h2>
+                  <Link to="/categories" className="text-sm font-medium text-primary hover:underline">
+                    {t('homepage.seeAll', 'See All')} →
+                  </Link>
+                </div>
+                <CategoryGrid categories={displayCategories} />
+              </>
             )}
           </div>
 

@@ -130,6 +130,8 @@ export default function AdDetails() {
 
   useEffect(() => {
     fetchAd();
+    // Scroll to top when entering an ad page
+    window.scrollTo(0, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
@@ -465,10 +467,13 @@ export default function AdDetails() {
             <AdGallery images={images} title={ad.title} isFeatured={ad.is_featured} />
 
             {/* Description */}
-            <Card>
+            <Card className="border-border/60 shadow-sm">
               <CardContent className="p-6">
-                <h2 className="font-semibold text-lg mb-4">{t('ad.description')}</h2>
-                <p className="text-muted-foreground whitespace-pre-wrap">
+                <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-primary rounded-full" />
+                  {t('ad.description')}
+                </h2>
+                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
                   {ad.description || t('ad.noDescription')}
                 </p>
               </CardContent>
@@ -479,11 +484,11 @@ export default function AdDetails() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-4">
-            <Card>
+          <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+            <Card className="border-border/60 shadow-md overflow-hidden">
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-start justify-between gap-4">
-                  <h1 className="text-2xl font-bold">{ad.title}</h1>
+                  <h1 className="text-2xl font-bold leading-tight">{ad.title}</h1>
                   <div className="flex flex-col gap-1 items-end shrink-0">
                     <Badge variant="secondary" className="capitalize">
                       {ad.condition}
@@ -497,7 +502,7 @@ export default function AdDetails() {
                   </div>
                 </div>
 
-                <p className="text-3xl font-bold text-primary">
+                <p className="text-3xl font-extrabold text-primary tracking-tight">
                   {formatPrice(ad.price, ad.price_type)}
                 </p>
 

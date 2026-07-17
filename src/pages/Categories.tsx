@@ -175,7 +175,7 @@ export default function Categories() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+      <Header hideSearch />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8 max-w-7xl">
         {/* Header Section */}
         <div className="flex flex-col gap-4 mb-8">

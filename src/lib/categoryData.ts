@@ -503,6 +503,46 @@ export const CATEGORY_DATA: CategoryDef[] = [
 const CATEGORY_BY_SLUG = new Map(CATEGORY_DATA.map((c) => [c.slug, c]));
 const CATEGORY_BY_NAME = new Map(CATEGORY_DATA.map((c) => [c.name.toLowerCase(), c]));
 
+/**
+ * Cloudinary logo URLs for each category slug.
+ * Logos uploaded to bazarbd/categories/ on Cloudinary.
+ */
+const CATEGORY_LOGO_BASE = 'https://res.cloudinary.com/iok4ild8/image/upload/c_fill,w_128,h_128,g_auto,f_auto/bazarbd/categories/cat_';
+
+const CATEGORY_LOGO_MAP: Record<string, string> = {
+  'electronics': `${CATEGORY_LOGO_BASE}electronics`,
+  'vehicles': `${CATEGORY_LOGO_BASE}vehicles`,
+  'real-estate': `${CATEGORY_LOGO_BASE}real_estate`,
+  'jobs': `${CATEGORY_LOGO_BASE}jobs`,
+  'services': `${CATEGORY_LOGO_BASE}services`,
+  'fashion': `${CATEGORY_LOGO_BASE}fashion`,
+  'home-garden': `${CATEGORY_LOGO_BASE}home_garden`,
+  'sports-fitness': `${CATEGORY_LOGO_BASE}sports_fitness`,
+  'books-stationery': `${CATEGORY_LOGO_BASE}books_stationery`,
+  'toys-games': `${CATEGORY_LOGO_BASE}toys_games`,
+  'music': `${CATEGORY_LOGO_BASE}music`,
+  'agriculture': `${CATEGORY_LOGO_BASE}agriculture`,
+  'industrial': `${CATEGORY_LOGO_BASE}industrial`,
+  'food-beverages': `${CATEGORY_LOGO_BASE}food_beverages`,
+  'health-medical': `${CATEGORY_LOGO_BASE}health_medical`,
+  'pets-animals': `${CATEGORY_LOGO_BASE}pets_animals`,
+  'antiques-collectibles': `${CATEGORY_LOGO_BASE}antiques_collectibles`,
+  'baby-kids': `${CATEGORY_LOGO_BASE}baby_kids`,
+  'wedding': `${CATEGORY_LOGO_BASE}wedding`,
+  'travel': `${CATEGORY_LOGO_BASE}travel`,
+  'office-equipment': `${CATEGORY_LOGO_BASE}office_equipment`,
+};
+
+/** Get the Cloudinary logo URL for a category by slug or name. */
+export function getCategoryLogoUrl(slugOrName?: string | null): string | null {
+  if (!slugOrName) return null;
+  const cat = getCategoryBySlug(slugOrName);
+  if (cat && CATEGORY_LOGO_MAP[cat.slug]) return CATEGORY_LOGO_MAP[cat.slug];
+  // Try direct slug lookup
+  if (CATEGORY_LOGO_MAP[slugOrName]) return CATEGORY_LOGO_MAP[slugOrName];
+  return null;
+}
+
 /** Resolve a full category definition by slug or (case-insensitive) name. */
 export function getCategoryBySlug(slugOrName?: string | null): CategoryDef | undefined {
   if (!slugOrName) return undefined;

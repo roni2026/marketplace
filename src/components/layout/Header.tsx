@@ -42,20 +42,6 @@ export function Header({ searchQuery = '', onSearchChange, onSearch, hideSearch 
 
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
     <>
-      <Link 
-        to="/" 
-        className="text-foreground/80 hover:text-primary transition-colors"
-        onClick={() => mobile && setIsOpen(false)}
-      >
-        {t('nav.home')}
-      </Link>
-      <Link 
-        to="/categories" 
-        className="text-foreground/80 hover:text-primary transition-colors"
-        onClick={() => mobile && setIsOpen(false)}
-      >
-        {t('nav.categories')}
-      </Link>
       {user && (
         <Link 
           to="/favorites" 
@@ -63,7 +49,6 @@ export function Header({ searchQuery = '', onSearchChange, onSearch, hideSearch 
           onClick={() => mobile && setIsOpen(false)}
         >
           <Heart className="h-4 w-4" />
-          {t('nav.favorites')}
         </Link>
       )}
       {showAdmin && (
@@ -83,11 +68,11 @@ export function Header({ searchQuery = '', onSearchChange, onSearch, hideSearch 
     <header className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
-          {/* Logo */}
+          {/* Logo — clicking goes to home */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <img
-              src="https://res.cloudinary.com/iok4ild8/image/upload/f_auto,q_auto,w_200/bazarbd/sohoj-kena-beca-logo.jpg"
-              alt="Sohoj Kena Beca"
+              src="https://res.cloudinary.com/iok4ild8/image/upload/c_limit,w_200,h_48,q_auto/f_auto/bazarbd/sohoj_kena_beca_logo"
+              alt="SohojKenaBeca"
               className="h-8 w-auto"
             />
           </Link>
