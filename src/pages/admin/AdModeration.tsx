@@ -102,6 +102,7 @@ export default function AdModeration() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [shopOwnerIds, setShopOwnerIds] = useState<Set<string>>(new Set());
+  const [queueCounts, setQueueCounts] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -146,6 +147,49 @@ export default function AdModeration() {
   // =========================================================================
   // Data Fetching
   // =========================================================================
+
+  // Fetch counts for all queues (for tab badges)
+  const fetchQueueCounts = useCallback(async () => {
+    try {
+      const { data: shopsData } = await supabase.from('shops').select('owner_id');
+      const shopIds = new Set((shopsData || []).map(s => s.owner_id));
+
+      // Pending (non-edited) — split into member vs general client-side isn't possible via count,
+      // so fetch user_ids for pending non-edited ads
+      const { data: pendingAds } = await supabase
+        .from('ads')
+        .select('user_id')
+        .eq('status', 'pending')
+        .neq('rejection_reason_code', 'edited_resubmit');
+
+      const pendingUserIds = (pendingAds || []).map(a => a.user_id);
+      const memberCount = pendingUserIds.filter(uid => shopIds.has(uid)).length;
+      const generalCount = pendingUserIds.length - memberCount;
+
+      // Edited
+      const { count: editedCount } = await supabase
+        .from('ads')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .eq('rejection_reason_code', 'edited_resubmit');
+
+      // Verify (auto_approved)
+      const { count: verifyCount } = await supabase
+        .from('ads')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'auto_approved');
+
+      setQueueCounts({
+        member: memberCount,
+        general: generalCount,
+        listing: 0, // No limits yet
+        edited: editedCount || 0,
+        verify: verifyCount || 0,
+      });
+    } catch (err) {
+      console.error('fetchQueueCounts error:', err);
+    }
+  }, []);
 
   const fetchAds = useCallback(async () => {
     setLoading(true);
@@ -213,7 +257,17 @@ export default function AdModeration() {
   }, []);
 
   useEffect(() => { fetchAds(); }, [fetchAds]);
+  useEffect(() => { fetchQueueCounts(); }, [fetchQueueCounts]);
   useEffect(() => { setPage(1); }, [activeTab, searchQuery]);
+
+  // Auto-open workspace when entering a queue tab (member, general, listing, edited, verify)
+  const QUEUE_TABS = ['member', 'general', 'listing', 'edited', 'verify'];
+  useEffect(() => {
+    if (!loading && QUEUE_TABS.includes(activeTab) && ads.length > 0 && viewMode !== 'workspace') {
+      // Auto-open the first (oldest) ad in workspace mode
+      openInWorkspace(ads[0], 0);
+    }
+  }, [loading, activeTab, ads, viewMode]);
 
   // =========================================================================
   // Queue Navigation
@@ -281,10 +335,13 @@ export default function AdModeration() {
       const nextAd = newAds[Math.min(currentIndex, newAds.length - 1)];
       setSelectedAd(nextAd);
       // Keep currentIndex as is — the next ad slides into position
+      // Update queue counts in background
+      fetchQueueCounts();
     } else {
       // Queue empty
       setSelectedAd(null);
       setViewMode('table');
+      fetchQueueCounts();
       toast.success('Queue complete! All ads reviewed.');
     }
   }, [ads, selectedAd, currentIndex]);
@@ -292,8 +349,9 @@ export default function AdModeration() {
   const exitWorkspace = useCallback(() => {
     setViewMode('table');
     setSelectedAd(null);
-    fetchAds(); // Refresh the list
-  }, [fetchAds]);
+    fetchAds();
+    fetchQueueCounts();
+  }, [fetchAds, fetchQueueCounts]);
 
   // =========================================================================
   // Table Actions (for non-workspace mode)
@@ -446,18 +504,23 @@ export default function AdModeration() {
             <TabsList className="w-max">
               <TabsTrigger value="member" className="gap-1.5">
                 <Crown className="h-3.5 w-3.5" /> Member
+                {queueCounts.member > 0 && <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px]">{queueCounts.member}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="general" className="gap-1.5">
                 <Package className="h-3.5 w-3.5" /> General
+                {queueCounts.general > 0 && <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px]">{queueCounts.general}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="listing" className="gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5" /> Listing
+                {queueCounts.listing > 0 && <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px]">{queueCounts.listing}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="edited" className="gap-1.5">
                 <Clock className="h-3.5 w-3.5" /> Edited
+                {queueCounts.edited > 0 && <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px]">{queueCounts.edited}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="verify" className="gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5" /> Verify
+                {queueCounts.verify > 0 && <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px]">{queueCounts.verify}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="all">All</TabsTrigger>
             </TabsList>
