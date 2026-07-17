@@ -121,6 +121,7 @@ export default function PostAdV4() {
   const [division, setDivision] = useState('');
   const [district, setDistrict] = useState('');
   const [area, setArea] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
 
   // Step 7: Warranty
   const [warrantyType, setWarrantyType] = useState<WarrantyType>('none');
@@ -196,6 +197,7 @@ export default function PostAdV4() {
           setDivision(ad.division as string || '');
           setDistrict(ad.district as string || '');
           setArea(ad.area as string || '');
+          setContactPhone(ad.contact_phone as string || '');
           setWarrantyType((ad.warranty_type as WarrantyType) || 'none');
           setWarrantyDuration(ad.warranty_duration_months ? String(ad.warranty_duration_months) : '');
           setWarrantyCoverage(ad.warranty_coverage as string || '');
@@ -283,6 +285,8 @@ export default function PostAdV4() {
       case 6:
         if (!division) errors.push('Division is required');
         if (!district) errors.push('District is required');
+        if (!contactPhone.trim()) errors.push('Phone number is required');
+        if (contactPhone.trim() && !/^[+\d\s\-()]{7,20}$/.test(contactPhone.trim())) errors.push('Phone number is invalid');
         break;
     }
     setValidationErrors(errors);
@@ -328,6 +332,7 @@ export default function PostAdV4() {
       division,
       district,
       area: area || undefined,
+      contact_phone: contactPhone.trim() || undefined,
       shipping_methods: shippingMethods,
       shipping_fee_type: shippingFeeType,
       shipping_fee: shippingFee ? parseFloat(shippingFee) : 0,
@@ -628,6 +633,7 @@ export default function PostAdV4() {
                   <div><Label>District *</Label><Select value={district} onValueChange={setDistrict} disabled={!division}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{division && DISTRICTS[division]?.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>
                   <div><Label>Area</Label><Input value={area} onChange={e => setArea(e.target.value)} placeholder="Optional" /></div>
                 </div>
+                <div><Label>Contact Phone *</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="01XXXXXXXXX" /></div>
               </div>
             )}
 
@@ -656,6 +662,7 @@ export default function PostAdV4() {
                   {discountAmount > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><Badge variant="destructive">{discountPercentage}% OFF</Badge></div>}
                   <div className="flex justify-between"><span className="text-muted-foreground">Images</span><span className="font-medium">{images.length + existingImages.length} images</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Location</span><span className="font-medium">{division}, {district}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Phone</span><span className="font-medium">{contactPhone || 'Not provided'}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span className="font-medium">{shippingMethods.length > 0 ? shippingMethods.map(m => m.replace(/_/g, ' ')).join(', ') : 'Not specified'}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Warranty</span><span className="font-medium capitalize">{warrantyType === 'none' ? 'No Warranty' : `${warrantyType} (${warrantyDuration || 0} months)`}</span></div>
                 </div>
