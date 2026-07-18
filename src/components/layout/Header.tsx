@@ -98,19 +98,35 @@ export function Header({ searchQuery = '', onSearchChange, onSearch, hideSearch 
             </div>
           </form>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-6">
-            <NavLinks />
-          </nav>
-
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            {/* 1. Admin */}
+            {showAdmin && (
+              <Link to="/admin" className="hidden lg:inline-flex" aria-label={t('nav.admin')}>
+                <Button variant="ghost" size="icon">
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </Link>
+            )}
+
+            {/* 2. Language Switcher */}
+            <LanguageSwitcher />
+
+            {/* 3. Theme */}
             <div className="hidden sm:block">
               <ThemeToggle />
             </div>
-            <LanguageSwitcher />
 
-            {/* Notification Bell */}
+            {/* 4. Saved Ads / Wishlist */}
+            {user && (
+              <Link to="/favorites" className="relative" aria-label={t('nav.favorites', 'Favorites')}>
+                <Button variant="ghost" size="icon">
+                  <Heart className="h-5 w-5" />
+                </Button>
+              </Link>
+            )}
+
+            {/* 5. Notification Bell */}
             {user && (
               <Link to="/notifications" className="relative">
                 <Button variant="ghost" size="icon" className="relative">

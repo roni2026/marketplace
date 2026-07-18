@@ -6,6 +6,7 @@ import { MobileNav } from '@/components/layout/MobileNav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdCard } from '@/components/ads/AdCard';
 import { SortSelect, SortOption } from '@/components/ads/SortSelect';
+import { InlineSearchBar } from '@/components/search/InlineSearchBar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -279,7 +280,7 @@ export default function Favorites() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <Header hideSearch />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
@@ -293,6 +294,7 @@ export default function Favorites() {
           </div>
 
           <div className="flex items-center gap-2">
+            <InlineSearchBar />
             <SortSelect value={sort} onChange={v => { setSort(v); setPage(1); }} />
             <Sheet>
               <SheetTrigger asChild>
