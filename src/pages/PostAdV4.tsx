@@ -37,7 +37,7 @@ import {
 import { toast } from 'sonner';
 import {
   ArrowLeft, ArrowRight, Check, Upload, X, Star, ImageIcon, Calendar,
-  Loader2, Save, Send, ChevronUp, ChevronDown, AlertCircle, Percent,
+  Loader2, Save, Send, ChevronUp, ChevronDown, AlertCircle, Percent, Plus,
 } from 'lucide-react';
 import type {
   ListingType, ItemConditionConfig, CategoryAttribute,
@@ -127,6 +127,7 @@ export default function PostAdV4() {
   const [area, setArea] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [secondaryPhone, setSecondaryPhone] = useState('');
+  const [showSecondaryPhone, setShowSecondaryPhone] = useState(false);
 
   // Step 7: Warranty
   const [warrantyType, setWarrantyType] = useState<WarrantyType>('none');
@@ -142,15 +143,52 @@ export default function PostAdV4() {
     if (!authLoading && !user) navigate('/auth');
   }, [user, authLoading, navigate]);
 
-  // Pre-fill phone from profile (only when creating a new ad, not editing)
+  // #5 Phone sync: default the listing's primary phone to the profile's primary
+  // number for new ads. Future edits to the profile phone flow into future listings
+  // because this reads the current profile each time a new ad is created.
   useEffect(() => {
     if (profile?.phone_number && !editId && !contactPhone) {
       setContactPhone(profile.phone_number);
     }
-    if (profile?.secondary_phone && !editId && !secondaryPhone) {
-      setSecondaryPhone(profile.secondary_phone);
-    }
-  }, [profile, editId]);
+  }, [profile, editId, contactPhone]);
+
+  // #6 Secondary phone is opt-in: hidden behind a button until the user adds it,
+  // and hidden again when removed. Shown automatically if a value already exists
+  // (e.g. when editing an ad that already has a secondary number).
+  const renderSecondaryPhone = () => (
+    (showSecondaryPhone || secondaryPhone) ? (
+      <div className="space-y-1.5">
+        <Label>Secondary Phone (optional)</Label>
+        <div className="flex items-center gap-2">
+          <Input
+            value={secondaryPhone}
+            onChange={e => setSecondaryPhone(e.target.value)}
+            placeholder="01XXXXXXXXX"
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Remove secondary number"
+            onClick={() => { setSecondaryPhone(''); setShowSecondaryPhone(false); }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    ) : (
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="gap-2"
+        onClick={() => setShowSecondaryPhone(true)}
+      >
+        <Plus className="h-4 w-4" /> Add Secondary Number
+      </Button>
+    )
+  );
 
   useEffect(() => {
     // Check if user has a shop (shop owner gets full wizard)
@@ -605,8 +643,8 @@ export default function PostAdV4() {
                     <div><Label>District *</Label><Select value={district} onValueChange={setDistrict} disabled={!division}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{division && DISTRICTS[division]?.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>
                     <div><Label>Area</Label><Input value={area} onChange={e => setArea(e.target.value)} placeholder="Optional" /></div>
                   </div>
-                  <div><Label>Contact Phone *</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="01XXXXXXXXX" /></div>
-                  <div><Label>Secondary Phone (optional)</Label><Input value={secondaryPhone} onChange={e => setSecondaryPhone(e.target.value)} placeholder="01XXXXXXXXX" /></div>
+                  <div><Label>Contact Phone *</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="01XXXXXXXXX" /><p className="text-xs text-muted-foreground mt-1">Defaults to your profile's primary number. Editable per listing.</p></div>
+                  {renderSecondaryPhone()}
                 </div>
               </div>
             )}
@@ -769,8 +807,8 @@ export default function PostAdV4() {
                   <div><Label>District *</Label><Select value={district} onValueChange={setDistrict} disabled={!division}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{division && DISTRICTS[division]?.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>
                   <div><Label>Area</Label><Input value={area} onChange={e => setArea(e.target.value)} placeholder="Optional" /></div>
                 </div>
-                <div><Label>Contact Phone *</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="01XXXXXXXXX" /></div>
-                <div><Label>Secondary Phone (optional)</Label><Input value={secondaryPhone} onChange={e => setSecondaryPhone(e.target.value)} placeholder="01XXXXXXXXX" /></div>
+                <div><Label>Contact Phone *</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="01XXXXXXXXX" /><p className="text-xs text-muted-foreground mt-1">Defaults to your profile's primary number. Editable per listing.</p></div>
+                {renderSecondaryPhone()}
               </div>
             )}
 
