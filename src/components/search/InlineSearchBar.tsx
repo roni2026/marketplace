@@ -37,22 +37,23 @@ export function InlineSearchBar({ initialValue = '', onSubmit, className }: Inli
   };
 
   return (
-    <form onSubmit={handleSubmit} className={className || 'relative w-full sm:w-56 md:w-64'}>
+    <form onSubmit={handleSubmit} className={className || 'relative w-full sm:w-72 md:w-96'}>
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         type="text"
         placeholder={t('search.searchPlaceholder')}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="pr-10"
+        className="h-11 rounded-lg pl-10 pr-24"
       />
       <Button
         type="submit"
-        size="icon"
-        variant="ghost"
-        className="absolute right-0 top-0 h-full"
+        size="sm"
+        className="absolute right-1.5 top-1/2 h-8 -translate-y-1/2 px-4"
         aria-label={t('search.searchPlaceholder')}
       >
-        <Search className="h-4 w-4" />
+        <Search className="h-4 w-4 sm:hidden" />
+        <span className="hidden sm:inline">{t('common.search', 'Search')}</span>
       </Button>
     </form>
   );

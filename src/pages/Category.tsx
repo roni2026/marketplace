@@ -349,6 +349,10 @@ export default function CategoryPage() {
 
   const CategoryIcon = getCategoryIcon(activeSlug);
 
+  // Derived from loaded category state (falls back to the route slug while loading).
+  const categoryName = category?.name ?? 'Category';
+  const categorySlug = activeSlug;
+
   return (
     <div className="min-h-screen flex flex-col">
       <SEO
@@ -360,24 +364,27 @@ export default function CategoryPage() {
           { name: categoryName, url: `/category/${categorySlug}` },
         ]}
       />
-      <Header hideSearch />
-      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <CategoryIcon className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">{category?.name || 'Category'}</h1>
-              <p className="text-muted-foreground">{totalCount} ads found</p>
-            </div>
+      <Header />
+      <main className="flex-1 container mx-auto px-4 py-4 pb-20 lg:py-6 lg:pb-6">
+        {/* Category header */}
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <CategoryIcon className="h-5 w-5" />
           </div>
-          <div className="flex items-center gap-2">
-            <InlineSearchBar />
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold leading-tight truncate">{category?.name || 'Category'}</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">{totalCount.toLocaleString()} ads found</p>
+          </div>
+        </div>
+
+        {/* Search + controls toolbar */}
+        <div className="flex flex-col sm:flex-row items-stretch gap-2 mb-4">
+          <InlineSearchBar className="relative flex-1 w-full" />
+          <div className="flex items-center gap-2 shrink-0">
             <SortSelect value={sort} onChange={v => { setSort(v); setPage(1); }} />
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" className="gap-2 relative">
+                <Button variant="outline" size="sm" className="h-11 gap-2 relative lg:hidden">
                   <Filter className="h-4 w-4" />
                   <span className="hidden sm:inline">Filters</span>
                   {activeFilterCount > 0 && (
@@ -393,13 +400,13 @@ export default function CategoryPage() {
           </div>
         </div>
 
-        {subcategories.length > 0 && <div className="mb-6"><SubcategoryChips /></div>}
+        {subcategories.length > 0 && <div className="mb-4"><SubcategoryChips /></div>}
 
-        <div className="grid lg:grid-cols-4 gap-8">
+        <div className="grid lg:grid-cols-4 gap-5">
           <aside className="hidden lg:block">
-            <div className="sticky top-24 bg-card p-4 rounded-lg border">
+            <div className="sticky top-20 bg-card p-4 rounded-lg border">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> Filters</h3>
+                <h3 className="font-semibold text-sm flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> Filters</h3>
                 {activeFilterCount > 0 && <Badge variant="secondary">{activeFilterCount}</Badge>}
               </div>
               <FilterPanel />
@@ -408,8 +415,8 @@ export default function CategoryPage() {
 
           <div className="lg:col-span-3">
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64 rounded-lg" />)}
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-56 rounded-lg" />)}
               </div>
             ) : ads.length === 0 ? (
               <div className="text-center py-12">
@@ -418,7 +425,7 @@ export default function CategoryPage() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
                   {ads.map(ad => <AdCard key={ad.id} ad={ad} isFavorite={favorites.includes(ad.id)} />)}
                 </div>
                 {totalPages > 1 && (

@@ -107,7 +107,7 @@ const Index = () => {
       description="BazarBD is a free classifieds marketplace to buy and sell electronics, vehicles, property, jobs and more across Bangladesh."
       breadcrumbs={[{ name: "Home", url: "/" }]}
     />
-      <Header hideSearch />
+      <Header />
       <main className="flex-1 pb-16 lg:pb-0">
         <HeroBanner />
         
