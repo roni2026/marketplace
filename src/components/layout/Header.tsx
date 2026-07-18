@@ -71,7 +71,7 @@ export function Header({ searchQuery = '', onSearchChange, onSearch, hideSearch 
           {/* Logo — clicking goes to home */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <img
-              src="https://res.cloudinary.com/iok4ild8/image/upload/c_limit,w_200,h_48,q_auto/f_auto/bazarbd/sohoj_kena_beca_logo"
+              src="https://res.cloudinary.com/iok4ild8/image/upload/c_limit,w_240,h_64,q_auto/f_auto/bazarbd/sohoj_kena_beca_logo_v2"
               alt="SohojKenaBeca"
               className="h-8 w-auto"
             />
