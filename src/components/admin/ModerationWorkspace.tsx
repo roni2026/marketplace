@@ -38,6 +38,7 @@ import {
   MapPin, Tag, DollarSign, Star, Zap, Crown, ExternalLink,
   History, StickyNote, ChevronDown, ChevronUp, Timer,
   TrendingUp, AlertCircle, EyeOff, ArrowRight, Copy, Share2,
+  Mail, Phone, Calendar,
 } from 'lucide-react';
 import {
   logModerationAction, ensureManualReviewInitialized, getModerationActions,
@@ -60,10 +61,14 @@ interface Seller {
   user_id: string;
   full_name: string | null;
   avatar_url: string | null;
+  email: string | null;
   phone_number: string | null;
+  secondary_phone: string | null;
   division: string | null;
   district: string | null;
   is_verified: boolean | null;
+  is_suspended: boolean | null;
+  is_blocked: boolean | null;
   seller_rating: number | null;
   total_sales: number | null;
   total_listings: number | null;
@@ -200,7 +205,7 @@ export function ModerationWorkspace({
       const [sellerRes, actionsRes, notesRes] = await Promise.all([
         supabase
           .from('profiles')
-          .select('user_id, full_name, avatar_url, phone_number, division, district, is_verified, seller_rating, total_sales, created_at')
+          .select('user_id, full_name, avatar_url, email, phone_number, secondary_phone, division, district, is_verified, is_suspended, is_blocked, seller_rating, total_sales, created_at')
           .eq('user_id', ad.user_id)
           .maybeSingle(),
         getModerationActions(ad.id, 50, 0),
@@ -451,7 +456,7 @@ export function ModerationWorkspace({
           user_id: ad.user_id, type: 'ad_approved',
           title: 'Your ad has been approved', body: `"${ad.title}" is now live.`,
         });
-      } catch {}
+      } catch { /* notification is best-effort; approval already succeeded */ }
 
       toast.success('Approved — loading next ad...');
       setActionLoading(false);
@@ -485,7 +490,7 @@ export function ModerationWorkspace({
           user_id: ad.user_id, type: 'ad_rejected',
           title: 'Your ad was rejected', body: `"${ad.title}": ${rejectReason}`,
         });
-      } catch {}
+      } catch { /* notification is best-effort; rejection already succeeded */ }
 
       setShowRejectDialog(false);
       setRejectReason('');
@@ -1082,20 +1087,59 @@ export function ModerationWorkspace({
                   </Avatar>
                   <div className="min-w-0">
                     <div className="font-medium text-sm truncate">{seller.full_name || 'Unknown'}</div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      {seller.is_verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
-                      {seller.is_verified ? 'Verified' : 'Unverified'}
+                    <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                      {seller.is_verified
+                        ? <Badge className="text-[10px] gap-1 bg-green-500/15 text-green-600 hover:bg-green-500/15"><ShieldCheck className="h-3 w-3" /> Verified</Badge>
+                        : <Badge variant="secondary" className="text-[10px]">Unverified</Badge>}
+                      {seller.is_blocked
+                        ? <Badge variant="destructive" className="text-[10px]">Blocked</Badge>
+                        : seller.is_suspended
+                          ? <Badge variant="destructive" className="text-[10px]">Suspended</Badge>
+                          : <Badge className="text-[10px] bg-green-500/15 text-green-600 hover:bg-green-500/15">Active</Badge>}
                     </div>
                   </div>
                 </div>
                 <div className="space-y-1.5 text-xs">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted-foreground flex items-center gap-1.5 shrink-0"><Mail className="h-3 w-3" /> Email</span>
+                    <span className="flex items-center gap-1 min-w-0">
+                      <span className="font-medium truncate">{seller.email || 'Not available'}</span>
+                      {seller.email && (
+                        <button type="button" aria-label="Copy email" className="text-muted-foreground hover:text-foreground shrink-0"
+                          onClick={() => { navigator.clipboard?.writeText(seller.email!); toast.success('Email copied'); }}>
+                          <Copy className="h-3 w-3" />
+                        </button>
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted-foreground flex items-center gap-1.5 shrink-0"><Phone className="h-3 w-3" /> Primary phone</span>
+                    <span className="font-medium font-mono truncate">{seller.phone_number || 'Not provided'}</span>
+                  </div>
+                  {seller.secondary_phone && (
+                    <div className="flex justify-between gap-2">
+                      <span className="text-muted-foreground flex items-center gap-1.5 shrink-0"><Phone className="h-3 w-3" /> Secondary phone</span>
+                      <span className="font-medium font-mono truncate">{seller.secondary_phone}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted-foreground shrink-0">User ID</span>
+                    <span className="flex items-center gap-1 min-w-0">
+                      <span className="font-medium font-mono truncate">{seller.user_id}</span>
+                      <button type="button" aria-label="Copy user ID" className="text-muted-foreground hover:text-foreground shrink-0"
+                        onClick={() => { navigator.clipboard?.writeText(seller.user_id); toast.success('User ID copied'); }}>
+                        <Copy className="h-3 w-3" />
+                      </button>
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted-foreground flex items-center gap-1.5 shrink-0"><Calendar className="h-3 w-3" /> Joined</span>
+                    <span className="font-medium">{seller.created_at ? format(new Date(seller.created_at), 'MMM d, yyyy') : 'N/A'}</span>
+                  </div>
+                  <Separator className="my-1" />
                   <div className="flex justify-between"><span className="text-muted-foreground">Rating</span><span className="font-medium">{seller.seller_rating?.toFixed(1) || 'N/A'} ★</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Total Sales</span><span className="font-medium">{seller.total_sales || 0}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Total Listings</span><span className="font-medium">{seller.total_listings || 0}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Member Since</span><span className="font-medium">{seller.created_at ? format(new Date(seller.created_at), 'MMM yyyy') : 'N/A'}</span></div>
-                  {seller.phone_number && (
-                    <div className="flex justify-between"><span className="text-muted-foreground">Phone</span><span className="font-medium font-mono">{seller.phone_number}</span></div>
-                  )}
                 </div>
                 <Button variant="outline" size="sm" className="w-full mt-2 gap-1" as="a" href={`/user/${seller.user_id}`} target="_blank">
                   <ExternalLink className="h-3.5 w-3.5" /> View Seller Profile
