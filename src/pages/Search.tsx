@@ -198,14 +198,14 @@ export default function Search() {
   return (
     <div className="min-h-screen flex flex-col">
       <SEO
-        title={generateSearchTitle(searchQuery || 'All Listings')}
-        description={generateSearchDescription(searchQuery || 'All Listings')}
+        title={generateSearchTitle(query || 'All Listings')}
+        description={generateSearchDescription(query || 'All Listings')}
         breadcrumbs={[
           { name: 'Home', url: '/' },
           { name: 'Search', url: '/search' },
         ]}
       />
-      <Header hideSearch />
+      <Header />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>

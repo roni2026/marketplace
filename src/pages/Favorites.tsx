@@ -280,7 +280,7 @@ export default function Favorites() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header hideSearch />
+      <Header />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">

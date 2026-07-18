@@ -37,7 +37,7 @@ import {
 import { toast } from 'sonner';
 import {
   ArrowLeft, ArrowRight, Check, Upload, X, Star, ImageIcon, Calendar,
-  Loader2, Save, Send, ChevronUp, ChevronDown, AlertCircle,
+  Loader2, Save, Send, ChevronUp, ChevronDown, AlertCircle, Percent,
 } from 'lucide-react';
 import type {
   ListingType, ItemConditionConfig, CategoryAttribute,

@@ -25,14 +25,14 @@
     "heroSearchPlaceholder": "আপনি কী খুঁজছেন?",
     "heroSearchButton": "সার্চ",
     "popular": "জনপ্রিয়:",
-    "freeSecure": "ফ্রি ও নিরাপদ বিজ্ঞাপন",
-    "trustedBy": "স্থানীয় ক্রেতা ও বিক্রেতাদের আস্থা",
-    "newAdsDaily": "প্রতিদিন নতুন বিজ্ঞাপন যোগ হচ্ছে",
     "browseCategories": "ক্যাটাগরি ব্রাউজ করুন",
     "featuredAds": "ফিচার্ড বিজ্ঞাপন",
     "recentAds": "সাম্প্রতিক বিজ্ঞাপন",
     "viewAll": "সব দেখুন",
-    "recentlyViewed": "সম্প্রতি দেখা হয়েছে"
+    "recentlyViewed": "সম্প্রতি দেখা হয়েছে",
+    "verifiedSellers": "যাচাইকৃত বিক্রেতা",
+    "buyerProtection": "ক্রেতা সুরক্ষা নিশ্চয়তা",
+    "secureCheckout": "নিরাপদ ও এনক্রিপ্টেড চেকআউট"
   },
   "ad": {
     "price": "মূল্য",

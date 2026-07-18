@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, Plus, User, Heart, Menu, X, LogOut, Settings, Bell, MessageCircle } from 'lucide-react';
+import { Plus, User, Heart, Menu, LogOut, Settings, Bell, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useMessages } from '@/hooks/useMessages';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -18,27 +17,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
 
-interface HeaderProps {
-  searchQuery?: string;
-  onSearchChange?: (query: string) => void;
-  onSearch?: () => void;
-  hideSearch?: boolean;
-}
-
-export function Header({ searchQuery = '', onSearchChange, onSearch, hideSearch = false }: HeaderProps) {
+export function Header() {
   const { user, isAdmin, roles, signOut } = useAuth();
   const showAdmin = isAdmin === true || (roles || []).some((r) => ['super_admin','admin','moderator'].includes(String(r)));
   const { unreadCount: unreadNotifications } = useNotifications();
   const { unreadCount: unreadMessages } = useMessages();
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useTranslation();
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch?.();
-  };
 
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
     <>
@@ -77,26 +63,8 @@ export function Header({ searchQuery = '', onSearchChange, onSearch, hideSearch 
             />
           </Link>
 
-          {/* Search Bar - Desktop (hidden on homepage, hero has its own search) */}
-          <form onSubmit={handleSearch} className={`hidden md:flex flex-1 max-w-xl ${hideSearch ? 'invisible' : ''}`}>
-            <div className="relative w-full">
-              <Input
-                type="text"
-                placeholder={t('search.searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => onSearchChange?.(e.target.value)}
-                className="pr-10"
-              />
-              <Button 
-                type="submit" 
-                size="icon" 
-                variant="ghost" 
-                className="absolute right-0 top-0 h-full"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </form>
+          {/* Spacer keeps the logo and action buttons at opposite ends */}
+          <div className="flex-1" />
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
@@ -235,23 +203,6 @@ export function Header({ searchQuery = '', onSearchChange, onSearch, hideSearch 
               </SheetTrigger>
               <SheetContent side="right" className="w-72">
                 <div className="flex flex-col gap-6 mt-8">
-                  <form onSubmit={handleSearch} className="relative">
-                    <Input
-                      type="text"
-                      placeholder={t('search.searchMobile')}
-                      value={searchQuery}
-                      onChange={(e) => onSearchChange?.(e.target.value)}
-                      className="pr-10"
-                    />
-                    <Button 
-                      type="submit" 
-                      size="icon" 
-                      variant="ghost" 
-                      className="absolute right-0 top-0 h-full"
-                    >
-                      <Search className="h-4 w-4" />
-                    </Button>
-                  </form>
                   <nav className="flex flex-col gap-4">
                     <NavLinks mobile />
                   </nav>

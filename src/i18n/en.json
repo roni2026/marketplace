@@ -25,14 +25,14 @@
     "heroSearchPlaceholder": "What are you looking for?",
     "heroSearchButton": "Search",
     "popular": "Popular:",
-    "freeSecure": "Free & secure listings",
-    "trustedBy": "Trusted by local buyers & sellers",
-    "newAdsDaily": "New ads added daily",
     "browseCategories": "Browse Categories",
     "featuredAds": "Featured Ads",
     "recentAds": "Recent Ads",
     "viewAll": "View All",
-    "recentlyViewed": "Recently Viewed"
+    "recentlyViewed": "Recently Viewed",
+    "verifiedSellers": "Verified sellers",
+    "buyerProtection": "Buyer protection guarantee",
+    "secureCheckout": "Secure & encrypted checkout"
   },
   "ad": {
     "price": "Price",

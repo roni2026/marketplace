@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, ShieldCheck, Users, TrendingUp } from 'lucide-react';
+import { Search, ShieldCheck, BadgeCheck, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -57,19 +57,19 @@ export function HeroBanner() {
           ))}
         </div>
 
-        {/* Trust badges - hidden on mobile */}
+        {/* Premium trust badges - hidden on mobile */}
         <div className="mt-10 hidden md:flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
           <span className="flex items-center gap-2">
+            <BadgeCheck className="h-4 w-4 text-primary" />
+            {t('homepage.verifiedSellers', 'Verified sellers')}
+          </span>
+          <span className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-primary" />
-            {t('homepage.freeSecure')}
+            {t('homepage.buyerProtection', 'Buyer protection guarantee')}
           </span>
           <span className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
-            {t('homepage.trustedBy')}
-          </span>
-          <span className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            {t('homepage.newAdsDaily')}
+            <Lock className="h-4 w-4 text-primary" />
+            {t('homepage.secureCheckout', 'Secure & encrypted checkout')}
           </span>
         </div>
       </div>

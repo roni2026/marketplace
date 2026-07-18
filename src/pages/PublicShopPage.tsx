@@ -218,7 +218,7 @@ export default function PublicShopPage() {
         breadcrumbs={[
           { name: 'Home', url: '/' },
           { name: 'Shops', url: '/shops' },
-          { name: shop?.name || 'Shop', url: `/shop/${shopSlug}` },
+          { name: shop?.name || 'Shop', url: `/shop/${slug}` },
         ]}
       />
       <Header />
