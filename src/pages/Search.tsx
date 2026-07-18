@@ -7,6 +7,7 @@ import { Footer } from '@/components/layout/Footer';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { AdCard } from '@/components/ads/AdCard';
 import { SortSelect, SortOption } from '@/components/ads/SortSelect';
+import { InlineSearchBar } from '@/components/search/InlineSearchBar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -204,7 +205,7 @@ export default function Search() {
           { name: 'Search', url: '/search' },
         ]}
       />
-      <Header />
+      <Header hideSearch />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -239,6 +240,15 @@ export default function Search() {
                 {t('search.saveSearch')}
               </Button>
             )}
+            <InlineSearchBar
+              initialValue={query}
+              onSubmit={(q) => {
+                const params = new URLSearchParams(searchParams);
+                if (q) params.set('q', q); else params.delete('q');
+                setSearchParams(params);
+                setPage(1);
+              }}
+            />
             <SortSelect value={sort} onChange={(v) => { setSort(v); setPage(1); }} />
           </div>
         </div>

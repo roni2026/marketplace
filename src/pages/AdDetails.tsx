@@ -412,7 +412,7 @@ export default function AdDetails() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header />
+        <Header hideSearch />
         <main className="flex-1 container mx-auto px-4 py-8">
           <div className="grid md:grid-cols-2 gap-8">
             <Skeleton className="aspect-square rounded-lg" />
@@ -431,7 +431,7 @@ export default function AdDetails() {
   if (!ad) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header />
+        <Header hideSearch />
         <main className="flex-1 container mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold">{t('ad.adNotFound')}</h1>
           <p className="text-muted-foreground mt-2">{t('ad.adNotFoundDesc')}</p>
@@ -469,7 +469,7 @@ export default function AdDetails() {
           images: ad.ad_images,
         })}
       />
-      <Header />
+      <Header hideSearch />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
         {/* Breadcrumb */}
         <nav className="text-sm text-muted-foreground mb-4 flex gap-2 overflow-x-auto whitespace-nowrap">
@@ -597,7 +597,7 @@ export default function AdDetails() {
                   </Dialog>
                 </div>
 
-                {/* Offer & Message buttons */}
+                {/* Offer button (message option lives in the seller information block) */}
                 {!isOwnAd && (
                   <div className="flex gap-2">
                     <Dialog open={showOfferDialog} onOpenChange={setShowOfferDialog}>
@@ -642,18 +642,6 @@ export default function AdDetails() {
                         </div>
                       </DialogContent>
                     </Dialog>
-
-                    <Button
-                      variant="outline"
-                      className="flex-1 gap-2"
-                      onClick={() => {
-                        if (!user) { navigate('/auth'); return; }
-                        setShowMessageDialog(true);
-                      }}
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      {t('ad.message')}
-                    </Button>
                   </div>
                 )}
 
