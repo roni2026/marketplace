@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { isCloudinaryConfigured, uploadToCloudinary } from '@/lib/cloudinary';
 import { toast } from 'sonner';
-import { Loader2, X, ImageIcon, ArrowLeft, ArrowRight, Calendar } from 'lucide-react';
+import { Loader2, X, ImageIcon, ArrowLeft, ArrowRight, Calendar, Plus } from 'lucide-react';
 import { DIVISIONS, DISTRICTS, generateSlug } from '@/lib/constants';
 import { validateTitle, validateDescription, validatePrice, validateLocation, validateImageFile, sanitizeText, sanitizeRichText } from '@/lib/validation';
 import { moderateContent, getSpamScore } from '@/lib/moderation';
@@ -59,6 +59,7 @@ export default function PostAd() {
   const [area, setArea] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [secondaryPhone, setSecondaryPhone] = useState('');
+  const [showSecondaryPhone, setShowSecondaryPhone] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -66,15 +67,13 @@ export default function PostAd() {
     }
   }, [user, authLoading, navigate]);
 
-  // Pre-fill phone from profile
+  // #5 Phone sync: the profile's primary number is the source of truth. Default
+  // the listing's contact phone to it for new ads; still editable per listing.
   useEffect(() => {
     if (profile?.phone_number && !contactPhone) {
       setContactPhone(profile.phone_number);
     }
-    if (profile?.secondary_phone && !secondaryPhone) {
-      setSecondaryPhone(profile.secondary_phone);
-    }
-  }, [profile]);
+  }, [profile, contactPhone]);
 
   useEffect(() => {
     fetchCategories();
@@ -325,17 +324,13 @@ export default function PostAd() {
       
       await supabase.from('ad_images').insert(imageInserts);
 
-      // Save phone numbers to user's profile for future use
-      if (contactPhone.trim()) {
+      // #5 Profile is the source of truth for the primary phone. Only backfill it
+      // if the profile has no primary number yet — never overwrite an existing one
+      // from a per-listing edit. The per-listing secondary number is not written back.
+      if (contactPhone.trim() && !profile?.phone_number) {
         await supabase
           .from('profiles')
           .update({ phone_number: contactPhone.trim(), updated_at: new Date().toISOString() })
-          .eq('user_id', user.id);
-      }
-      if (secondaryPhone.trim()) {
-        await supabase
-          .from('profiles')
-          .update({ secondary_phone: secondaryPhone.trim(), updated_at: new Date().toISOString() })
           .eq('user_id', user.id);
       }
 
@@ -620,22 +615,45 @@ export default function PostAd() {
                   placeholder="01XXXXXXXXX"
                 />
                 <p className="text-xs text-muted-foreground">
-                  {t('postAd.phoneHint')}
+                  Defaults to your profile's primary number. Editable for this listing.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="secondaryPhone">Secondary Phone (optional)</Label>
-                <Input
-                  id="secondaryPhone"
-                  type="tel"
-                  value={secondaryPhone}
-                  onChange={(e) => setSecondaryPhone(e.target.value)}
-                  placeholder="01XXXXXXXXX"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Add an optional secondary contact number.
-                </p>
+                {(showSecondaryPhone || secondaryPhone) ? (
+                  <>
+                    <Label htmlFor="secondaryPhone">Secondary Phone (optional)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="secondaryPhone"
+                        type="tel"
+                        value={secondaryPhone}
+                        onChange={(e) => setSecondaryPhone(e.target.value)}
+                        placeholder="01XXXXXXXXX"
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Remove secondary number"
+                        onClick={() => { setSecondaryPhone(''); setShowSecondaryPhone(false); }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setShowSecondaryPhone(true)}
+                  >
+                    <Plus className="h-4 w-4" /> Add Secondary Number
+                  </Button>
+                )}
               </div>
 
               {/* Scheduling & Urgent */}
