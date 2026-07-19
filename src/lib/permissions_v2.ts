@@ -30,6 +30,11 @@ export const CAN_MANAGE_SEO = 'can_manage_seo';
 export const CAN_MANAGE_API_KEYS = 'can_manage_api_keys';
 export const CAN_MANAGE_BACKUPS = 'can_manage_backups';
 export const CAN_MANAGE_FEATURE_FLAGS = 'can_manage_feature_flags';
+// Ad moderation (Phase: Admin Permissions & Universal Ad Search)
+export const CAN_DELETE_ADS = 'can_delete_ads';
+export const CAN_RESTORE_ADS = 'can_restore_ads';
+export const CAN_BOOST_ADS = 'can_boost_ads';
+export const CAN_EDIT_LISTINGS = 'can_edit_listings';
 
 export type AdvancedPermission = typeof CAN_APPROVE_ADS
   | typeof CAN_REJECT_ADS
@@ -55,7 +60,11 @@ export type AdvancedPermission = typeof CAN_APPROVE_ADS
   | typeof CAN_MANAGE_SEO
   | typeof CAN_MANAGE_API_KEYS
   | typeof CAN_MANAGE_BACKUPS
-  | typeof CAN_MANAGE_FEATURE_FLAGS;
+  | typeof CAN_MANAGE_FEATURE_FLAGS
+  | typeof CAN_DELETE_ADS
+  | typeof CAN_RESTORE_ADS
+  | typeof CAN_BOOST_ADS
+  | typeof CAN_EDIT_LISTINGS;
 
 export const ALL_ADVANCED_PERMISSIONS: AdvancedPermission[] = [
   CAN_APPROVE_ADS,
@@ -83,6 +92,10 @@ export const ALL_ADVANCED_PERMISSIONS: AdvancedPermission[] = [
   CAN_MANAGE_API_KEYS,
   CAN_MANAGE_BACKUPS,
   CAN_MANAGE_FEATURE_FLAGS,
+  CAN_DELETE_ADS,
+  CAN_RESTORE_ADS,
+  CAN_BOOST_ADS,
+  CAN_EDIT_LISTINGS,
 ];
 
 // ============================================
@@ -115,6 +128,10 @@ export const PERMISSION_LABELS: Record<AdvancedPermission, string> = {
   [CAN_MANAGE_API_KEYS]: 'Manage API Keys',
   [CAN_MANAGE_BACKUPS]: 'Manage Backups',
   [CAN_MANAGE_FEATURE_FLAGS]: 'Manage Feature Flags',
+  [CAN_DELETE_ADS]: 'Delete / Remove Ads',
+  [CAN_RESTORE_ADS]: 'Restore Ads',
+  [CAN_BOOST_ADS]: 'Boost Ads',
+  [CAN_EDIT_LISTINGS]: 'Edit Listings',
 };
 
 export interface PermissionGroup {
@@ -125,7 +142,7 @@ export interface PermissionGroup {
 export const PERMISSION_GROUPS: PermissionGroup[] = [
   {
     label: 'Ads',
-    permissions: [CAN_APPROVE_ADS, CAN_REJECT_ADS],
+    permissions: [CAN_APPROVE_ADS, CAN_REJECT_ADS, CAN_DELETE_ADS, CAN_RESTORE_ADS, CAN_BOOST_ADS, CAN_EDIT_LISTINGS],
   },
   {
     label: 'Users',
@@ -161,10 +178,12 @@ const ROLE_DEFAULT_PERMISSIONS: Record<AppRole, AdvancedPermission[]> = {
     CAN_MANAGE_SETTINGS, CAN_MODERATE_REVIEWS, CAN_MODERATE_MESSAGES, CAN_MANAGE_CMS,
     CAN_VIEW_FINANCIAL_REPORTS, CAN_BAN_USERS, CAN_VERIFY_BUSINESS, CAN_MANAGE_BLACKLIST,
     CAN_VIEW_FRAUD_ALERTS, CAN_MANAGE_WORKFLOW, CAN_MANAGE_SEO, CAN_MANAGE_FEATURE_FLAGS,
+    CAN_DELETE_ADS, CAN_RESTORE_ADS, CAN_BOOST_ADS, CAN_EDIT_LISTINGS,
   ],
   moderator: [
     CAN_APPROVE_ADS, CAN_REJECT_ADS, CAN_MODERATE_REVIEWS, CAN_MODERATE_MESSAGES,
     CAN_VIEW_FRAUD_ALERTS, CAN_BAN_USERS, CAN_VIEW_ANALYTICS,
+    CAN_EDIT_LISTINGS,
   ],
   customer_support: [
     CAN_MODERATE_MESSAGES, CAN_MODERATE_REVIEWS, CAN_VIEW_FRAUD_ALERTS,

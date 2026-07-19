@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { logAudit } from '@/lib/audit';
 
 interface CatalogRow { permission_key: string; label: string; section: string; href: string; sort_order: number; }
 
@@ -68,6 +69,12 @@ export function AdminTabGrants({ userId }: { userId: string }) {
         const { error } = await supabase.from('admin_tab_permissions').insert(rows);
         if (error) throw error;
       }
+      await logAudit({
+        action: 'update',
+        resourceType: 'admin_tab_permissions',
+        resourceId: userId,
+        details: { granted_tabs: [...granted] },
+      });
       toast.success('Tab access saved — that admin will only see granted tabs');
       load();
     } catch (e: any) {

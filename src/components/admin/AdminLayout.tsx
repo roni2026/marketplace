@@ -18,7 +18,7 @@ import {
   ShoppingCart, Tag, Ticket, Percent, RotateCcw, Star, MessageSquare,
   Image, Globe, Zap, Wrench, Activity, Code, HardDrive,
   Building2, UserCheck, FileCheck, Truck, Crown, Gift,
-  TrendingUp, AlertTriangle, ShieldCheck, Key,
+  TrendingUp, AlertTriangle, ShieldCheck, Key, FileSearch,
 } from 'lucide-react';
 
 interface NavItem {
@@ -43,6 +43,12 @@ const navSections: NavSection[] = [
       { title: 'Activity Log', href: '/admin/activity-log', icon: Activity },
       { title: 'Analytics', href: '/admin/analytics', icon: TrendingUp },
       { title: 'Reports', href: '/admin/reporting', icon: BarChart3 },
+    ],
+  },
+  {
+    label: 'Ads',
+    items: [
+      { title: 'Ad Search', href: '/admin/ads/search', icon: FileSearch },
     ],
   },
   {
