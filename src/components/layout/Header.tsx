@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus, User, Heart, Menu, LogOut, Settings, Bell, MessageCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Plus, User, Heart, Menu, LogOut, Settings, Bell, MessageCircle, Search } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useMessages } from '@/hooks/useMessages';
@@ -25,7 +26,32 @@ export function Header() {
   const { unreadCount: unreadNotifications } = useNotifications();
   const { unreadCount: unreadMessages } = useMessages();
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
   const { t } = useTranslation();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
+  };
+
+  const SearchForm = ({ className = '', autoFocus = false }: { className?: string; autoFocus?: boolean }) => (
+    <form onSubmit={handleSearch} className={className} role="search">
+      <div className="relative w-full">
+        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="search"
+          autoFocus={autoFocus}
+          placeholder={t('homepage.heroSearchPlaceholder', 'Search products, brands and more…')}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="h-9 w-full pl-9 pr-3"
+          aria-label={t('nav.search', 'Search')}
+        />
+      </div>
+    </form>
+  );
 
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
     <>
@@ -52,9 +78,9 @@ export function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-b border-border shadow-sm">
+      <div className="container mx-auto px-4 py-2.5">
+        <div className="flex items-center justify-between gap-3">
           {/* Logo — clicking goes to home */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <img
@@ -67,11 +93,14 @@ export function Header() {
           {/* Category mega menu (desktop) */}
           <CategoryMegaMenu />
 
-          {/* Spacer keeps the logo and action buttons at opposite ends */}
-          <div className="flex-1" />
+          {/* Inline search (desktop / tablet) */}
+          <SearchForm className="hidden md:block flex-1 max-w-xl" />
+
+          {/* Spacer keeps actions pinned to the right when search is hidden */}
+          <div className="flex-1 md:hidden" />
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* 1. Admin */}
             {showAdmin && (
               <Link to="/admin" className="hidden lg:inline-flex" aria-label={t('nav.admin')}>
@@ -91,7 +120,7 @@ export function Header() {
 
             {/* 4. Saved Ads / Wishlist */}
             {user && (
-              <Link to="/favorites" className="relative" aria-label={t('nav.favorites', 'Favorites')}>
+              <Link to="/favorites" className="relative hidden sm:inline-flex" aria-label={t('nav.favorites', 'Favorites')}>
                 <Button variant="ghost" size="icon">
                   <Heart className="h-5 w-5" />
                 </Button>
@@ -114,7 +143,7 @@ export function Header() {
 
             {/* Messages Icon */}
             {user && (
-              <Link to="/messages" className="relative">
+              <Link to="/messages" className="relative hidden sm:inline-flex">
                 <Button variant="ghost" size="icon" className="relative">
                   <MessageCircle className="h-5 w-5" />
                   {unreadMessages > 0 && (
@@ -260,6 +289,9 @@ export function Header() {
             </Sheet>
           </div>
         </div>
+
+        {/* Inline search (mobile) — full width row below the top bar */}
+        <SearchForm className="md:hidden mt-2.5" />
       </div>
     </header>
   );

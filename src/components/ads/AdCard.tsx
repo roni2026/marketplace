@@ -51,6 +51,8 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle, showCompare =
   const isComparing = compareIds.includes(ad.id);
   const hasDiscount = ad.discount_percentage && ad.discount_percentage > 0 && ad.original_price && ad.original_price > (ad.price || 0);
 
+  const badgeCls = 'gap-1 px-1.5 py-0 text-[10px] font-semibold leading-4 shadow-sm';
+
   const handleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -96,8 +98,8 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle, showCompare =
   };
 
   return (
-    <Link to={`/ad/${ad.slug}-${ad.id}`}>
-      <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 h-full">
+    <Link to={`/ad/${ad.slug}-${ad.id}`} className="block h-full">
+      <Card className="group h-full overflow-hidden border-border/80 hover:border-primary/40 hover:shadow-md">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           <img
             src={imageUrl}
@@ -105,56 +107,56 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle, showCompare =
             loading="lazy"
             decoding="async"
             onError={() => setImgError(true)}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
           />
           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
             {ad.is_premium && (
-              <Badge className="bg-purple-600 hover:bg-purple-600 text-white gap-1">
+              <Badge className={`bg-purple-600 hover:bg-purple-600 text-white ${badgeCls}`}>
                 <TrendingUp className="h-3 w-3" />
                 Premium
               </Badge>
             )}
             {ad.is_boosted && (
-              <Badge className="bg-blue-600 hover:bg-blue-600 text-white">
+              <Badge className={`bg-blue-600 hover:bg-blue-600 text-white ${badgeCls}`}>
                 Boosted
               </Badge>
             )}
             {ad.is_featured && (
-              <Badge className="bg-primary gap-1">
+              <Badge className={`bg-primary ${badgeCls}`}>
                 <Star className="h-3 w-3" />
                 Featured
               </Badge>
             )}
             {ad.is_urgent && (
-              <Badge className="bg-red-600 hover:bg-red-600 text-white gap-1">
+              <Badge className={`bg-red-600 hover:bg-red-600 text-white ${badgeCls}`}>
                 <Zap className="h-3 w-3" />
                 Urgent
               </Badge>
             )}
             {hasDiscount && (
-              <Badge className="bg-orange-600 hover:bg-orange-600 text-white gap-1">
+              <Badge className={`bg-orange-600 hover:bg-orange-600 text-white ${badgeCls}`}>
                 <Tag className="h-3 w-3" />
                 {ad.discount_percentage}% OFF
               </Badge>
             )}
             {isNew && !ad.is_featured && !ad.is_premium && !ad.is_boosted && (
-              <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white">New</Badge>
+              <Badge className={`bg-emerald-600 hover:bg-emerald-600 text-white ${badgeCls}`}>New</Badge>
             )}
           </div>
           <Badge
             variant="secondary"
-            className="absolute top-2 right-2 capitalize"
+            className="absolute top-2 right-2 capitalize px-1.5 py-0 text-[10px] leading-4 shadow-sm backdrop-blur-sm"
           >
             {ad.condition}
           </Badge>
         </div>
-        <CardContent className="p-4">
-          <div className="space-y-2">
-            <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors text-sm sm:text-base">
+        <CardContent className="p-3">
+          <div className="space-y-1.5">
+            <h3 className="font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors text-sm min-h-[2.5rem]">
               {ad.title}
             </h3>
-            <div className="flex items-baseline gap-2">
-              <p className="text-base sm:text-lg font-bold text-primary">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <p className="text-[15px] sm:text-base font-bold text-foreground">
                 {formatPrice(ad.price, ad.price_type)}
               </p>
               {hasDiscount && ad.original_price && (
@@ -164,18 +166,18 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle, showCompare =
               )}
             </div>
             {ad.brand && (
-              <p className="text-xs text-muted-foreground">{ad.brand}</p>
+              <p className="text-xs text-muted-foreground truncate">{ad.brand}</p>
             )}
-            <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
-              <MapPin className="h-3 w-3" />
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3 shrink-0" />
               <span className="truncate">{ad.district}, {ad.division}</span>
             </div>
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5 border-t border-border/60">
+              <span className="flex items-center gap-1 pt-1.5">
                 <Clock className="h-3 w-3" />
                 <span>{formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}</span>
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pt-1.5">
                 {(ad.views_count || 0) > 0 && (
                   <span className="flex items-center gap-1">
                     <Eye className="h-3 w-3" />
@@ -191,11 +193,11 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle, showCompare =
               </div>
             </div>
             {/* Favorite & Compare buttons below the image */}
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-1.5 pt-1">
               <Button
                 variant="outline"
                 size="sm"
-                className={`gap-1.5 h-8 ${isFav ? 'text-destructive border-destructive/30' : ''}`}
+                className={`flex-1 gap-1.5 h-7 text-xs ${isFav ? 'text-destructive border-destructive/30' : ''}`}
                 onClick={handleFavorite}
                 disabled={isLoading}
               >
@@ -206,7 +208,7 @@ export function AdCard({ ad, isFavorite = false, onFavoriteToggle, showCompare =
                 <Button
                   variant="outline"
                   size="sm"
-                  className={`gap-1.5 h-8 ${isComparing ? 'text-primary border-primary/30' : ''}`}
+                  className={`flex-1 gap-1.5 h-7 text-xs ${isComparing ? 'text-primary border-primary/30' : ''}`}
                   onClick={handleCompare}
                 >
                   <Layers className="h-3.5 w-3.5" />
