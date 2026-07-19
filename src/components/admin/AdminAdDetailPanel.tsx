@@ -21,6 +21,7 @@ import {
   Tag, MapPin, Clock, DollarSign, Package, Shield, AlertTriangle,
   FileText, MessageSquare, ShoppingCart, ChevronLeft, ChevronRight,
   StickyNote, Flag, User, Loader2, Ban, Archive, Crown,
+  Mail, Phone, Copy, Calendar,
 } from 'lucide-react';
 
 interface Ad {
@@ -90,6 +91,30 @@ export function AdminAdDetailPanel({ ad, onClose, onAction, onNavigate }: AdDeta
   const [savingNote, setSavingNote] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [updatingSeller, setUpdatingSeller] = useState(false);
+
+  const copyToClipboard = (value: string, label: string) => {
+    navigator.clipboard?.writeText(value);
+    toast.success(`${label} copied`);
+  };
+
+  // #7 Editable seller status directly from the moderation panel.
+  const updateSellerStatus = async (updates: Record<string, boolean>) => {
+    setUpdatingSeller(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('user_id', ad.user_id);
+      if (error) throw error;
+      setSeller((prev: any) => ({ ...prev, ...updates }));
+      toast.success('Seller updated');
+    } catch {
+      toast.error('Failed to update seller');
+    } finally {
+      setUpdatingSeller(false);
+    }
+  };
 
   useEffect(() => {
     setCurrentImage(0);
@@ -100,14 +125,14 @@ export function AdminAdDetailPanel({ ad, onClose, onAction, onNavigate }: AdDeta
     setLoading(true);
     try {
       const [sellerRes, reportsRes, notesRes] = await Promise.all([
-        supabase.from('profiles').select('full_name, avatar_url, is_verified, is_suspended, phone_number, division, seller_rating, total_sales').eq('user_id', ad.user_id).single(),
+        supabase.from('profiles').select('full_name, avatar_url, is_verified, is_suspended, is_blocked, phone_number, secondary_phone, email, division, created_at, seller_rating, total_sales').eq('user_id', ad.user_id).single(),
         supabase.from('reports').select('id, reason, reason_code, status, created_at').eq('ad_id', ad.id).order('created_at', { ascending: false }),
         supabase.from('admin_notes').select('id, note, created_at').eq('entity_type', 'ad').eq('entity_id', ad.id).order('created_at', { ascending: false }),
       ]);
       if (sellerRes.data) setSeller(sellerRes.data);
       setReports((reportsRes.data as Report[]) || []);
       setNotes((notesRes.data as AdminNote[]) || []);
-    } catch {}
+    } catch { /* best-effort enrichment; panel still renders core ad data */ }
     setLoading(false);
   };
 
@@ -280,24 +305,92 @@ export function AdminAdDetailPanel({ ad, onClose, onAction, onNavigate }: AdDeta
                 <CardHeader className="pb-2">
                   <CardTitle className="text-xs flex items-center gap-2"><User className="h-3 w-3" /> Seller</CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="pt-0 space-y-3">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={seller.avatar_url || ''} />
                       <AvatarFallback>{(seller.full_name || '?')[0]}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <p className="font-medium text-sm truncate">{seller.full_name || 'Unknown'}</p>
-                        {seller.is_verified && <Shield className="h-3 w-3 text-green-500" />}
-                        {seller.is_suspended && <Badge variant="destructive" className="text-[10px]">Suspended</Badge>}
+                        {seller.is_verified && <Shield className="h-3 w-3 text-green-500 shrink-0" />}
                       </div>
-                      <p className="text-xs text-muted-foreground">{seller.phone_number || 'No phone'}</p>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
                         <span>⭐ {seller.seller_rating || 0}</span>
                         <span>📦 {seller.total_sales || 0} sold</span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Seller details */}
+                  <dl className="grid grid-cols-1 gap-1.5 text-xs">
+                    <div className="flex items-start justify-between gap-2">
+                      <dt className="flex items-center gap-1.5 text-muted-foreground shrink-0"><Mail className="h-3 w-3" /> Email</dt>
+                      <dd className="flex items-center gap-1 min-w-0">
+                        <span className="truncate">{seller.email || 'Not available'}</span>
+                        {seller.email && (
+                          <button type="button" onClick={() => copyToClipboard(seller.email, 'Email')} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Copy email">
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        )}
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="flex items-center gap-1.5 text-muted-foreground shrink-0"><Phone className="h-3 w-3" /> Primary phone</dt>
+                      <dd className="truncate">{seller.phone_number || 'Not provided'}</dd>
+                    </div>
+                    {seller.secondary_phone && (
+                      <div className="flex items-center justify-between gap-2">
+                        <dt className="flex items-center gap-1.5 text-muted-foreground shrink-0"><Phone className="h-3 w-3" /> Secondary phone</dt>
+                        <dd className="truncate">{seller.secondary_phone}</dd>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="flex items-center gap-1.5 text-muted-foreground shrink-0"><User className="h-3 w-3" /> User ID</dt>
+                      <dd className="flex items-center gap-1 min-w-0">
+                        <span className="font-mono truncate">{ad.user_id}</span>
+                        <button type="button" onClick={() => copyToClipboard(ad.user_id, 'User ID')} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Copy user ID">
+                          <Copy className="h-3 w-3" />
+                        </button>
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="flex items-center gap-1.5 text-muted-foreground shrink-0"><Calendar className="h-3 w-3" /> Joined</dt>
+                      <dd className="truncate">{seller.created_at ? format(new Date(seller.created_at), 'MMM d, yyyy') : 'Unknown'}</dd>
+                    </div>
+                  </dl>
+
+                  <Separator />
+
+                  {/* Verification status (editable) */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <span className="text-muted-foreground">Verification</span>
+                      {seller.is_verified
+                        ? <Badge className="text-[10px] bg-green-500/15 text-green-600 hover:bg-green-500/15">Verified</Badge>
+                        : <Badge variant="secondary" className="text-[10px]">Unverified</Badge>}
+                    </div>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" disabled={updatingSeller}
+                      onClick={() => updateSellerStatus({ is_verified: !seller.is_verified })}>
+                      {updatingSeller ? <Loader2 className="h-3 w-3 animate-spin" /> : (seller.is_verified ? 'Unverify' : 'Verify')}
+                    </Button>
+                  </div>
+
+                  {/* Account status (editable) */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <span className="text-muted-foreground">Account</span>
+                      {seller.is_blocked
+                        ? <Badge variant="destructive" className="text-[10px]">Blocked</Badge>
+                        : seller.is_suspended
+                          ? <Badge variant="destructive" className="text-[10px]">Suspended</Badge>
+                          : <Badge className="text-[10px] bg-green-500/15 text-green-600 hover:bg-green-500/15">Active</Badge>}
+                    </div>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" disabled={updatingSeller}
+                      onClick={() => updateSellerStatus({ is_suspended: !seller.is_suspended })}>
+                      {updatingSeller ? <Loader2 className="h-3 w-3 animate-spin" /> : (<><Ban className="h-3 w-3" />{seller.is_suspended ? 'Unsuspend' : 'Suspend'}</>)}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

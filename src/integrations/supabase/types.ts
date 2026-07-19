@@ -463,6 +463,7 @@ export type Database = {
           deleted_at: string | null
           district: string | null
           division: string | null
+          email: string | null
           full_name: string | null
           id: string
           is_blocked: boolean | null
@@ -484,6 +485,7 @@ export type Database = {
           deleted_at?: string | null
           district?: string | null
           division?: string | null
+          email?: string | null
           full_name?: string | null
           id?: string
           is_blocked?: boolean | null
@@ -505,6 +507,7 @@ export type Database = {
           deleted_at?: string | null
           district?: string | null
           division?: string | null
+          email?: string | null
           full_name?: string | null
           id?: string
           is_blocked?: boolean | null
