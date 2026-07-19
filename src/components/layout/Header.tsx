@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { CategoryMegaMenu, CategoryMobileNav } from '@/components/layout/CategoryMegaMenu';
 import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
@@ -62,6 +63,9 @@ export function Header() {
               className="h-8 w-auto"
             />
           </Link>
+
+          {/* Category mega menu (desktop) */}
+          <CategoryMegaMenu />
 
           {/* Spacer keeps the logo and action buttons at opposite ends */}
           <div className="flex-1" />
@@ -206,6 +210,10 @@ export function Header() {
                   <nav className="flex flex-col gap-4">
                     <NavLinks mobile />
                   </nav>
+                  <div className="border-t border-border pt-4">
+                    <p className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categories</p>
+                    <CategoryMobileNav onNavigate={() => setIsOpen(false)} />
+                  </div>
                   {user && (
                     <nav className="flex flex-col gap-4 border-t border-border pt-4">
                       <Link 
