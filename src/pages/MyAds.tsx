@@ -14,7 +14,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/constants';
 import { formatDistanceToNow } from 'date-fns';
-import { MapPin, Clock, Plus, Edit, Trash2, Eye, AlertCircle, RefreshCw, CheckSquare } from 'lucide-react';
+import { MapPin, Clock, Plus, Edit, Trash2, Eye, AlertCircle, RefreshCw, CheckSquare, Rocket } from 'lucide-react';
+import { PromoteAdDialog } from '@/components/ads/PromoteAdDialog';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -54,6 +55,7 @@ export default function MyAds() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [promoteAdId, setPromoteAdId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -301,6 +303,10 @@ export default function MyAds() {
                       )}
 
                       <div className="flex items-center gap-2 mt-3">
+                        <Button variant="default" size="sm" className="gap-2" onClick={() => setPromoteAdId(ad.id)}>
+                          <Rocket className="h-3 w-3" />
+                          {t('myAds.promote', 'Promote')}
+                        </Button>
                         <Button variant="outline" size="sm" className="gap-2" onClick={() => handleRenew(ad.id)}>
                           <RefreshCw className="h-3 w-3" />
                           {t('myAds.renew')}
@@ -413,6 +419,12 @@ export default function MyAds() {
           </TabsContent>
         </Tabs>
       </main>
+      <PromoteAdDialog
+        adId={promoteAdId}
+        open={!!promoteAdId}
+        onOpenChange={(o) => !o && setPromoteAdId(null)}
+        onPromoted={fetchAds}
+      />
       <MobileNav />
       <Footer />
     </div>

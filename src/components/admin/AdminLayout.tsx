@@ -49,6 +49,7 @@ const navSections: NavSection[] = [
     label: 'Ads',
     items: [
       { title: 'Ad Search', href: '/admin/ads/search', icon: FileSearch },
+      { title: 'Ad Promotions', href: '/admin/ad-promotions', icon: Megaphone },
     ],
   },
   {

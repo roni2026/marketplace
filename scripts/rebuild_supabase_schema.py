@@ -62,6 +62,7 @@ ORDER = [
     "19_schema_v19_enterprise_moderation.sql",
     "20_fix_review_moderation_rls.sql",
     "21_phase20_admin_permissions_ad_search.sql",
+    "22_ad_promotion_system.sql",
 ]
 
 
