@@ -96,6 +96,7 @@ import AdminSettingsV2 from "./pages/admin/AdminSettings";
 import BulkOperations from "./pages/admin/BulkOperations";
 import AdminSearch from "./pages/admin/AdminSearch";
 import AdSearch from "./pages/admin/AdSearch";
+import AdPromotions from "./pages/admin/AdPromotions";
 // New customer portal pages
 import RecentlyViewedPage from "./pages/RecentlyViewedPage";
 import PriceAlertsPage from "./pages/PriceAlertsPage";
@@ -173,6 +174,7 @@ const App = () => (
                 <Route path="/admin/bulk-operations" element={<AdminRoute><BulkOperations /></AdminRoute>} />
                 <Route path="/admin/search" element={<AdminRoute><AdminSearch /></AdminRoute>} />
                 <Route path="/admin/ads/search" element={<AdminRoute><AdSearch /></AdminRoute>} />
+                <Route path="/admin/ad-promotions" element={<AdminRoute><AdPromotions /></AdminRoute>} />
                 <Route path="/admin/ads" element={<AdminRoute><AdModeration /></AdminRoute>} />
                 <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
                 <Route path="/admin/brands" element={<AdminRoute><BrandManagement /></AdminRoute>} />
