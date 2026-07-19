@@ -62,7 +62,7 @@ export function RecentlyViewed({ favorites = [] }: RecentlyViewedProps) {
         <History className="h-5 w-5 text-muted-foreground" />
         <h2 className="text-2xl font-bold">Recently Viewed</h2>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {ads.map((ad) => (
           <AdCard key={ad.id} ad={ad} isFavorite={favorites.includes(ad.id)} />
         ))}

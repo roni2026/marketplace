@@ -268,7 +268,7 @@ export default function Favorites() {
         <Header />
         <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
           <Skeleton className="h-8 w-48 mb-6" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-64 rounded-lg" />)}
           </div>
         </main>
@@ -329,7 +329,7 @@ export default function Favorites() {
           {/* Ads Grid */}
           <div className="lg:col-span-3">
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64 rounded-lg" />)}
               </div>
             ) : paginatedAds.length === 0 ? (
@@ -349,7 +349,7 @@ export default function Favorites() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {paginatedAds.map(ad => <AdCard key={ad.id} ad={ad} isFavorite={true} />)}
                 </div>
 

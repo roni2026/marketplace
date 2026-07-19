@@ -137,7 +137,7 @@ export default function RecentlyViewedPage() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-64 rounded-lg" />)}
           </div>
         ) : validItems.length === 0 ? (
@@ -148,7 +148,7 @@ export default function RecentlyViewedPage() {
             <Button asChild><Link to="/search">Browse Listings <ArrowRight className="h-4 w-4 ml-1" /></Link></Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {validItems.map(item => (
               <div key={item.id} className="relative group">
                 <AdCard ad={item.ads as any} />

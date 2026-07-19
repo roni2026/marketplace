@@ -508,7 +508,7 @@ export default function AdvancedSearch() {
 
             {/* Loading state */}
             {isSearching && allListings.length === 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-64 rounded-lg" />)}
               </div>
             ) : allListings.length === 0 ? (
@@ -532,7 +532,7 @@ export default function AdvancedSearch() {
                       <Sparkles className="h-5 w-5 text-primary" />
                       <h4 className="font-semibold">You might like these instead</h4>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                       {noResultRecs.map(ad => (
                         <AdCard key={ad.id} ad={ad as any} isFavorite={favorites.includes(ad.id)} />
                       ))}
@@ -543,7 +543,7 @@ export default function AdvancedSearch() {
             ) : (
               <>
                 {/* Results grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {allListings.map(ad => (
                     <AdCard
                       key={ad.id}

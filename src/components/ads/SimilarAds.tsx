@@ -56,7 +56,7 @@ export function SimilarAds({ categoryId, excludeAdId, favorites = [] }: SimilarA
   return (
     <section className="mt-10">
       <h2 className="text-xl font-bold mb-4">Similar Ads</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {ads.map((ad) => (
           <AdCard key={ad.id} ad={ad} isFavorite={favorites.includes(ad.id)} />
         ))}

@@ -29,9 +29,9 @@ export function AdSection({ title, ads, viewAllLink, favorites = [] }: AdSection
   if (ads.length === 0) return null;
 
   return (
-    <section className="py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">{title}</h2>
+    <section className="py-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold tracking-tight">{title}</h2>
         {viewAllLink && (
           <Link to={viewAllLink}>
             <Button variant="ghost" className="gap-1">
@@ -41,7 +41,7 @@ export function AdSection({ title, ads, viewAllLink, favorites = [] }: AdSection
           </Link>
         )}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {ads.map((ad) => (
           <AdCard 
             key={ad.id} 
