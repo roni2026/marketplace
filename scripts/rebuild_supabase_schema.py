@@ -59,6 +59,9 @@ ORDER = [
     "17_schema_v15_catalog_rbac_customer.sql",
     "18_fix_super_admin_access.sql",
     "19_admin_bootstrap_and_cloudinary_notes.sql",
+    "19_schema_v19_enterprise_moderation.sql",
+    "20_fix_review_moderation_rls.sql",
+    "21_phase20_admin_permissions_ad_search.sql",
 ]
 
 

@@ -1,7 +1,10 @@
-import { ReactNode, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useAdminNavAccess } from '@/hooks/useAdminNavAccess';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { Forbidden } from '@/components/auth/Forbidden';
 import { checkIsAdmin, readAdminCache } from '@/lib/permissions';
 import { isAllowlistedAdmin, allowlistConfigured } from '@/lib/adminAllowlist';
 import { Button } from '@/components/ui/button';
@@ -179,7 +182,45 @@ function FullScreenLoader() {
   );
 }
 
-export function AdminRoute({ children }: { children: ReactNode }) {
+/**
+ * Second-layer gate rendered only after the user is a confirmed admin.
+ * Enforces per-tab grants (limited admins) and super-admin-only pages by
+ * matching the current /admin path. Unauthorized users — including those who
+ * type the URL directly — get a 403 instead of the page content. The backend
+ * (RLS + SECURITY DEFINER RPCs) enforces the same rules independently.
+ */
+function AdminAccessGate({ superAdminOnly, children }: { superAdminOnly?: boolean; children: ReactNode }) {
+  const location = useLocation();
+  const { roles } = useAuth();
+  const { canAccessHref, loading } = useAdminNavAccess();
+
+  const isStrictSuperAdmin = useMemo(
+    () => (roles || []).map((r) => String(r).toLowerCase()).includes('super_admin'),
+    [roles],
+  );
+
+  if (loading) return <FullScreenLoader />;
+
+  if (superAdminOnly && !isStrictSuperAdmin) {
+    return (
+      <AdminLayout>
+        <Forbidden message="This page is restricted to Super Admins only." />
+      </AdminLayout>
+    );
+  }
+
+  if (!canAccessHref(location.pathname)) {
+    return (
+      <AdminLayout>
+        <Forbidden />
+      </AdminLayout>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+export function AdminRoute({ children, superAdminOnly }: { children: ReactNode; superAdminOnly?: boolean }) {
   const { user, isLoading, isAdmin, roles, refreshRoles } = useAuth();
   const [rechecking, setRechecking] = useState(false);
   const [fallbackAdmin, setFallbackAdmin] = useState<boolean | null>(null);
@@ -230,7 +271,7 @@ export function AdminRoute({ children }: { children: ReactNode }) {
   const allowlisted = isAllowlistedAdmin(user);
 
   if (isAdmin === true || fallbackAdmin === true || cachedAdmin || allowlisted) {
-    return <>{children}</>;
+    return <AdminAccessGate superAdminOnly={superAdminOnly}>{children}</AdminAccessGate>;
   }
 
   // Stay on /admin with a clear panel (no silent redirect to marketplace).

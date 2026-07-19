@@ -12,6 +12,7 @@ export const HREF_TO_PERMISSION_KEY: Record<string, string> = {
   '/admin/listing-analytics': 'listing_analytics',
   '/admin/search-analytics': 'search_analytics',
   '/admin/sponsored-listings': 'sponsored_listings',
+  '/admin/ads/search': 'ad_search',
   '/admin/ads': 'ad_moderation',
   '/admin/categories': 'categories',
   '/admin/brands': 'brands',
