@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, User, Heart, Menu, LogOut, Settings, Bell, MessageCircle, Search } from 'lucide-react';
@@ -28,7 +28,19 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
+
+  // Pages that already render their own primary search bar in the page body.
+  // On these we hide the header search to avoid showing two search bars at once.
+  const pathname = location.pathname;
+  const pageHasOwnSearch =
+    pathname === '/' ||
+    pathname === '/search' ||
+    pathname === '/discover' ||
+    pathname === '/categories' ||
+    pathname.startsWith('/category/') ||
+    pathname.startsWith('/shop/');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,11 +105,12 @@ export function Header() {
           {/* Category mega menu (desktop) */}
           <CategoryMegaMenu />
 
-          {/* Inline search (desktop / tablet) */}
-          <SearchForm className="hidden md:block flex-1 max-w-xl" />
+          {/* Inline search (desktop / tablet) — hidden on pages that already
+              have their own search bar in the page body */}
+          {!pageHasOwnSearch && <SearchForm className="hidden md:block flex-1 max-w-xl" />}
 
           {/* Spacer keeps actions pinned to the right when search is hidden */}
-          <div className="flex-1 md:hidden" />
+          <div className={pageHasOwnSearch ? 'flex-1' : 'flex-1 md:hidden'} />
 
           {/* Action Buttons */}
           <div className="flex items-center gap-1 sm:gap-2">
@@ -290,8 +303,9 @@ export function Header() {
           </div>
         </div>
 
-        {/* Inline search (mobile) — full width row below the top bar */}
-        <SearchForm className="md:hidden mt-2.5" />
+        {/* Inline search (mobile) — full width row below the top bar.
+            Hidden on pages that already render their own search bar. */}
+        {!pageHasOwnSearch && <SearchForm className="md:hidden mt-2.5" />}
       </div>
     </header>
   );

@@ -551,9 +551,31 @@ export function getCategoryBySlug(slugOrName?: string | null): CategoryDef | und
   );
 }
 
+/**
+ * Icon aliases for taxonomy category slugs that are not present verbatim in
+ * CATEGORY_DATA (see supabase/22_catalog_seed_bd.sql). Keeps DB-driven category
+ * grids/mega menu showing meaningful icons for the expanded taxonomy.
+ */
+const CATEGORY_ICON_ALIASES: Record<string, LucideIcon> = {
+  'mobiles-tablets': Smartphone,
+  'home-living': Sofa,
+  'books-education': BookOpen,
+  'food-catering': UtensilsCrossed,
+  'business-industrial': Factory,
+  'hobbies-collectibles': Palette,
+  'health-medical': HeartPulse,
+  'baby-kids': Baby,
+  'pets-animals': PawPrint,
+  'sports-fitness': Dumbbell,
+  'real-estate': Home,
+};
+
 /** Resolve a lucide icon for a category. Falls back to a generic Package icon. */
 export function getCategoryIcon(slugOrName?: string | null): LucideIcon {
-  return getCategoryBySlug(slugOrName)?.icon ?? Package;
+  const direct = getCategoryBySlug(slugOrName)?.icon;
+  if (direct) return direct;
+  if (slugOrName && CATEGORY_ICON_ALIASES[slugOrName]) return CATEGORY_ICON_ALIASES[slugOrName];
+  return Package;
 }
 
 /** Get the subcategory list for a category (empty array if unknown). */

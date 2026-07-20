@@ -17,6 +17,14 @@
 create extension if not exists pg_trgm;
 
 -- -------------------------------------------------------------------------
+-- 0) Ensure additive columns used by the indexes/functions below exist.
+--    These come from earlier feature migrations; guarding them here makes
+--    this phase safe to run on a fresh database or out of order.
+-- -------------------------------------------------------------------------
+alter table public.ads add column if not exists contact_phone text;
+alter table public.ads add column if not exists secondary_phone text;
+
+-- -------------------------------------------------------------------------
 -- 1) Search indexes (avoid full scans on large tables)
 -- -------------------------------------------------------------------------
 create index if not exists idx_ads_title_trgm       on public.ads using gin (title gin_trgm_ops);
@@ -30,6 +38,14 @@ create index if not exists idx_ads_subcategory       on public.ads (subcategory_
 create index if not exists idx_ads_created_at        on public.ads (created_at desc);
 create index if not exists idx_ads_user_id           on public.ads (user_id);
 create index if not exists idx_ads_id_text           on public.ads (( id::text ) text_pattern_ops);
+
+-- Ensure the columns referenced by the indexes below actually exist. These are
+-- added by earlier migrations (add_profile_email_for_moderation.sql,
+-- add_secondary_phone.sql), but this block makes the file safe to run on its own
+-- and fixes: ERROR 42703 column "email" does not exist.
+alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists secondary_phone text;
+alter table public.profiles add column if not exists phone_number text;
 
 create index if not exists idx_profiles_phone        on public.profiles (phone_number);
 create index if not exists idx_profiles_sec_phone    on public.profiles (secondary_phone);

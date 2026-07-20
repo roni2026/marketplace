@@ -19,6 +19,9 @@ import { validateTitle, validateDescription, validatePrice, validateLocation, va
 import { moderateContent, getSpamScore } from '@/lib/moderation';
 import { logAdAction } from '@/lib/audit';
 import { useTranslation } from 'react-i18next';
+import { getCategoryFields } from '@/lib/categoryFields';
+import { getBrandsForSubcategory, getModelsForBrand } from '@/lib/brandData';
+import { getItemTypes } from '@/lib/marketplaceTaxonomy';
 
 interface Category {
   id: string;
@@ -29,6 +32,7 @@ interface Category {
 interface Subcategory {
   id: string;
   name: string;
+  slug?: string;
   category_id: string;
 }
 
@@ -60,6 +64,33 @@ export default function PostAd() {
   const [contactPhone, setContactPhone] = useState('');
   const [secondaryPhone, setSecondaryPhone] = useState('');
   const [showSecondaryPhone, setShowSecondaryPhone] = useState(false);
+
+  // Category-specific structured fields (brand / model / item type / attributes)
+  const [itemType, setItemType] = useState('');
+  const [brand, setBrand] = useState('');
+  const [model, setModel] = useState('');
+  const [attributes, setAttributes] = useState<Record<string, string>>({});
+
+  // Slugs for the current selection (fields + brand lists are keyed by slug).
+  const selectedCategory = categories.find((c) => c.id === categoryId);
+  const selectedSubcategory = filteredSubcategories.find((s) => s.id === subcategoryId);
+  const categorySlug = selectedCategory?.slug || '';
+  const subcategorySlug =
+    selectedSubcategory?.slug ||
+    (selectedSubcategory ? selectedSubcategory.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '');
+
+  const fieldConfig = getCategoryFields(subcategorySlug);
+  const itemTypeOptions = getItemTypes(categorySlug, subcategorySlug);
+  const brandOptions = fieldConfig?.hasBrand ? getBrandsForSubcategory(subcategorySlug) : [];
+  const modelOptions = brand ? getModelsForBrand(subcategorySlug, brand) : [];
+
+  // Reset structured fields whenever the subcategory changes.
+  useEffect(() => {
+    setItemType('');
+    setBrand('');
+    setModel('');
+    setAttributes({});
+  }, [subcategoryId]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -296,6 +327,12 @@ export default function PostAd() {
           description: sanitizedDesc,
           category_id: categoryId,
           subcategory_id: subcategoryId || null,
+          item_type: itemType || null,
+          brand: brand || null,
+          model: model || null,
+          product_attributes: Object.keys(attributes).length > 0
+            ? Object.fromEntries(Object.entries(attributes).filter(([, v]) => v !== '' && v != null))
+            : {},
           price: priceValue,
           price_type: priceType,
           condition,
@@ -489,6 +526,90 @@ export default function PostAd() {
                   </Select>
                 </div>
               </div>
+
+              {/* Category-specific fields: item type, brand, model, attributes */}
+              {subcategoryId && (itemTypeOptions.length > 0 || fieldConfig) && (
+                <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+                  <p className="text-sm font-medium">Item details</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Type of item */}
+                    {itemTypeOptions.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>Type of item</Label>
+                        <Select value={itemType} onValueChange={setItemType}>
+                          <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                          <SelectContent>
+                            {itemTypeOptions.map((it) => (
+                              <SelectItem key={it} value={it}>{it}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Brand */}
+                    {fieldConfig?.hasBrand && brandOptions.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>Brand</Label>
+                        <Select value={brand} onValueChange={(v) => { setBrand(v); setModel(''); }}>
+                          <SelectTrigger><SelectValue placeholder="Select brand" /></SelectTrigger>
+                          <SelectContent className="max-h-72">
+                            {brandOptions.map((b) => (
+                              <SelectItem key={b.name} value={b.name}>{b.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Model */}
+                    {fieldConfig?.hasBrand && brand && (
+                      <div className="space-y-2">
+                        <Label>Model</Label>
+                        {modelOptions.length > 0 ? (
+                          <Select value={model} onValueChange={setModel}>
+                            <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
+                            <SelectContent className="max-h-72">
+                              {modelOptions.map((m) => (
+                                <SelectItem key={m} value={m}>{m}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Enter model" />
+                        )}
+                      </div>
+                    )}
+
+                    {/* Additional structured fields */}
+                    {fieldConfig?.fields.map((f) => (
+                      <div className="space-y-2" key={f.key}>
+                        <Label>{f.label}</Label>
+                        {f.type === 'select' ? (
+                          <Select
+                            value={attributes[f.key] || ''}
+                            onValueChange={(v) => setAttributes((a) => ({ ...a, [f.key]: v }))}
+                          >
+                            <SelectTrigger><SelectValue placeholder={`Select ${f.label.toLowerCase()}`} /></SelectTrigger>
+                            <SelectContent className="max-h-72">
+                              {(f.options || []).map((o) => (
+                                <SelectItem key={o} value={o}>{o}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            type={f.type === 'number' ? 'number' : 'text'}
+                            value={attributes[f.key] || ''}
+                            onChange={(e) => setAttributes((a) => ({ ...a, [f.key]: e.target.value }))}
+                            placeholder={f.label}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Price */}
               <div className="space-y-4">
