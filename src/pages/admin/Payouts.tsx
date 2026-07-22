@@ -22,9 +22,19 @@ import { format } from 'date-fns';
 import { Wallet, DollarSign, CheckCircle2, XCircle, Clock, Download, AlertTriangle } from 'lucide-react';
 
 interface Payout {
-  id: string; seller_id: string; amount: number; status: string;
-  created_at: string; processed_at: string | null; failure_reason: string | null;
-  reference: string | null;
+  id: string;
+  user_id: string;
+  amount: number;
+  fee?: number | null;
+  net_amount?: number | null;
+  status: string;
+  created_at: string;
+  processed_at: string | null;
+  failure_reason?: string | null;
+  notes?: string | null;
+  admin_notes?: string | null;
+  reference_id?: string | null;
+  seller_name?: string;
 }
 
 export default function Payouts() {
@@ -42,7 +52,20 @@ export default function Payouts() {
     let query = supabase.from('payouts').select('*').order('created_at', { ascending: false });
     if (statusFilter !== 'all') query = query.eq('status', statusFilter);
     const { data } = await query.limit(200);
-    setPayouts((data as Payout[]) || []);
+    let rows = (data as Payout[]) || [];
+
+    const ids = [...new Set(rows.map((r) => r.user_id).filter(Boolean))];
+    if (ids.length) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', ids);
+      const map = new Map(
+        (profiles || []).map((p: { user_id: string; full_name: string | null }) => [p.user_id, p.full_name || '']),
+      );
+      rows = rows.map((r) => ({ ...r, seller_name: map.get(r.user_id) || r.user_id?.slice(0, 8) }));
+    }
+    setPayouts(rows);
 
     const [pendingRes, pendingAmtRes, completedRes, completedAmtRes, failedRes] = await Promise.all([
       supabase.from('payouts').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
@@ -64,14 +87,35 @@ export default function Payouts() {
   useEffect(() => { fetchPayouts(); }, [fetchPayouts]);
 
   const handleAction = useCallback(async (payout: Payout, action: string, reason?: string) => {
-    const statusMap: Record<string, string> = { process: 'processing', complete: 'completed', fail: 'failed' };
-    const updates: any = { status: statusMap[action] };
+    const statusMap: Record<string, string> = { process: 'processing', complete: 'completed', fail: 'failed', cancel: 'cancelled' };
+    const updates: Record<string, unknown> = {
+      status: statusMap[action],
+      updated_at: new Date().toISOString(),
+    };
     if (action === 'complete' || action === 'fail') updates.processed_at = new Date().toISOString();
-    if (action === 'fail') updates.failure_reason = reason || 'Failed by admin';
+    if (action === 'fail') {
+      updates.failure_reason = reason || 'Failed by admin';
+      updates.notes = reason || 'Failed by admin';
+    }
+    if (action === 'complete') {
+      updates.reference_id = payout.reference_id || `PAY-${payout.id.slice(0, 8).toUpperCase()}`;
+    }
     const { error } = await supabase.from('payouts').update(updates).eq('id', payout.id);
-    if (error) { toast.error('Failed to update payout'); return; }
+    if (error) { toast.error(error.message || 'Failed to update payout'); return; }
     if (user) await logActivity(`${action}_payout`, 'payout', payout.id, { amount: payout.amount });
-    toast.success(`Payout ${action}ed`);
+
+    // Notify seller
+    if (payout.user_id) {
+      await supabase.from('notifications').insert({
+        user_id: payout.user_id,
+        type: 'system',
+        title: `Payout ${statusMap[action]}`,
+        message: `Your payout of ৳${Number(payout.amount).toLocaleString()} is now ${statusMap[action]}.`,
+        data: { payout_id: payout.id, status: statusMap[action] },
+      });
+    }
+
+    toast.success(`Payout ${action === 'complete' ? 'completed' : action + 'ed'}`);
     fetchPayouts();
   }, [user, logActivity, fetchPayouts]);
 
@@ -82,8 +126,9 @@ export default function Payouts() {
 
   const columns: Column<Payout>[] = useMemo(() => [
     { key: 'id', label: 'ID', width: '70px', render: (r) => <span className="font-mono text-[10px] text-muted-foreground">{r.id.slice(0, 8)}</span> },
-    { key: 'seller_id', label: 'Seller', render: (r) => <span className="font-mono text-[10px] text-muted-foreground">{r.seller_id?.slice(0, 10)}</span> },
-    { key: 'amount', label: 'Amount', sortable: true, sortValue: (r) => r.amount, align: 'right', render: (r) => <span className="text-xs font-medium text-green-600">${r.amount?.toLocaleString() || 0}</span> },
+    { key: 'user_id', label: 'Seller', render: (r) => <span className="text-xs">{r.seller_name || r.user_id?.slice(0, 8)}</span> },
+    { key: 'amount', label: 'Amount', sortable: true, sortValue: (r) => r.amount, align: 'right', render: (r) => <span className="text-xs font-medium text-green-600">৳{Number(r.amount || 0).toLocaleString()}</span> },
+    { key: 'net_amount', label: 'Net', align: 'right', render: (r) => <span className="text-[11px] text-muted-foreground">৳{Number(r.net_amount ?? r.amount ?? 0).toLocaleString()}</span> },
     { key: 'status', label: 'Status', sortable: true, sortValue: (r) => r.status, render: (r) => <Badge variant={r.status === 'completed' ? 'success' : r.status === 'failed' ? 'destructive' : r.status === 'processing' ? 'info' : 'warning'} className="text-[10px]">{r.status}</Badge> },
     { key: 'created_at', label: 'Created', sortable: true, sortValue: (r) => r.created_at, render: (r) => <span className="text-[11px] text-muted-foreground">{format(new Date(r.created_at), 'MMM d, yyyy')}</span> },
     { key: 'processed_at', label: 'Processed', render: (r) => <span className="text-[11px] text-muted-foreground">{r.processed_at ? format(new Date(r.processed_at), 'MMM d, yyyy') : '—'}</span> },
@@ -115,7 +160,7 @@ export default function Payouts() {
       </StatCardGrid>
       <div className="mt-4">
         <DataTable
-          columns={columns} data={payouts} searchable searchPlaceholder="Search payouts..." searchKeys={['id', 'seller_id'] as any}
+          columns={columns} data={payouts} searchable searchPlaceholder="Search payouts..." searchKeys={['id', 'user_id', 'seller_name'] as any}
           pageSize={20} loading={loading} getRowId={(r) => r.id} emptyMessage="No payouts found" onExport={handleExport}
           filters={
             <Select value={statusFilter} onValueChange={setStatusFilter}>

@@ -101,6 +101,12 @@ const sections: { title: string; items: NavItem[] }[] = [
         badgeKey: 'pendingOffersReceived',
         badgeTone: 'warn',
       },
+      {
+        to: '/my/orders',
+        label: 'My orders',
+        description: 'Deals after an offer is accepted',
+        icon: Package,
+      },
     ],
   },
   {

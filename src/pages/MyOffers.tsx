@@ -19,6 +19,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { TrendingUp, TrendingDown, Clock, Check, X, Search, Filter, SlidersHorizontal, ArrowUpRight, ArrowDownRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { createOrderFromOffer, notifyOrderParty } from '@/lib/orders';
 
 interface Offer {
   id: string;
@@ -75,10 +76,41 @@ export default function MyOffers() {
   const handleAccept = async (offerId: string) => {
     setActionLoading(offerId);
     try {
-      const { error } = await supabase.from('offers').update({ status: 'accepted' }).eq('id', offerId);
+      const offer = received.find(o => o.id === offerId) || sent.find(o => o.id === offerId);
+      if (!offer) throw new Error('Offer not found');
+
+      const { error } = await supabase
+        .from('offers')
+        .update({ status: 'accepted', updated_at: new Date().toISOString() })
+        .eq('id', offerId);
       if (error) throw error;
+
+      // Create marketplace order (deal) for both parties
+      let orderNumber: string | null = null;
+      try {
+        const { order, created } = await createOrderFromOffer({
+          id: offer.id,
+          ad_id: offer.ad_id,
+          buyer_id: offer.buyer_id,
+          seller_id: offer.seller_id,
+          amount: offer.amount,
+        });
+        orderNumber = order.order_number;
+        if (created) {
+          await notifyOrderParty(
+            offer.buyer_id,
+            'Offer accepted',
+            `Your offer was accepted. Order ${order.order_number} is ready — confirm meetup details.`,
+            order.id,
+          );
+        }
+      } catch (orderErr: any) {
+        console.error('order create failed', orderErr);
+        toast.message('Offer accepted, but order could not be created. Apply the marketplace_orders migration.');
+      }
+
       setReceived(prev => prev.map(o => o.id === offerId ? { ...o, status: 'accepted' } : o));
-      toast.success('Offer accepted');
+      toast.success(orderNumber ? `Offer accepted · ${orderNumber}` : 'Offer accepted');
     } catch (e: any) {
       toast.error(e?.message || 'Failed to accept offer');
     }
@@ -88,8 +120,21 @@ export default function MyOffers() {
   const handleReject = async (offerId: string) => {
     setActionLoading(offerId);
     try {
-      const { error } = await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId);
+      const offer = received.find(o => o.id === offerId);
+      const { error } = await supabase
+        .from('offers')
+        .update({ status: 'rejected', updated_at: new Date().toISOString() })
+        .eq('id', offerId);
       if (error) throw error;
+      if (offer) {
+        await supabase.from('notifications').insert({
+          user_id: offer.buyer_id,
+          type: 'offer_rejected',
+          title: 'Offer declined',
+          message: `Your offer on “${offer.ads?.title || 'a listing'}” was declined.`,
+          data: { offer_id: offer.id },
+        });
+      }
       setReceived(prev => prev.map(o => o.id === offerId ? { ...o, status: 'rejected' } : o));
       toast.success('Offer rejected');
     } catch (e: any) {
@@ -234,6 +279,11 @@ export default function MyOffers() {
                 </Link>
                 {statusBadge(offer.status)}
               </div>
+              {offer.status === 'accepted' && (
+                <Link to="/my/orders" className="text-xs text-primary underline-offset-4 hover:underline">
+                  Open order →
+                </Link>
+              )}
 
               <div className="flex items-baseline gap-2 mb-1">
                 <span className="text-lg font-bold text-primary">৳{new Intl.NumberFormat('en-BD').format(offer.amount)}</span>

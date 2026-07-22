@@ -29,6 +29,7 @@ import {
   Truck, MapPin, Plane, FileText, Download, CreditCard,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ORDER_SELECT, ORDER_STATUS_LABEL, type MarketplaceOrder } from '@/lib/orders';
 import {
   Area, AreaChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
@@ -80,6 +81,8 @@ export default function SellerPortal() {
   } = useSellerDashboard();
 
   const [ads, setAds] = useState<Ad[]>([]);
+  const [sellerOrders, setSellerOrders] = useState<MarketplaceOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const [adsLoading, setAdsLoading] = useState(true);
   const [trendPeriod, setTrendPeriod] = useState<'7d' | '30d' | '90d'>('30d');
   const [vacationMessage, setVacationMessage] = useState('');
@@ -144,6 +147,10 @@ export default function SellerPortal() {
   useEffect(() => {
     fetchAds();
   }, [fetchAds]);
+
+  useEffect(() => {
+    fetchSellerOrders();
+  }, [fetchSellerOrders]);
 
   useEffect(() => {
     if (user) fetchViewTrends(trendPeriod);
@@ -227,6 +234,27 @@ export default function SellerPortal() {
   const handleSaveShipping = async () => {
     await updateShippingPrefs(shippingForm);
   };
+
+  
+  const fetchSellerOrders = useCallback(async () => {
+    if (!user) return;
+    setOrdersLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('marketplace_orders')
+        .select(ORDER_SELECT)
+        .eq('seller_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      setSellerOrders((data as MarketplaceOrder[]) || []);
+    } catch (e) {
+      console.error(e);
+      setSellerOrders([]);
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [user]);
 
   const handleRequestPayout = async () => {
     const amount = parseFloat(payoutAmount);
@@ -546,20 +574,67 @@ export default function SellerPortal() {
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Buyer Messages & Inquiries</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground mb-3">View and respond to buyer messages</p>
-                  <Link to="/messages">
-                    <Button variant="outline" size="sm">Go to Messages</Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold">Deals & orders</h3>
+                <p className="text-xs text-muted-foreground">Accepted offers become orders you can complete here.</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={fetchSellerOrders}>Refresh</Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/my/orders">Full orders page</Link>
+                </Button>
+              </div>
+            </div>
+            {ordersLoading ? (
+              <Skeleton className="h-40" />
+            ) : sellerOrders.length === 0 ? (
+              <Card>
+                <CardContent className="py-10 text-center">
+                  <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground text-sm mb-3">No orders yet. Accept an offer to start a deal.</p>
+                  <div className="flex justify-center gap-2">
+                    <Button variant="outline" size="sm" asChild><Link to="/my/offers">Offers</Link></Button>
+                    <Button variant="outline" size="sm" asChild><Link to="/messages">Messages</Link></Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order</TableHead>
+                        <TableHead>Listing</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sellerOrders.map((o) => (
+                        <TableRow key={o.id}>
+                          <TableCell className="font-mono text-xs">{o.order_number}</TableCell>
+                          <TableCell className="text-sm max-w-[160px] truncate">{o.ads?.title || '—'}</TableCell>
+                          <TableCell className="text-sm font-medium">৳{Number(o.amount).toLocaleString()}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize text-xs font-normal">
+                              {ORDER_STATUS_LABEL[o.status] || o.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button size="sm" variant="ghost" asChild>
+                              <Link to="/my/orders">Manage</Link>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Performance Tab */}

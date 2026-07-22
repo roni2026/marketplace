@@ -45,6 +45,7 @@ import PublicProfile from "./pages/PublicProfile";
 import MyAddresses from "./pages/MyAddresses";
 import MySupport from "./pages/MySupport";
 import MyOffers from "./pages/MyOffers";
+import MyOrders from "./pages/MyOrders";
 import BrandManagement from "./pages/admin/BrandManagement";
 
 // Admin pages
@@ -231,6 +232,7 @@ const App = () => (
                 <Route path="/my/addresses" element={<ProtectedRoute><MyAddresses /></ProtectedRoute>} />
           <Route path="/my/support" element={<ProtectedRoute><MySupport /></ProtectedRoute>} />
           <Route path="/my/offers" element={<ProtectedRoute><MyOffers /></ProtectedRoute>} />
+                <Route path="/my/orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
           
                 {/* New Admin Routes */}
                 <Route path="/admin/feature-flags" element={<AdminRoute><FeatureFlags /></AdminRoute>} />
