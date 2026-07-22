@@ -199,7 +199,7 @@ export default function AdminDashboardV2() {
           <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
             {[
               { label: 'Users', path: '/admin/users', icon: Users, color: 'text-blue-500' },
-              { label: 'Moderation', path: '/admin/ads', icon: FileCheck, color: 'text-amber-500' },
+              { label: 'Moderation', path: '/admin/moderation', icon: FileCheck, color: 'text-amber-500' },
               { label: 'Reports', path: '/admin/reports', icon: Flag, color: 'text-red-500' },
               { label: 'Analytics', path: '/admin/analytics', icon: BarChart3, color: 'text-purple-500' },
               { label: 'Payouts', path: '/admin/payouts', icon: Wallet, color: 'text-green-500' },

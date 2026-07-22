@@ -54,6 +54,7 @@ import AdModeration from "./pages/admin/AdModeration";
 import CategoryManagement from "./pages/admin/CategoryManagement";
 import UserManagement from "./pages/admin/UserManagement";
 import ReportManagement from "./pages/admin/ReportManagement";
+import ModerationInbox from "./pages/admin/ModerationInbox";
 import AuditLogPage from "./pages/admin/AuditLog";
 import AnalyticsPage from "./pages/admin/Analytics";
 import SettingsPage from "./pages/admin/Settings";
@@ -181,6 +182,7 @@ const App = () => (
                 <Route path="/admin/search" element={<AdminRoute><AdminSearch /></AdminRoute>} />
                 <Route path="/admin/ads/search" element={<AdminRoute><AdSearch /></AdminRoute>} />
                 <Route path="/admin/ad-promotions" element={<AdminRoute><AdPromotions /></AdminRoute>} />
+                <Route path="/admin/moderation" element={<AdminRoute><ModerationInbox /></AdminRoute>} />
                 <Route path="/admin/ads" element={<AdminRoute><AdModeration /></AdminRoute>} />
                 <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
                 <Route path="/admin/brands" element={<AdminRoute><BrandManagement /></AdminRoute>} />
