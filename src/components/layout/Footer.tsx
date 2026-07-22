@@ -37,6 +37,7 @@ export function Footer() {
               <li><Link to="/my-ads" className="hover:opacity-100">{t('footer.myAds')}</Link></li>
               <li><Link to="/favorites" className="hover:opacity-100">{t('footer.favorites')}</Link></li>
               <li><Link to="/seller-portal" className="hover:opacity-100">Seller portal</Link></li>
+              <li><Link to="/my/orders" className="hover:opacity-100">My orders</Link></li>
             </ul>
           </div>
 
@@ -59,6 +60,7 @@ export function Footer() {
               <li><Link to="/contact" className="hover:opacity-100">Contact us</Link></li>
               <li><Link to="/my/support" className="hover:opacity-100">Support tickets</Link></li>
               <li><Link to="/terms" className="hover:opacity-100">Terms of service</Link></li>
+              <li><Link to="/privacy" className="hover:opacity-100">Privacy policy</Link></li>
             </ul>
           </div>
         </div>

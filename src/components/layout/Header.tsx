@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, User, Heart, Menu, LogOut, Settings, Bell, MessageCircle, Search } from 'lucide-react';
+import { Plus, User, Heart, Menu, LogOut, Settings, Bell, MessageCircle, Search , Package, Tag} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useMessages } from '@/hooks/useMessages';
@@ -187,6 +187,18 @@ export function Header() {
                     <Link to="/account" className="flex items-center gap-2">
                       <User className="h-4 w-4" />
                       My account
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/my/orders" className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      My orders
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/my/offers" className="flex items-center gap-2">
+                      <Tag className="h-4 w-4" />
+                      My offers
                     </Link>
                   </DropdownMenuItem>
 <DropdownMenuItem asChild>

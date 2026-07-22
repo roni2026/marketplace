@@ -40,15 +40,16 @@ export default function Compare() {
             ))}
           </div>
         ) : compareIds.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 max-w-md mx-auto">
             <ArrowLeft className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">No items to compare</h2>
-            <p className="text-muted-foreground mb-4">
-              Add items to compare by clicking the compare button on product pages.
+            <h2 className="text-xl font-semibold mb-2">Nothing to compare yet</h2>
+            <p className="text-muted-foreground mb-4 text-sm">
+              On a listing, tap Compare to add it here. You can line up a few ads side by side before you decide.
             </p>
-            <Link to="/">
-              <Button>Browse Ads</Button>
-            </Link>
+            <div className="flex justify-center gap-2">
+              <Button asChild><Link to="/search">Browse ads</Link></Button>
+              <Button asChild variant="outline"><Link to="/favorites">Favorites</Link></Button>
+            </div>
           </div>
         ) : (
           <>

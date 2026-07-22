@@ -59,6 +59,7 @@ const navSections: NavSection[] = [
     label: 'People',
     items: [
       { title: 'Users', href: '/admin/users', icon: Users },
+      { title: 'Customers', href: '/admin/customers', icon: Users },
       { title: 'Sellers', href: '/admin/sellers', icon: Store },
       { title: 'Shops', href: '/admin/shops', icon: Building2 },
       { title: 'Shop verifications', href: '/admin/shop-verifications', icon: UserCheck },
@@ -68,6 +69,7 @@ const navSections: NavSection[] = [
     label: 'Catalog',
     items: [
       { title: 'Listings', href: '/admin/listing-management', icon: Package },
+      { title: 'Inventory', href: '/admin/inventory', icon: Package },
       { title: 'Ad search', href: '/admin/ads/search', icon: FileSearch },
       { title: 'Categories', href: '/admin/categories', icon: FolderTree },
       { title: 'Brands', href: '/admin/brands', icon: Tag },

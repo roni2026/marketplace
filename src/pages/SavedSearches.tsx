@@ -61,12 +61,17 @@ export default function SavedSearches() {
             <CardContent className="p-12 text-center">
               <Search className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
               <h3 className="font-semibold mb-1">No saved searches</h3>
-              <p className="text-muted-foreground text-sm mb-4">
-                Save your search criteria to get notified when new ads match.
+              <p className="text-muted-foreground text-sm mb-4 max-w-sm mx-auto">
+                Run a search, then save it to get alerts when new ads match your filters.
               </p>
-              <Link to="/search">
-                <Button variant="outline">Browse Ads</Button>
-              </Link>
+              <div className="flex justify-center gap-2">
+                <Button asChild>
+                  <Link to="/search">Start a search</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/account">My account</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (

@@ -156,7 +156,25 @@ export default function PublicProfilePage() {
     );
   }
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-16 text-center max-w-md">
+          <h1 className="text-xl font-semibold mb-2">Profile not found</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            This user may have closed their account, or the link is out of date.
+          </p>
+          <div className="flex justify-center gap-2">
+            <Button asChild variant="outline"><Link to="/">Home</Link></Button>
+            <Button asChild><Link to="/search">Search</Link></Button>
+          </div>
+        </main>
+        <Footer />
+        <MobileNav />
+      </div>
+    );
+  }
 
   const isOwnProfile = currentUser?.id === userId;
 

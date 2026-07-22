@@ -84,6 +84,7 @@ export default function SellerDashboard() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => navigate('/seller-portal')}>Seller portal</Button>
+            <Button variant="outline" size="sm" onClick={() => navigate('/my/orders')}>Orders</Button>
             <Button variant="outline" size="sm" onClick={() => navigate('/my-ads')}>My ads</Button>
             <Button size="sm" onClick={() => navigate('/post-ad')}>Post ad</Button>
           </div>

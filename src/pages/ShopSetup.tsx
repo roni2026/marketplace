@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -196,7 +196,25 @@ export default function ShopSetup() {
     );
   }
 
-  if (shop) return null;
+  if (shop) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-16 text-center max-w-md">
+          <h1 className="text-xl font-semibold mb-2">You already have a shop</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Manage it from your dashboard or settings instead of creating another one.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-2">
+            <Button asChild><Link to="/shop-dashboard">Shop dashboard</Link></Button>
+            <Button asChild variant="outline"><Link to="/shop-settings">Shop settings</Link></Button>
+          </div>
+        </main>
+        <Footer />
+        <MobileNav />
+      </div>
+    );
+  }
 
   const tierIcons = { basic: Package, professional: Zap, business: Star, enterprise: Crown };
 

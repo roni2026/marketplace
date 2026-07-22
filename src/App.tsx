@@ -123,6 +123,7 @@ import ShopVerificationPage from "./pages/ShopVerificationPage";
 import ShopCouponsPage from "./pages/ShopCouponsPage";
 import CustomerPortal from "./pages/CustomerPortal";
 import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ContactPage from "./pages/Contact";
 import SafetyTips from "./pages/SafetyTips";
 import HelpCenter from "./pages/HelpCenter";
@@ -256,6 +257,7 @@ const App = () => (
                 <Route path="/safety" element={<SafetyTips />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
 
                 <Route path="/shop-staff" element={<ProtectedRoute><ShopStaffPage /></ProtectedRoute>} />
                 <Route path="/shop-analytics" element={<ProtectedRoute><ShopAnalyticsPage /></ProtectedRoute>} />

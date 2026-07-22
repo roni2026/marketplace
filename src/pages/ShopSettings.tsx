@@ -111,6 +111,8 @@ export default function ShopSettings() {
     refund_policy: '',
     warranty_info: '',
     announcement: '',
+    logo_url: '',
+    banner_url: '',
   });
 
   useEffect(() => {
@@ -138,6 +140,8 @@ export default function ShopSettings() {
         refund_policy: shop.refund_policy || '',
         warranty_info: shop.warranty_info || '',
         announcement: shop.announcement || '',
+        logo_url: shop.logo_url || '',
+        banner_url: shop.banner_url || '',
       });
       setVacationEnabled(!!shop.is_vacation_mode);
       setVacationMessage(shop.vacation_message || '');
@@ -184,6 +188,8 @@ export default function ShopSettings() {
         refund_policy: editForm.refund_policy.trim() || null,
         warranty_info: editForm.warranty_info.trim() || null,
         announcement: editForm.announcement.trim() || null,
+        logo_url: editForm.logo_url.trim() || null,
+        banner_url: editForm.banner_url.trim() || null,
       });
       if (result) {
         setIsDirty(false);
@@ -372,6 +378,30 @@ export default function ShopSettings() {
                 <div className="space-y-2">
                   <Label>Shop Name</Label>
                   <Input value={editForm.name} onChange={(e) => patchForm({ name: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Logo URL</Label>
+                    <Input
+                      value={editForm.logo_url}
+                      onChange={(e) => patchForm({ logo_url: e.target.value })}
+                      placeholder="https://…"
+                    />
+                    {editForm.logo_url && (
+                      <img src={editForm.logo_url} alt="" className="h-12 w-12 rounded-lg object-cover border mt-1" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Banner URL</Label>
+                    <Input
+                      value={editForm.banner_url}
+                      onChange={(e) => patchForm({ banner_url: e.target.value })}
+                      placeholder="https://…"
+                    />
+                    {editForm.banner_url && (
+                      <img src={editForm.banner_url} alt="" className="h-12 w-full max-w-[200px] rounded-lg object-cover border mt-1" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Description</Label>
