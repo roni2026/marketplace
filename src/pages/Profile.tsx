@@ -346,20 +346,17 @@ export default function ProfilePage() {
       <Header />
       {/* Customer portal shortcuts */}
       <div className="border-b bg-muted/30">
-        <div className="container mx-auto px-4 py-3 flex flex-wrap gap-2 text-sm">
-          <a className="underline-offset-4 hover:underline" href="/my/addresses">Addresses</a>
-          <span className="text-muted-foreground">·</span>
-          <a className="underline-offset-4 hover:underline" href="/my/offers">Offers</a>
-          <span className="text-muted-foreground">·</span>
-          <a className="underline-offset-4 hover:underline" href="/my/support">Support</a>
-          <span className="text-muted-foreground">·</span>
-          <a className="underline-offset-4 hover:underline" href="/favorites">Favorites</a>
-          <span className="text-muted-foreground">·</span>
-          <a className="underline-offset-4 hover:underline" href="/saved-searches">Saved searches</a>
-          <span className="text-muted-foreground">·</span>
-          <a className="underline-offset-4 hover:underline" href="/compare">Compare</a>
-          <span className="text-muted-foreground">·</span>
-          <a className="underline-offset-4 hover:underline" href="/messages">Messages</a>
+        <div className="container mx-auto px-4 py-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+          <Link to="/account" className="font-medium text-primary underline-offset-4 hover:underline">My account</Link>
+          <span className="text-muted-foreground/50">|</span>
+          <Link to="/my/addresses" className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Addresses</Link>
+          <Link to="/my/offers" className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Offers</Link>
+          <Link to="/my/support" className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Support</Link>
+          <Link to="/favorites" className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Favorites</Link>
+          <Link to="/saved-searches" className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Saved searches</Link>
+          <Link to="/billing" className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Billing</Link>
+          <Link to="/messages" className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Messages</Link>
+          <Link to="/seller-portal" className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Seller portal</Link>
         </div>
       </div>
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">

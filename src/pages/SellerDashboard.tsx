@@ -77,7 +77,17 @@ export default function SellerDashboard() {
       </Helmet>
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
-        <h1 className="text-2xl font-bold mb-6">Seller Dashboard</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Seller analytics</h1>
+            <p className="text-sm text-muted-foreground mt-1">Views, inquiries, and revenue for your listings.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/seller-portal')}>Seller portal</Button>
+            <Button variant="outline" size="sm" onClick={() => navigate('/my-ads')}>My ads</Button>
+            <Button size="sm" onClick={() => navigate('/post-ad')}>Post ad</Button>
+          </div>
+        </div>
 
         {/* Overview Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

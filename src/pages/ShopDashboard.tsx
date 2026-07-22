@@ -121,7 +121,20 @@ export default function ShopDashboard() {
     );
   }
 
-  if (!shop) return null;
+  if (!shop) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-16 text-center">
+          <h1 className="text-xl font-semibold mb-2">No shop yet</h1>
+          <p className="text-muted-foreground mb-6">Set up your shop to unlock the dashboard, staff tools, and analytics.</p>
+          <Link to="/shop-setup" className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground">Create shop</Link>
+        </main>
+        <Footer />
+        <MobileNav />
+      </div>
+    );
+  }
 
   const statCards = [
     { title: 'Total Revenue', value: formatPrice(overview?.total_revenue || 0, 'fixed'), icon: DollarSign, color: 'text-green-500' },
@@ -545,7 +558,13 @@ export default function ShopDashboard() {
               <Settings className="h-4 w-4" /> Shop Settings
             </Button>
           </Link>
-          <Link to="/shop-settings?tab=coupons">
+          <Link to="/shop-staff">
+            <Button variant="outline" size="sm">Staff</Button>
+          </Link>
+          <Link to="/shop-analytics">
+            <Button variant="outline" size="sm">Analytics</Button>
+          </Link>
+          <Link to="/shop-coupons">
             <Button variant="outline" size="sm" className="gap-2">
               <Ticket className="h-4 w-4" /> Create Coupon
             </Button>
@@ -555,7 +574,7 @@ export default function ShopDashboard() {
               <Plus className="h-4 w-4" /> Add Product
             </Button>
           </Link>
-          <Link to="/shop-settings?tab=verification">
+          <Link to="/shop-verification">
             <Button variant="outline" size="sm" className="gap-2">
               <ShieldCheck className="h-4 w-4" /> Verification
             </Button>

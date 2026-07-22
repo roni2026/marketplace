@@ -207,10 +207,9 @@ export default function Messages() {
           <Card>
             <CardContent className="p-12 text-center">
               <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <h3 className="font-semibold text-lg mb-2">Messaging Coming Soon</h3>
+              <h3 className="font-semibold text-lg mb-2">No conversations yet</h3>
               <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                The messaging system is being set up. You'll be able to chat with sellers and buyers 
-                about listings once it's active.
+                When you contact a seller or receive a message about a listing, your conversations will appear here.
               </p>
             </CardContent>
           </Card>

@@ -9,9 +9,6 @@
  * Also retains table/grid view for browsing all statuses.
  */
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { MobileNav } from '@/components/layout/MobileNav';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,6 +37,7 @@ import {
 import { ModerationWorkspace } from '@/components/admin/ModerationWorkspace';
 import { AdminRejectDialog } from '@/components/admin/AdminRejectDialog';
 import {
+import { AdminLayout } from '@/components/admin/AdminLayout';
   startModerationSession, endModerationSession, getActiveSession,
   updateSessionStats, type ModerationSession,
 } from '@/lib/moderation';
@@ -429,24 +427,19 @@ export default function AdModeration() {
 
   if (viewMode === 'workspace' && selectedAd) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="flex-1">
-          <ModerationWorkspace
-            ad={selectedAd}
-            categories={categories}
-            queuePosition={currentIndex + 1}
-            queueTotal={totalCount}
-            sessionId={sessionRef.current}
-            enteredFromQueue={['member', 'general', 'listing', 'edited', 'verify'].includes(activeTab)}
-            onActionComplete={handleActionComplete}
-            onNavigateNext={navigateNext}
-            onNavigatePrev={navigatePrev}
-            onClose={exitWorkspace}
-          />
-        </div>
-        <MobileNav />
-        <Footer />
+      <div className="min-h-screen bg-background">
+        <ModerationWorkspace
+          ad={selectedAd}
+          categories={categories}
+          queuePosition={currentIndex + 1}
+          queueTotal={totalCount}
+          sessionId={sessionRef.current}
+          enteredFromQueue={['member', 'general', 'listing', 'edited', 'verify'].includes(activeTab)}
+          onActionComplete={handleActionComplete}
+          onNavigateNext={navigateNext}
+          onNavigatePrev={navigatePrev}
+          onClose={exitWorkspace}
+        />
       </div>
     );
   }
@@ -456,9 +449,8 @@ export default function AdModeration() {
   // =========================================================================
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container mx-auto px-4 py-6 pb-20 lg:pb-6 max-w-7xl">
+    <AdminLayout>
+      <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
           <div className="flex items-center gap-3">
@@ -666,7 +658,7 @@ export default function AdModeration() {
             <strong>Tip:</strong> Click any ad to open the moderation workspace. After approving or rejecting, the next ad loads automatically — no need to return to the list.
           </div>
         )}
-      </main>
+      </div>
 
       <AdminRejectDialog
         open={rejectDialogOpen}
@@ -675,9 +667,6 @@ export default function AdModeration() {
         adTitle={rejectTarget?.title}
         bulkCount={rejectTarget?.bulk}
       />
-
-      <MobileNav />
-      <Footer />
-    </div>
+    </AdminLayout>
   );
 }

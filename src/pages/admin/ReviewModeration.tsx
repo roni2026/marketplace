@@ -11,9 +11,6 @@
  * - Stats: pending, approved today, rejected today, avg rating
  */
 import { useEffect, useState, useCallback } from 'react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { MobileNav } from '@/components/layout/MobileNav';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,6 +29,7 @@ import { AdminBulkActions } from '@/components/admin/AdminBulkActions';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import {
+import { AdminLayout } from '@/components/admin/AdminLayout';
   Search, Filter, CheckCircle, XCircle, Star, Eye, Download,
   ChevronLeft, ChevronRight, Columns, Table as TableIcon, SlidersHorizontal,
   MoreVertical, Trash2, Clock, MessageSquare, User, Package,
@@ -168,10 +166,9 @@ export default function ReviewModeration() {
   const totalPages = Math.ceil(totalCount / PER_PAGE);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <AdminLayout>
+      <div className="space-y-4">
+<div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-yellow-500/10 text-yellow-500 flex items-center justify-center"><Star className="h-6 w-6" /></div>
             <div><h1 className="text-2xl font-bold">Review Moderation</h1><p className="text-muted-foreground">{totalCount} reviews</p></div>
@@ -315,7 +312,7 @@ export default function ReviewModeration() {
             </div>
           )}
         </div>
-      </main>
+      </div>
 
       <AdminBulkActions selectedCount={selectedIds.size} onClear={() => setSelectedIds(new Set())} onBulkAction={handleBulkAction} />
 
@@ -339,8 +336,7 @@ export default function ReviewModeration() {
         </div>
       )}
 
-      <MobileNav />
-      <Footer />
-    </div>
+      
+    </AdminLayout>
   );
 }

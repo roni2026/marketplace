@@ -119,6 +119,11 @@ import ShopStaffPage from "./pages/ShopStaffPage";
 import ShopAnalyticsPage from "./pages/ShopAnalyticsPage";
 import ShopVerificationPage from "./pages/ShopVerificationPage";
 import ShopCouponsPage from "./pages/ShopCouponsPage";
+import CustomerPortal from "./pages/CustomerPortal";
+import TermsOfService from "./pages/TermsOfService";
+import ContactPage from "./pages/Contact";
+import SafetyTips from "./pages/SafetyTips";
+import HelpCenter from "./pages/HelpCenter";
 
 const queryClient = new QueryClient();
 
@@ -242,6 +247,12 @@ const App = () => (
                 <Route path="/membership-plans" element={<ProtectedRoute><MembershipPlansPage /></ProtectedRoute>} />
                 <Route path="/membership-benefits" element={<MembershipBenefitsPage />} />
                 <Route path="/billing" element={<ProtectedRoute><BillingHistoryPage /></ProtectedRoute>} />
+                <Route path="/account" element={<ProtectedRoute><CustomerPortal /></ProtectedRoute>} />
+                <Route path="/help" element={<HelpCenter />} />
+                <Route path="/safety" element={<SafetyTips />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/terms" element={<TermsOfService />} />
+
                 <Route path="/shop-staff" element={<ProtectedRoute><ShopStaffPage /></ProtectedRoute>} />
                 <Route path="/shop-analytics" element={<ProtectedRoute><ShopAnalyticsPage /></ProtectedRoute>} />
                 <Route path="/shop-verification" element={<ProtectedRoute><ShopVerificationPage /></ProtectedRoute>} />

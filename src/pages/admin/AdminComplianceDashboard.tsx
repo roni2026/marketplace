@@ -2,9 +2,6 @@
  * AdminComplianceDashboard — GDPR consent logs, terms acceptance, data deletion requests.
  */
 import { useEffect, useState, useCallback } from 'react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { MobileNav } from '@/components/layout/MobileNav';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Shield, FileText, CheckCircle, Download, Search, AlertTriangle, Users, FileCheck } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 export default function AdminComplianceDashboard() {
   const [consentLogs, setConsentLogs] = useState<any[]>([]);
@@ -68,10 +66,9 @@ export default function AdminComplianceDashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
-        <div className="flex items-center gap-3 mb-6">
+    <AdminLayout>
+      <div className="space-y-4">
+<div className="flex items-center gap-3 mb-6">
           <div className="h-12 w-12 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center">
             <Shield className="h-6 w-6" />
           </div>
@@ -157,9 +154,8 @@ export default function AdminComplianceDashboard() {
             )}
           </TabsContent>
         </Tabs>
-      </main>
-      <MobileNav />
-      <Footer />
-    </div>
+      </div>
+      
+    </AdminLayout>
   );
 }

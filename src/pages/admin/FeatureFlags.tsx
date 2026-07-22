@@ -2,9 +2,6 @@
  * FeatureFlagsPage — Admin page to toggle features on/off globally or per-user.
  */
 import { useEffect, useState, useCallback } from 'react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { MobileNav } from '@/components/layout/MobileNav';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -16,10 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { AdminRoute } from '@/components/auth/AdminRoute';
 import { toast } from 'sonner';
 import { Flag, Plus, Trash2, Globe, User, ToggleLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface FeatureFlag {
   id: string;
@@ -113,10 +110,9 @@ export default function FeatureFlagsPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
-        <div className="flex items-center gap-3 mb-6">
+    <AdminLayout>
+      <div className="space-y-4">
+<div className="flex items-center gap-3 mb-6">
           <div className="h-12 w-12 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
             <Flag className="h-6 w-6" />
           </div>
@@ -193,9 +189,8 @@ export default function FeatureFlagsPage() {
             </Card>
           </div>
         </div>
-      </main>
-      <MobileNav />
-      <Footer />
-    </div>
+      </div>
+      
+    </AdminLayout>
   );
 }

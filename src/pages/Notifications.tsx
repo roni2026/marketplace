@@ -150,7 +150,7 @@ export default function Notifications() {
           <Card>
             <CardContent className="p-12 text-center">
               <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <h3 className="font-semibold text-lg mb-2">Notifications Coming Soon</h3>
+              <h3 className="font-semibold text-lg mb-2">No notifications yet</h3>
               <p className="text-muted-foreground text-sm max-w-md mx-auto">
                 The notification system is being set up. You'll see alerts here for new messages, 
                 offers, listing updates, and important announcements once it's active.

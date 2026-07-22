@@ -2,9 +2,6 @@
  * AdminSystemHealth — Real-time system health with threshold alerts.
  */
 import { useEffect, useState, useCallback } from 'react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { MobileNav } from '@/components/layout/MobileNav';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { Server, Cpu, HardDrive, Activity, AlertTriangle, CheckCircle, RefreshCw, Bell } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface HealthMetric {
   id: string;
@@ -115,10 +113,9 @@ export default function AdminSystemHealth() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <AdminLayout>
+      <div className="space-y-4">
+<div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center">
               <Server className="h-6 w-6" />
@@ -169,9 +166,8 @@ export default function AdminSystemHealth() {
             {metrics.map(m => <MetricCard key={m.id} metric={m} icon={getIcon(m.metric_name)} />)}
           </div>
         )}
-      </main>
-      <MobileNav />
-      <Footer />
-    </div>
+      </div>
+      
+    </AdminLayout>
   );
 }

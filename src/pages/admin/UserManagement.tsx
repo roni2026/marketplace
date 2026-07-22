@@ -14,9 +14,6 @@
  * - CSV export
  */
 import { useEffect, useState, useCallback } from 'react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { MobileNav } from '@/components/layout/MobileNav';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,6 +37,7 @@ import { AdminBulkActions } from '@/components/admin/AdminBulkActions';
 import { format, formatDistanceToNow, subDays } from 'date-fns';
 import { toast } from 'sonner';
 import {
+import { AdminLayout } from '@/components/admin/AdminLayout';
   Search, Filter, CheckCircle, XCircle, Shield, ShieldCheck, Ban,
   Download, ChevronLeft, ChevronRight, LayoutGrid, Table as TableIcon,
   Columns, SlidersHorizontal, Users, UserPlus, Clock, Flag, Star,
@@ -291,10 +289,9 @@ export default function UserManagement() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <AdminLayout>
+      <div className="space-y-4">
+<div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><Users className="h-6 w-6" /></div>
             <div><h1 className="text-2xl font-bold">User Management</h1><p className="text-muted-foreground">{totalCount} users</p></div>
@@ -424,7 +421,7 @@ export default function UserManagement() {
             </div>
           )}
         </div>
-      </main>
+      </div>
 
       <AdminBulkActions selectedCount={selectedIds.size} onClear={() => setSelectedIds(new Set())} onBulkAction={handleBulkAction} />
 
@@ -454,8 +451,7 @@ export default function UserManagement() {
         </DialogContent>
       </Dialog>
 
-      <MobileNav />
-      <Footer />
-    </div>
+      
+    </AdminLayout>
   );
 }

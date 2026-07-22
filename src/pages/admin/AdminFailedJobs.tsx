@@ -2,9 +2,6 @@
  * AdminFailedJobs — Monitor failed background jobs with retry and cleanup.
  */
 import { useEffect, useState, useCallback } from 'react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { MobileNav } from '@/components/layout/MobileNav';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AlertTriangle, RefreshCw, Trash2, Eye, Clock, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface FailedJob {
   id: string;
@@ -72,10 +70,9 @@ export default function AdminFailedJobs() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container mx-auto px-4 py-8 pb-20 lg:pb-8">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <AdminLayout>
+      <div className="space-y-4">
+<div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center">
               <AlertTriangle className="h-6 w-6" />
@@ -126,10 +123,7 @@ export default function AdminFailedJobs() {
             ))}
           </div>
         )}
-      </main>
-      <MobileNav />
-      <Footer />
-
+      </div>
       <Dialog open={!!previewJob} onOpenChange={(v) => !v && setPreviewJob(null)}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Job Details — {previewJob?.job_type}</DialogTitle></DialogHeader>
@@ -150,6 +144,7 @@ export default function AdminFailedJobs() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    
+    </AdminLayout>
   );
 }
