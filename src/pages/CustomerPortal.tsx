@@ -235,10 +235,10 @@ export default function CustomerPortal() {
       .eq('status', 'draft');
 
     const openTicketsReq = supabase
-      .from('customer_tickets')
+      .from('support_tickets')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', uid)
-      .in('status', ['open', 'pending', 'in_progress', 'waiting_on_user']);
+      .in('status', ['open', 'in_progress', 'waiting_on_user']);
 
     const favoritesReq = supabase
       .from('favorites')
