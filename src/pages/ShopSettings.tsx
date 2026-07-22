@@ -36,6 +36,7 @@ import {
   deleteShopAnnouncement,
   createShopStaff,
   removeShopStaff,
+  inviteShopStaffByEmail,
 } from '@/lib/shop';
 import type {
   ShopVerification,
@@ -52,11 +53,14 @@ import { toast } from 'sonner';
 export default function ShopSettings() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
-  const { shop, isLoading: shopLoading, updateShop, toggleVacation, coupons, categories, staff, fetchShop } = useShop();
+  const { shop, isLoading: shopLoading, updateShop, toggleVacation, coupons, categories, collections, announcements, staff, fetchShop } = useShop();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'general';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [savingVacation, setSavingVacation] = useState(false);
+  const [addingStaff, setAddingStaff] = useState(false);
   const [vacationEnabled, setVacationEnabled] = useState(false);
   const [vacationMessage, setVacationMessage] = useState('');
 
@@ -91,7 +95,7 @@ export default function ShopSettings() {
   const [announcementForm, setAnnouncementForm] = useState({ title: '', body: '' });
 
   // Staff form
-  const [staffForm, setStaffForm] = useState({ email: '', role: 'staff' as const });
+  const [staffForm, setStaffForm] = useState<{ email: string; role: 'staff' | 'manager' }>({ email: '', role: 'staff' });
 
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -135,8 +139,9 @@ export default function ShopSettings() {
         warranty_info: shop.warranty_info || '',
         announcement: shop.announcement || '',
       });
-      setVacationEnabled(shop.is_vacation_mode);
+      setVacationEnabled(!!shop.is_vacation_mode);
       setVacationMessage(shop.vacation_message || '');
+      setIsDirty(false);
     }
   }, [shop]);
 
@@ -154,27 +159,71 @@ export default function ShopSettings() {
     fetchVerificationData();
   }, [fetchVerificationData]);
 
+  const patchForm = (patch: Partial<typeof editForm>) => {
+    setEditForm((prev) => ({ ...prev, ...patch }));
+    setIsDirty(true);
+  };
+
   const handleSave = async () => {
+    if (!editForm.name.trim()) {
+      toast.error('Shop name is required');
+      return;
+    }
     setIsSaving(true);
-    await updateShop({
-      name: sanitizeText(editForm.name),
-      description: editForm.description || null,
-      contact_email: editForm.contact_email || null,
-      contact_phone: editForm.contact_phone || null,
-      location_division: editForm.location_division || null,
-      location_city: editForm.location_city || null,
-      location_address: editForm.location_address || null,
-      shipping_policy: editForm.shipping_policy || null,
-      return_policy: editForm.return_policy || null,
-      refund_policy: editForm.refund_policy || null,
-      warranty_info: editForm.warranty_info || null,
-      announcement: editForm.announcement || null,
-    });
-    setIsSaving(false);
+    try {
+      const result = await updateShop({
+        name: sanitizeText(editForm.name),
+        description: editForm.description.trim() || null,
+        contact_email: editForm.contact_email.trim() || null,
+        contact_phone: editForm.contact_phone.trim() || null,
+        location_division: editForm.location_division || null,
+        location_city: editForm.location_city || null,
+        location_address: editForm.location_address.trim() || null,
+        shipping_policy: editForm.shipping_policy.trim() || null,
+        return_policy: editForm.return_policy.trim() || null,
+        refund_policy: editForm.refund_policy.trim() || null,
+        warranty_info: editForm.warranty_info.trim() || null,
+        announcement: editForm.announcement.trim() || null,
+      });
+      if (result) {
+        setIsDirty(false);
+        await fetchShop();
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSaveVacation = async () => {
-    await toggleVacation(vacationEnabled, vacationMessage || undefined);
+    setSavingVacation(true);
+    try {
+      const result = await toggleVacation(vacationEnabled, vacationMessage || undefined);
+      if (result) await fetchShop();
+    } finally {
+      setSavingVacation(false);
+    }
+  };
+
+  const handleAddStaff = async () => {
+    if (!shop || !user || !staffForm.email.trim()) {
+      toast.error('Enter the staff member’s account email or phone');
+      return;
+    }
+    setAddingStaff(true);
+    try {
+      const result = await inviteShopStaffByEmail(
+        shop.id,
+        user.id,
+        staffForm.email.trim(),
+        staffForm.role === 'manager' ? 'manager' : 'staff',
+      );
+      if (result) {
+        setStaffForm({ email: '', role: 'staff' });
+        await fetchShop();
+      }
+    } finally {
+      setAddingStaff(false);
+    }
   };
 
   const handleSubmitVerification = async () => {
@@ -258,7 +307,20 @@ export default function ShopSettings() {
     );
   }
 
-  if (!shop) return null;
+  if (!shop) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-16 text-center">
+          <h1 className="text-xl font-semibold mb-2">No shop yet</h1>
+          <p className="text-muted-foreground mb-6">Create a shop before managing settings.</p>
+          <Button asChild><Link to="/shop-setup">Create shop</Link></Button>
+        </main>
+        <Footer />
+        <MobileNav />
+      </div>
+    );
+  }
 
   const verificationRequirements: VerificationRequirement = getVerificationRequirements(selectedVerificationType);
 
@@ -269,9 +331,24 @@ export default function ShopSettings() {
       </Helmet>
       <Header />
       <main className="container mx-auto px-4 py-6 pb-20 md:pb-6 max-w-4xl">
-        <div className="flex items-center gap-2 mb-6">
-          <Settings className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Shop Settings</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-2">
+            <Settings className="h-6 w-6 text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold">Shop settings</h1>
+              <p className="text-sm text-muted-foreground">Changes save to your live shop page.</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {shop.slug && (
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/shop/${shop.slug}`}>View shop</Link>
+              </Button>
+            )}
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/shop-dashboard">Dashboard</Link>
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -294,33 +371,33 @@ export default function ShopSettings() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Shop Name</Label>
-                  <Input value={editForm.name} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} />
+                  <Input value={editForm.name} onChange={(e) => patchForm({ name: e.target.value })} />
                 </div>
                 <div className="space-y-2">
                   <Label>Description</Label>
-                  <Textarea value={editForm.description} onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))} rows={3} />
+                  <Textarea value={editForm.description} onChange={(e) => patchForm({ description: e.target.value })} rows={3} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Contact Email</Label>
-                    <Input type="email" value={editForm.contact_email} onChange={(e) => setEditForm((p) => ({ ...p, contact_email: e.target.value }))} />
+                    <Input type="email" value={editForm.contact_email} onChange={(e) => patchForm({ contact_email: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>Contact Phone</Label>
-                    <Input value={editForm.contact_phone} onChange={(e) => setEditForm((p) => ({ ...p, contact_phone: e.target.value }))} />
+                    <Input value={editForm.contact_phone} onChange={(e) => patchForm({ contact_phone: e.target.value })} />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Division</Label>
-                    <Select value={editForm.location_division} onValueChange={(v) => setEditForm((p) => ({ ...p, location_division: v, location_city: '' }))}>
+                    <Select value={editForm.location_division} onValueChange={(v) => patchForm({ location_division: v, location_city: '' })}>
                       <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>{DIVISIONS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>District</Label>
-                    <Select value={editForm.location_city} onValueChange={(v) => setEditForm((p) => ({ ...p, location_city: v }))} disabled={!editForm.location_division}>
+                    <Select value={editForm.location_city} onValueChange={(v) => patchForm({ location_city: v })} disabled={!editForm.location_division}>
                       <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>{(DISTRICTS[editForm.location_division] || []).map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
                     </Select>
@@ -328,16 +405,19 @@ export default function ShopSettings() {
                 </div>
                 <div className="space-y-2">
                   <Label>Address</Label>
-                  <Input value={editForm.location_address} onChange={(e) => setEditForm((p) => ({ ...p, location_address: e.target.value }))} />
+                  <Input value={editForm.location_address} onChange={(e) => patchForm({ location_address: e.target.value })} />
                 </div>
                 <div className="space-y-2">
                   <Label>Announcement</Label>
-                  <Textarea value={editForm.announcement} onChange={(e) => setEditForm((p) => ({ ...p, announcement: e.target.value }))} rows={2} placeholder="Shop-wide announcement shown to visitors" />
+                  <Textarea value={editForm.announcement} onChange={(e) => patchForm({ announcement: e.target.value })} rows={2} placeholder="Shop-wide announcement shown to visitors" />
                 </div>
-                <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Save Changes
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button onClick={handleSave} disabled={isSaving || !isDirty} className="gap-2">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {isDirty ? 'Save changes' : 'Saved'}
+                  </Button>
+                  {isDirty && <span className="text-xs text-amber-600">Unsaved changes</span>}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -349,24 +429,27 @@ export default function ShopSettings() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Shipping Policy</Label>
-                  <Textarea value={editForm.shipping_policy} onChange={(e) => setEditForm((p) => ({ ...p, shipping_policy: e.target.value }))} rows={3} />
+                  <Textarea value={editForm.shipping_policy} onChange={(e) => patchForm({ shipping_policy: e.target.value })} rows={3} />
                 </div>
                 <div className="space-y-2">
                   <Label>Return Policy</Label>
-                  <Textarea value={editForm.return_policy} onChange={(e) => setEditForm((p) => ({ ...p, return_policy: e.target.value }))} rows={3} />
+                  <Textarea value={editForm.return_policy} onChange={(e) => patchForm({ return_policy: e.target.value })} rows={3} />
                 </div>
                 <div className="space-y-2">
                   <Label>Refund Policy</Label>
-                  <Textarea value={editForm.refund_policy} onChange={(e) => setEditForm((p) => ({ ...p, refund_policy: e.target.value }))} rows={3} />
+                  <Textarea value={editForm.refund_policy} onChange={(e) => patchForm({ refund_policy: e.target.value })} rows={3} />
                 </div>
                 <div className="space-y-2">
                   <Label>Warranty Information</Label>
-                  <Textarea value={editForm.warranty_info} onChange={(e) => setEditForm((p) => ({ ...p, warranty_info: e.target.value }))} rows={3} />
+                  <Textarea value={editForm.warranty_info} onChange={(e) => patchForm({ warranty_info: e.target.value })} rows={3} />
                 </div>
-                <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Save Policies
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button onClick={handleSave} disabled={isSaving || !isDirty} className="gap-2">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {isDirty ? 'Save policies' : 'Saved'}
+                  </Button>
+                  {isDirty && <span className="text-xs text-amber-600">Unsaved changes</span>}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -550,6 +633,36 @@ export default function ShopSettings() {
                 <Button onClick={handleCreateCollection} className="gap-2"><Plus className="h-4 w-4" /> Create</Button>
               </CardContent>
             </Card>
+            {collections.length > 0 ? (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Your collections</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  {collections.map((col) => (
+                    <div key={col.id} className="flex items-center gap-3 p-3 rounded-lg border">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{col.name}</p>
+                        {col.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-1">{col.description}</p>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-destructive"
+                        onClick={async () => {
+                          await deleteShopCollection(col.id);
+                          fetchShop();
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : (
+              <p className="text-sm text-muted-foreground">No collections yet.</p>
+            )}
           </TabsContent>
 
           {/* Categories Tab */}
@@ -585,7 +698,7 @@ export default function ShopSettings() {
           {/* Announcements Tab */}
           <TabsContent value="announcements" className="space-y-4">
             <Card>
-              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Megaphone className="h-4 w-4" /> Create Announcement</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Megaphone className="h-4 w-4" /> Create announcement</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-1">
                   <Label>Title</Label>
@@ -598,31 +711,100 @@ export default function ShopSettings() {
                 <Button onClick={handleCreateAnnouncement} className="gap-2"><Plus className="h-4 w-4" /> Create</Button>
               </CardContent>
             </Card>
+            {announcements.length > 0 ? (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Active announcements</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  {announcements.map((a) => (
+                    <div key={a.id} className="flex items-start gap-3 p-3 rounded-lg border">
+                      <Megaphone className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{a.title}</p>
+                        {a.body && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{a.body}</p>}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-destructive"
+                        onClick={async () => {
+                          await deleteShopAnnouncement(a.id);
+                          fetchShop();
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : (
+              <p className="text-sm text-muted-foreground">No announcements yet. Create one to show on your shop page.</p>
+            )}
           </TabsContent>
 
           {/* Staff Tab */}
           <TabsContent value="staff" className="space-y-4">
             <Card>
-              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" /> Staff Management</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">Add staff members to help manage your shop.</p>
-                {staff.length > 0 && (
-                  <div className="space-y-2">
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" /> Staff</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Invite someone who already has a BazarBD account (email or phone on their profile).
+                </p>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2 space-y-1">
+                    <Label>Email or phone</Label>
+                    <Input
+                      value={staffForm.email}
+                      onChange={(e) => setStaffForm((p) => ({ ...p, email: e.target.value }))}
+                      placeholder="staff@example.com"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Role</Label>
+                    <Select
+                      value={staffForm.role}
+                      onValueChange={(v) => setStaffForm((p) => ({ ...p, role: v as 'staff' | 'manager' }))}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="staff">Staff</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button onClick={handleAddStaff} disabled={addingStaff} className="gap-2">
+                  {addingStaff ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  Add staff
+                </Button>
+
+                {staff.length > 0 ? (
+                  <div className="space-y-2 pt-2 border-t">
                     {staff.map((s) => (
                       <div key={s.id} className="flex items-center gap-3 p-3 rounded-lg border">
                         <Users className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium capitalize">{s.role}</p>
-                          <p className="text-xs text-muted-foreground">{s.user_id.slice(0, 8)}...</p>
+                          <p className="text-xs text-muted-foreground font-mono truncate">{s.user_id}</p>
                         </div>
                         {s.role !== 'owner' && (
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => { removeShopStaff(s.id); fetchShop(); }}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-destructive"
+                            onClick={async () => {
+                              await removeShopStaff(s.id);
+                              fetchShop();
+                            }}
+                          >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         )}
                       </div>
                     ))}
                   </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Only you (owner) so far.</p>
                 )}
               </CardContent>
             </Card>
@@ -646,7 +828,10 @@ export default function ShopSettings() {
                     <Textarea value={vacationMessage} onChange={(e) => setVacationMessage(e.target.value)} rows={2} placeholder="We'll be back soon!" />
                   </div>
                 )}
-                <Button onClick={handleSaveVacation} size="sm">Save</Button>
+                <Button onClick={handleSaveVacation} size="sm" disabled={savingVacation} className="gap-2">
+                  {savingVacation ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                  Save vacation settings
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>

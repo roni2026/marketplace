@@ -141,9 +141,19 @@ export async function updateShop(shopId: string, updates: ShopUpdate): Promise<S
       }
     }
 
-    const sanitizedUpdates: Record<string, unknown> = { ...updates };
-    if (updates.name) sanitizedUpdates.name = sanitizeText(updates.name);
-    if (updates.description) sanitizedUpdates.description = updates.description;
+    if (updates.name !== undefined && updates.name !== null) {
+      const name = sanitizeText(String(updates.name)).trim();
+      if (!name) {
+        toast.error('Shop name is required');
+        return null;
+      }
+      updates = { ...updates, name };
+    }
+
+    const sanitizedUpdates: Record<string, unknown> = {
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
 
     const { data, error } = await supabase
       .from('shops')
@@ -154,12 +164,13 @@ export async function updateShop(shopId: string, updates: ShopUpdate): Promise<S
 
     if (error) throw error;
 
-    await logAudit({ action: 'update', resourceType: 'shop', resourceId: shopId, details: updates });
-    toast.success('Shop updated successfully!');
+    await logAudit({ action: 'update', resourceType: 'shop', resourceId: shopId, details: updates as Record<string, unknown> });
+    toast.success('Shop saved');
     return data as Shop;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('updateShop error:', error);
-    toast.error('Failed to update shop');
+    const msg = error instanceof Error ? error.message : 'Failed to update shop';
+    toast.error(msg);
     return null;
   }
 }
@@ -192,8 +203,9 @@ export async function toggleVacationMode(
       .from('shops')
       .update({
         is_vacation_mode: isActive,
-        vacation_message: message || null,
+        vacation_message: message?.trim() || null,
         vacation_until: null,
+        updated_at: new Date().toISOString(),
       })
       .eq('id', shopId)
       .select()
@@ -201,11 +213,25 @@ export async function toggleVacationMode(
 
     if (error) throw error;
 
-    toast.success(isActive ? 'Vacation mode enabled' : 'Vacation mode disabled');
+    // Keep seller-level vacation row in sync when possible
+    const ownerId = (data as Shop | null)?.owner_id;
+    if (ownerId) {
+      await supabase.from('seller_vacation_modes').upsert(
+        {
+          user_id: ownerId,
+          is_active: isActive,
+          message: message?.trim() || null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' },
+      );
+    }
+
+    toast.success(isActive ? 'Vacation mode on — shop paused' : 'Vacation mode off — shop live');
     return data as Shop;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('toggleVacationMode error:', error);
-    toast.error('Failed to toggle vacation mode');
+    toast.error(error instanceof Error ? error.message : 'Failed to toggle vacation mode');
     return null;
   }
 }
@@ -850,5 +876,71 @@ export async function removeShopStaff(staffId: string): Promise<boolean> {
     console.error('removeShopStaff error:', error);
     toast.error('Failed to remove staff member');
     return false;
+  }
+}
+
+/** Resolve a profile by email/phone-ish search and add as shop staff. */
+export async function inviteShopStaffByEmail(
+  shopId: string,
+  invitedBy: string,
+  emailOrPhone: string,
+  role: 'manager' | 'staff' | 'support' = 'staff',
+): Promise<ShopStaff | null> {
+  try {
+    const q = emailOrPhone.trim();
+    if (!q) {
+      toast.error('Enter an email or phone for the staff member');
+      return null;
+    }
+
+    // Prefer exact email match on profiles if column exists; fall back to phone
+    let userId: string | null = null;
+
+    // Case-insensitive email, then phone
+    const { data: byEmail } = await supabase
+      .from('profiles')
+      .select('user_id, full_name')
+      .ilike('email', q)
+      .limit(1)
+      .maybeSingle();
+    if (byEmail?.user_id) userId = byEmail.user_id;
+
+    if (!userId) {
+      const { data: byPhone } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .eq('phone_number', q)
+        .maybeSingle();
+      if (byPhone?.user_id) userId = byPhone.user_id;
+    }
+
+    if (!userId) {
+      toast.error('No account found with that email or phone. They need to sign up first.');
+      return null;
+    }
+
+    const { data: staff, error } = await supabase
+      .from('shop_staff')
+      .upsert(
+        {
+          shop_id: shopId,
+          user_id: userId,
+          role,
+          invited_by: invitedBy,
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'shop_id,user_id' },
+      )
+      .select()
+      .single();
+
+    if (error) throw error;
+    toast.success('Staff member added');
+    return staff as ShopStaff;
+  } catch (error: unknown) {
+    console.error('inviteShopStaffByEmail error:', error);
+    toast.error(error instanceof Error ? error.message : 'Failed to add staff');
+    return null;
   }
 }
