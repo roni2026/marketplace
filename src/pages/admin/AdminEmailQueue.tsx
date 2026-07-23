@@ -154,7 +154,6 @@ export default function AdminEmailQueue() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
     </AdminLayout>
   );
 }
